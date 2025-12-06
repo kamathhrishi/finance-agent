@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StrataLens - Institutional Grade Financial Intelligence</title>
-    <meta name="description" content="Institutional-grade financial intelligence for US public equities. Ask any question and get instant insights from 20+ years of market data.">
+    <title>StrataLens - Equity Research Copilot</title>
+    <meta name="description" content="AI equity research copilot providing accurate insights from official SEC filings and earnings transcripts for US public companies.">
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
@@ -331,6 +331,13 @@
             border-color: rgba(0, 102, 204, 0.2);
         }
 
+        .bg-grid-pattern {
+            background-image:
+                linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
         /* Refined Chat Input Styling */
         #landingSearchInput {
             min-height: 24px;
@@ -518,16 +525,26 @@
                     <button onclick="showAboutModal()" class="hidden lg:flex items-center text-slate-500 hover:text-slate-700 px-3 py-1.5 text-sm font-medium transition-colors rounded-lg hover:bg-slate-100/50">
                         About
                     </button>
-                    
+
+                    <!-- Desktop GitHub Link -->
+                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700 hover:text-slate-900">
+                        <i class="fab fa-github text-base"></i>
+                        <span>Star</span>
+                        <span class="flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
+                            <i class="fas fa-star text-[10px] text-yellow-500"></i>
+                            <span id="github-stars">—</span>
+                        </span>
+                    </a>
+
                     <!-- Mobile About Button -->
                     <button onclick="showAboutModal()" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
                         <i class="fas fa-info-circle"></i>
                     </button>
-                    
-                    <!-- Request Access Button -->
-                    <button onclick="showAuthModal('register')" class="btn-primary text-white px-4 py-2 rounded-lg font-medium text-sm">
-                        Request Access
-                    </button>
+
+                    <!-- Mobile GitHub Link -->
+                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
+                        <i class="fab fa-github"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -548,26 +565,9 @@
                     </p>
     </div>
 
-                <!-- Value Proposition: Why StrataLens over ChatGPT/Generic LLMs -->
-                <div class="mb-8 max-w-2xl mx-auto">
-                    <div class="bg-gradient-to-r from-strata-blue-50 to-slate-50 border border-strata-blue-200/50 rounded-xl p-4 md:p-5">
-                        <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 mt-0.5">
-                                <i class="fas fa-shield-check text-strata-blue-600 text-lg"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-sm font-semibold text-slate-800 mb-1.5">Trustworthy Sources</h3>
-                                <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
-                                    Unlike ChatGPT or generic LLMs that rely on news articles and web content, StrataLens uses <strong>official SEC filings and earnings transcripts</strong> directly from companies. Get accurate, verifiable insights from primary sources instead of second-hand information.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Data Coverage Note -->
                 <div class="mb-8 max-w-3xl mx-auto">
-                    <div class="inline-flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-slate-600">
+                    <div class="inline-flex flex-wrap items-center justify-center gap-3 text-xs text-slate-600">
                         <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full">
                             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
                             9,000+ US companies
@@ -576,9 +576,13 @@
                             <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
                             Earnings calls 2022-2025
                         </span>
-                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-slate-500">
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full">
+                            <span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                            2024-25 10-K filings
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full">
                             <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-                            SEC filings coming soon
+                            Latest news available
                         </span>
                     </div>
                 </div>
@@ -628,6 +632,102 @@
         </div>
     </section>
 
+    <!-- Why StrataLens Section -->
+    <section class="section-padding relative bg-gradient-to-b from-slate-100 via-slate-50 to-white border-t-2 border-b-2 border-slate-300/40 shadow-inner">
+        <div class="absolute inset-0 bg-grid-pattern opacity-[0.025]"></div>
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                    Why StrataLens?
+                </h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                    Built for serious equity research
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- StrataLens Card -->
+                <div class="feature-card p-8">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-strata-blue-600 to-strata-blue-700 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-shield-check text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900">StrataLens</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Official SEC Filings</p>
+                                <p class="text-sm text-slate-600">10-K, 10-Q reports directly from the SEC</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Earnings Transcripts</p>
+                                <p class="text-sm text-slate-600">Word-for-word executive commentary</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Primary Sources</p>
+                                <p class="text-sm text-slate-600">Same documents institutional investors use</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-800">Verifiable & Accurate</p>
+                                <p class="text-sm text-slate-600">Citation-backed, traceable insights</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LLM+Web Search Card -->
+                <div class="feature-card p-8 bg-slate-50 border-slate-300">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-slate-400 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-globe text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-700">LLM + Web Search</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-slate-400 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">News Articles</p>
+                                <p class="text-sm text-slate-500">Second-hand interpretations and opinions</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-slate-400 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">Web Content</p>
+                                <p class="text-sm text-slate-500">Unverified, potentially outdated information</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-slate-400 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">Secondary Sources</p>
+                                <p class="text-sm text-slate-500">Filtered through journalists and bloggers</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-slate-400 mt-1 mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">No Verification</p>
+                                <p class="text-sm text-slate-500">Cannot trace back to original sources</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Authentication Modal -->
     <div id="authModal" class="hidden fixed inset-0 bg-black/70 z-[150] flex items-center justify-center p-4">
@@ -1370,7 +1470,7 @@
 
         function formatLandingMarketCap(marketCap) {
             if (!marketCap) return '';
-            
+
             if (marketCap >= 1e12) {
                 return `$${(marketCap / 1e12).toFixed(1)}T`;
             } else if (marketCap >= 1e9) {
@@ -1381,6 +1481,30 @@
                 return `$${marketCap.toFixed(0)}`;
             }
         }
+
+        // Fetch GitHub stars count
+        async function fetchGitHubStars() {
+            try {
+                const response = await fetch('https://api.github.com/repos/kamathhrishi/stratalens-ai');
+                if (response.ok) {
+                    const data = await response.json();
+                    const stars = data.stargazers_count;
+                    const starsElement = document.getElementById('github-stars');
+                    if (starsElement) {
+                        // Format number with k suffix if needed
+                        starsElement.textContent = stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars;
+                    }
+                }
+            } catch (error) {
+                // Silently fail - keep the dash
+                console.log('Could not fetch GitHub stars');
+            }
+        }
+
+        // Fetch stars on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchGitHubStars();
+        });
     </script>
 </body>
 </html>
