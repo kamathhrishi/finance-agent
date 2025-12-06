@@ -40,6 +40,23 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your API keys and database credentials
 
+# Configure environment (see Configuration section below)
+```
+
+### Configuration
+
+Before running the application, configure the following files based on your environment:
+
+**Backend (`.env`):**
+- `BASE_URL` - Set to your server URL (e.g., `localhost:8000` for local, your production URL for deployment)
+- `RAG_DEBUG_MODE` - Set to `false` for production, `true` for development debugging
+- `ENABLE_LOGIN` / `ENABLE_SELF_SERVE_REGISTRATION` - Toggle authentication features as needed
+
+**Frontend (`frontend/config.js`):**
+- `ENVIRONMENT` - Set to `'local'` for development or `'production'` for deployment
+- Update the `ENVIRONMENTS.production` URLs to match your production server
+
+```bash
 # Initialize database
 python utils/database_init.py
 

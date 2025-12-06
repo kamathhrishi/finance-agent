@@ -8,7 +8,7 @@
 //
 // =============================================================================
 
-const ENVIRONMENT = 'local'; // Change this to 'local' or 'production'
+const ENVIRONMENT = 'production'; // Change this to 'local' or 'production'
 
 const ENVIRONMENTS = {
     local: {
