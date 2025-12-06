@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StrataLens - Institutional Grade Financial Intelligence</title>
+    <meta name="description" content="Institutional-grade financial intelligence for US public equities. Ask any question and get instant insights from 20+ years of market data.">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- TODO: Replace with proper Tailwind CSS build for production -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'strata-blue': {
+                            50: '#f0f7ff', 100: '#e0eefe', 200: '#c2e0fd', 300: '#a3d1fc',
+                            400: '#6ab8f9', 500: '#329ef6', 600: '#0083f1', 700: '#0070d8',
+                            800: '#005cb6', 900: '#004f97', 950: '#00315e'
+                        },
+                        'strata-slate': {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+                            400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+                            800: '#1e293b', 900: '#0f172a', 950: '#020617'
+                        },
+                    },
+                    fontFamily: { 
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    animation: {},
+                    keyframes: {}
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        html {
+            overflow-x: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            background: #fafbfc;
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            letter-spacing: -0.01em;
+        }
+        
+        /* Selection styling */
+        ::selection {
+            background: rgba(0, 102, 204, 0.12);
+            color: #0f172a;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0, 102, 204, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0, 102, 204, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .hero-gradient::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23cbd5e1' fill-opacity='0.08'%3E%3Ccircle cx='1' cy='1' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.15), 
+                        0 4px 12px rgba(0, 102, 204, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 4px 8px rgba(0, 102, 204, 0.2), 
+                        0 8px 20px rgba(0, 102, 204, 0.25),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0) scale(0.99);
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+        }
+        
+        .btn-secondary {
+            background: #ffffff;
+            backdrop-filter: blur(10px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .btn-secondary:hover {
+            border-color: #0066cc;
+            color: #0066cc;
+            background: rgba(0, 102, 204, 0.04);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1), 0 4px 12px rgba(0, 102, 204, 0.1);
+        }
+        
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #0066cc 0%, #3b82f6 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.08), 
+                        0 12px 28px rgba(0, 0, 0, 0.06);
+            border-color: rgba(0, 102, 204, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            background: linear-gradient(135deg, #0066cc 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+        
+        .demo-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .demo-container:hover {
+            border-color: rgba(0, 102, 204, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.08), 
+                        0 12px 32px rgba(0, 0, 0, 0.08);
+        }
+        
+        .section-padding {
+            padding: 5rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .section-padding {
+                padding: 3rem 0;
+            }
+        }
+        
+        .animate-on-scroll {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .animate-on-scroll.animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .icon-glow {
+            filter: drop-shadow(0 0 6px rgba(0, 102, 204, 0.25));
+            transition: filter 0.2s ease;
+        }
+        
+        .icon-glow:hover {
+            filter: drop-shadow(0 0 12px rgba(0, 102, 204, 0.4));
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .floating-shape {
+            position: absolute;
+            opacity: 0.06;
+        }
+        
+        .navbar-blur {
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+        }
+        
+        .enterprise-badge {
+            background: rgba(0, 102, 204, 0.06);
+            border: 1px solid rgba(0, 102, 204, 0.12);
+            border-radius: 9999px;
+        }
+        
+        .form-input {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+        
+        .form-input:hover {
+            border-color: #cbd5e1;
+        }
+        
+        .form-input:focus {
+            background: #ffffff;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            outline: none;
+        }
+        
+        .beta-form-container {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .form-group .form-input {
+            width: 100%;
+        }
+        
+        .form-group:hover .form-input {
+            border-color: #cbd5e1;
+        }
+        
+        .beta-form-wrapper {
+            perspective: 1000px;
+        }
+        
+        .shimmer-text {
+            background: linear-gradient(90deg, #334155 0%, #0066cc 50%, #334155 100%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .metric-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        
+        .metric-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
+            border-color: rgba(0, 102, 204, 0.2);
+        }
+
+        /* Refined Chat Input Styling */
+        #landingSearchInput {
+            min-height: 24px;
+            max-height: 120px;
+            transition: height 0.2s ease;
+            font-size: 0.9375rem;
+            line-height: 1.5;
+        }
+
+        #landingSearchInput:focus {
+            outline: none;
+        }
+        
+        /* Example button refinement */
+        .example-btn {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .example-btn:hover {
+            transform: translateX(4px);
+        }
+
+        /* Mobile optimizations for input */
+        @media (max-width: 768px) {
+            html {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                position: relative;
+                touch-action: pan-y;
+            }
+            
+            body {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                position: relative;
+                touch-action: pan-y;
+                overscroll-behavior-y: contain;
+                overscroll-behavior-x: none;
+            }
+            
+            body > * {
+                max-width: 100vw;
+            }
+            
+            .text-4xl {
+                font-size: 2.5rem;
+            }
+            
+            .text-5xl {
+                font-size: 3rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+            
+            .text-lg {
+                font-size: 1rem;
+            }
+            
+            .max-w-4xl {
+                max-width: 100%;
+                padding: 0 1rem;
+            }
+            
+            .max-w-3xl {
+                max-width: 100%;
+            }
+            
+            .grid.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid.md\\:grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .p-4 {
+                padding: 0.75rem;
+            }
+            
+            .px-4 {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            .py-3 {
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+            }
+            
+            /* Mobile input improvements */
+            #landingSearchInput {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            section, main, div {
+                box-sizing: border-box;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .text-4xl {
+                font-size: 2rem;
+            }
+            
+            .text-5xl {
+                font-size: 2.5rem;
+            }
+            
+            .mb-16 {
+                margin-bottom: 3rem;
+            }
+            
+            .mb-12 {
+                margin-bottom: 2rem;
+            }
+            
+            .mb-8 {
+                margin-bottom: 1.5rem;
+            }
+            
+            .gap-6 {
+                gap: 1rem;
+            }
+            
+            .gap-3 {
+                gap: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Warning Banner -->
+    <div id="mobileWarningBanner" class="hidden bg-yellow-500 text-yellow-900 px-4 py-2 text-center text-sm font-medium relative z-[60]" style="display: none;">
+        <div class="flex items-center justify-center space-x-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>StrataLens is optimized for desktop only. Mobile experience may be limited.</span>
+            <button id="dismissMobileBanner" class="ml-2 text-yellow-800 hover:text-yellow-900">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Warning Modal -->
+    <div id="mobileWarningModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <div class="flex items-center space-x-3 mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-500 text-2xl"></i>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Mobile Not Recommended</h3>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+                StrataLens is optimized for desktop only. Mobile devices may have limited functionality and poor readability.
+            </p>
+            <div class="flex space-x-3">
+                <button id="continueMobileBtn" class="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                    Continue anyway
+                </button>
+                <button id="closeMobileModal" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Got it
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation - REFINED -->
+    <nav class="navbar-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <!-- Logo Section -->
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-7 h-7 bg-gradient-to-br from-strata-blue-600 to-strata-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+                        <i class="fas fa-layer-group text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-semibold text-slate-800 tracking-tight">StrataLens</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-3">
+                    <!-- Desktop About Link -->
+                    <button onclick="showAboutModal()" class="hidden lg:flex items-center text-slate-500 hover:text-slate-700 px-3 py-1.5 text-sm font-medium transition-colors rounded-lg hover:bg-slate-100/50">
+                        About
+                    </button>
+                    
+                    <!-- Mobile About Button -->
+                    <button onclick="showAboutModal()" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    
+                    <!-- Request Access Button -->
+                    <button onclick="showAuthModal('register')" class="btn-primary text-white px-4 py-2 rounded-lg font-medium text-sm">
+                        Request Access
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Section -->
+    <main class="min-h-screen bg-gradient-to-br from-white via-strata-blue-50/20 to-strata-slate-50/30" style="width: 100%; overflow-x: hidden;">
+        <!-- ChatGPT-style Hero Section -->
+        <section id="landing-hero" class="flex flex-col items-center justify-center min-h-screen px-4 pt-12" style="width: 100%; max-width: 100vw; overflow-x: hidden;">
+            <div class="text-center max-w-4xl mx-auto">
+                <!-- Simple Welcome Message - REFINED -->
+                <div class="mb-10">
+                    <h1 class="text-3xl md:text-4xl lg:text-5xl font-semibold text-slate-800 mb-4 tracking-tight">
+                        Equity Research Copilot
+                    </h1>
+                    <p class="text-base md:text-lg text-slate-500 font-normal max-w-xl mx-auto leading-relaxed">
+                        Quick insights from U.S. public markets data
+                    </p>
+    </div>
+
+                <!-- Value Proposition: Why StrataLens over ChatGPT/Generic LLMs -->
+                <div class="mb-8 max-w-2xl mx-auto">
+                    <div class="bg-gradient-to-r from-strata-blue-50 to-slate-50 border border-strata-blue-200/50 rounded-xl p-4 md:p-5">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-shield-check text-strata-blue-600 text-lg"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-semibold text-slate-800 mb-1.5">Trustworthy Sources</h3>
+                                <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
+                                    Unlike ChatGPT or generic LLMs that rely on news articles and web content, StrataLens uses <strong>official SEC filings and earnings transcripts</strong> directly from companies. Get accurate, verifiable insights from primary sources instead of second-hand information.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Coverage Note -->
+                <div class="mb-8 max-w-3xl mx-auto">
+                    <div class="inline-flex flex-col sm:flex-row items-center justify-center gap-3 text-xs text-slate-600">
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                            9,000+ US companies
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full">
+                            <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                            Earnings calls 2022-2025
+                        </span>
+                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-slate-500">
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                            SEC filings coming soon
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ChatGPT-style Chat Interface -->
+                <div class="mb-12">
+                    <div class="relative max-w-3xl mx-auto">
+                        <!-- Chat Input Container -->
+                        <div class="modern-input-container">
+                            <div class="input-main-area">
+                                <textarea 
+                                    id="landingSearchInput" 
+                                    placeholder="What do you want to know? (please mention tickers with $)" 
+                                    rows="1"
+                                    maxlength="1000"
+                                    autocomplete="off"
+                                ></textarea>
+                            </div>
+                            <div class="input-footer-bar">
+                                <div class="flex-1"></div>
+                                <div class="footer-right-actions">
+                                    <button id="landingSearchButton" type="button" class="send-btn">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example Prompts -->
+                <div class="mb-8">
+                    <p class="text-xs text-slate-500 mb-4 font-medium uppercase tracking-wide">Try an example</p>
+                    <div class="space-y-2 max-w-3xl mx-auto">
+                        <button onclick="insertExampleQuery('Compile $INTC management commentary on foundry business in last 3 quarters')" class="example-btn w-full bg-white hover:bg-slate-50 border border-slate-200 hover:border-strata-blue-400/50 text-slate-600 hover:text-slate-800 px-4 py-3 rounded-xl text-left transition-all duration-200">
+                            <span class="text-sm">Compile $INTC management commentary on foundry business in last 3 quarters</span>
+                        </button>
+                        <button onclick="insertExampleQuery('Compare $MSFT and $GOOGL cloud segment')" class="example-btn w-full bg-white hover:bg-slate-50 border border-slate-200 hover:border-strata-blue-400/50 text-slate-600 hover:text-slate-800 px-4 py-3 rounded-xl text-left transition-all duration-200">
+                            <span class="text-sm">Compare $MSFT and $GOOGL cloud segment</span>
+                        </button>
+                        <button onclick="insertExampleQuery('Compile $META AI capex commentary in last 3 quarters')" class="example-btn w-full bg-white hover:bg-slate-50 border border-slate-200 hover:border-strata-blue-400/50 text-slate-600 hover:text-slate-800 px-4 py-3 rounded-xl text-left transition-all duration-200">
+                            <span class="text-sm">Compile $META AI capex commentary in last 3 quarters</span>
+                        </button>
+                    </div>
+                </div>
+
+        </div>
+    </section>
+
+
+    <!-- Authentication Modal -->
+    <div id="authModal" class="hidden fixed inset-0 bg-black/70 z-[150] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
+            <div id="authModalContent">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="fixed inset-0 bg-black/70 z-[150] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-strata-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-info-circle text-white text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">About StrataLens</h2>
+                
+                <div class="space-y-4 text-left">
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        AI equity research copilot providing quick insights from U.S. public markets data.
+                    </p>
+                    
+                    <div class="bg-gradient-to-r from-strata-blue-50 to-slate-50 border border-strata-blue-200/50 rounded-lg p-4">
+                        <div class="flex items-start gap-3 mb-3">
+                            <i class="fas fa-shield-check text-strata-blue-600 mt-0.5"></i>
+                            <div>
+                                <h3 class="text-slate-800 font-semibold text-sm mb-1.5">Why StrataLens over ChatGPT or Generic LLMs?</h3>
+                                <p class="text-slate-600 text-xs leading-relaxed">
+                                    StrataLens uses <strong>official SEC filings and earnings transcripts</strong> directly from companies, not news articles or web content. This ensures you get accurate, verifiable insights from primary sources—the same documents that institutional investors rely on.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <h3 class="text-slate-800 font-medium mb-2">Created by</h3>
+                        <p class="text-slate-600 text-sm mb-2">Hrishikesh Kamath</p>
+                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center text-strata-blue-600 hover:text-strata-blue-700 text-sm font-medium transition-colors">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            Visit hkamath.com
+                        </a>
+                    </div>
+                    
+                    <p class="text-slate-500 text-xs">
+                        Currently in private beta. Contact hrishi@stratalens.ai for access.
+                    </p>
+                </div>
+                
+                <button onclick="hideAboutModal()" class="btn btn-secondary w-full mt-6">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js?v=5"></script>
+    <script>
+        // Debug: Log the loaded config
+        console.log('Loaded config:', window.STRATALENS_CONFIG);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Landing page state
+        let isAuthenticated = false;
+
+        // Initialize landing page
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Setup search functionality
+            setupLandingSearch();
+        });
+
+        function setupLandingSearch() {
+            const searchInput = document.getElementById('landingSearchInput');
+            const searchButton = document.getElementById('landingSearchButton');
+
+            // Handle search input
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleLandingSearch();
+                }
+            });
+
+            // Auto-resize textarea and handle ticker autocomplete
+            searchInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                
+                // Update button state
+                const count = this.value.length;
+                searchButton.disabled = count === 0;
+                
+                // Handle ticker autocomplete
+                handleLandingTickerAutocomplete();
+            });
+
+            searchButton.addEventListener('click', handleLandingSearch);
+
+            // Setup landing page mode selector
+            setupLandingModeSelector();
+
+            // Focus on search input
+            searchInput.focus();
+        }
+
+        function setupLandingModeSelector() {
+            const toggleBtn = document.getElementById('landingModeToggleBtn');
+            const dropdown = document.getElementById('landingModeDropdown');
+            
+            if (!toggleBtn || !dropdown) {
+                return;
+            }
+
+            // Toggle dropdown
+            toggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isOpen = dropdown.classList.contains('show');
+                dropdown.classList.toggle('show');
+                toggleBtn.setAttribute('aria-expanded', !isOpen);
+            });
+
+            // Handle mode selection
+            const modeItems = dropdown.querySelectorAll('.mode-item');
+            modeItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Skip if disabled
+                    if (item.classList.contains('mode-disabled')) {
+                        return;
+                    }
+                    
+                    const mode = item.getAttribute('data-mode');
+                    
+                    // Update UI
+                    modeItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Update button
+                    const icon = mode === 'agent' ? 'fa-magnifying-glass-chart' : 'fa-bolt';
+                    const text = mode === 'agent' ? 'Agent' : 'Ask';
+                    
+                    const iconEl = toggleBtn.querySelector('i:first-child');
+                    if (iconEl) iconEl.className = `fas ${icon}`;
+                    
+                    const currentMode = document.getElementById('landingCurrentMode');
+                    if (currentMode) currentMode.textContent = text;
+                    
+                    // Close dropdown
+                    dropdown.classList.remove('show');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                    
+                });
+            });
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                if (!toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+        }
+
+        function getLandingMode() {
+            const activeItem = document.querySelector('#landingModeDropdown .mode-item.active');
+            return activeItem ? activeItem.getAttribute('data-mode') : 'ask';
+        }
+
+        function insertExampleQuery(query) {
+            const searchInput = document.getElementById('landingSearchInput');
+            searchInput.value = query;
+            
+            // Trigger input event to update character count and resize
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.focus();
+        }
+
+        function handleLandingSearch() {
+            const searchInput = document.getElementById('landingSearchInput');
+            const query = searchInput.value.trim();
+            
+            if (!query) return;
+
+            // Transition to platform interface
+            transitionToPlatform(query);
+        }
+
+        function transitionToPlatform(initialQuery = '') {
+            
+            // Get the selected mode from landing page
+            const selectedMode = getLandingMode();
+            
+            // Store the query and mode in localStorage for reliable transfer
+            if (initialQuery) {
+                localStorage.setItem('LANDING_STATE', JSON.stringify({
+                    initialQuery: initialQuery,
+                    selectedMode: selectedMode,
+                    fromLanding: true,
+                    timestamp: Date.now()
+                }));
+            }
+            
+            // Also store in window for immediate access
+            window.LANDING_STATE = { 
+                initialQuery: initialQuery,
+                selectedMode: selectedMode,
+                fromLanding: true
+            };
+            
+            // Redirect to the real platform with mode parameter
+            let queryParam = initialQuery ? `?from=landing&query=${encodeURIComponent(initialQuery)}` : '?from=landing';
+            if (selectedMode) {
+                queryParam += `&mode=${selectedMode}`;
+            }
+            window.location.href = `/app${queryParam}`;
+        }
+
+
+        // Helper function for chat messages
+        function addChatMessage(sender, message) {
+            console.log(`[${sender}] ${message}`);
+            // You can add UI display logic here if needed
+        }
+
+        async function fetchAuthFlags() {
+            try {
+                const config = window.STRATALENS_CONFIG || { apiBaseUrl: 'http://localhost:8000' };
+                console.log('Using API URL:', config.apiBaseUrl);
+                const res = await fetch(`${config.apiBaseUrl}/api`, { method: 'GET' });
+                const info = await res.json();
+                return (info && info.auth_flags) ? info.auth_flags : {
+                    enable_login: true,
+                    enable_self_serve_registration: true
+                };
+            } catch (e) {
+                console.error('Failed to fetch auth flags:', e);
+                return {
+                    enable_login: true,
+                    enable_self_serve_registration: true
+                };
+            }
+        }
+
+        async function showAuthModal(mode = 'register') {
+            const modal = document.getElementById('authModal');
+            const content = document.getElementById('authModalContent');
+            const flags = await fetchAuthFlags();
+            const allowLogin = !!flags.enable_login;
+            const allowRegister = !!flags.enable_self_serve_registration;
+            
+            if (mode === 'register' && allowRegister) {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Create Account</h2>
+                        <p class="text-gray-600 mb-6">Register for a StrataLens account</p>
+                        
+                        <form id="registerForm" class="space-y-4">
+                            <input type="email" name="email" placeholder="Email" autocomplete="email" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <input type="text" name="full_name" placeholder="Full Name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <input type="password" name="password" placeholder="Password" autocomplete="new-password" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <input type="text" name="company" placeholder="Company (optional)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <button type="submit" class="w-full bg-strata-blue-600 hover:bg-strata-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">Create Account</button>
+                        </form>
+                        
+                        <p class="text-sm text-gray-500 mt-4">
+                            Already have an account? 
+                            ${allowLogin ? `<button onclick="showAuthModal('login')" class="text-strata-blue-600 hover:underline">Sign in</button>` : ''}
+                        </p>
+                        
+                        <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (allowLogin) {
+                content.innerHTML = `
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h2>
+                        <p class="text-gray-600 mb-6">Sign in to your StrataLens account</p>
+                        
+                        <form id="loginForm" class="space-y-4">
+                            <input type="text" name="username" placeholder="Username or Email" autocomplete="username" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-strata-blue-500 focus:border-transparent">
+                            <button type="submit" class="w-full bg-strata-blue-600 hover:bg-strata-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                                Sign In
+                            </button>
+                        </form>
+                        
+                        ${allowRegister ? `<p class="text-sm text-gray-500 mt-4">Need an account? <button onclick=\"showAuthModal('register')\" class=\"text-strata-blue-600 hover:underline\">Sign up</button></p>` : ''}
+                        
+                        <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Neither login nor registration allowed: show access request/info
+                content.innerHTML = `
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
+                        <p class="text-gray-600 mb-6">Authentication is currently disabled by the administrator.</p>
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
+                            <p class="text-slate-800 text-sm font-medium mb-2">Private Beta</p>
+                            <p class="text-slate-600 text-sm mb-4">StrataLens is currently in private beta.</p>
+                            <p class="text-slate-600 text-sm">Contact <strong>hrishi@stratalens.ai</strong> for access</p>
+                        </div>
+                        <button onclick="hideAuthModal()" class="btn btn-secondary w-full">Close</button>
+                        <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Setup form submission
+            const form = document.getElementById(mode === 'register' ? 'registerForm' : 'loginForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                    
+                    const formData = new FormData(form);
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    const originalText = submitButton.textContent;
+                    
+                    // Show loading state
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+                    
+                    try {
+                        const data = {};
+                        for (let [key, value] of formData.entries()) {
+                            data[key] = value;
+                        }
+                        
+                        // Add required fields for registration
+                        if (mode === 'register') {
+                            data.username = data.email; // Use email as username
+                            data.full_name = data.full_name || data.email.split('@')[0];
+                            data.company = data.company || 'Unknown';
+                            data.role = data.role || 'user';
+                        }
+                        
+                        await handleAuthSubmission(data, mode === 'login');
+                        
+                    } catch (error) {
+                        addChatMessage('assistant', `Error: ${error.message}`);
+                    } finally {
+                        // Reset button state
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText;
+                    }
+                });
+            }
+        }
+
+        function hideAuthModal() {
+            const modal = document.getElementById('authModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function showAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function handleAuthSubmission(formData, isLogin = false) {
+            const endpoint = isLogin ? '/auth/login' : '/auth/register';
+            const config = window.STRATALENS_CONFIG || { apiBaseUrl: 'http://localhost:8000' };
+            
+            try {
+                const response = await fetch(`${config.apiBaseUrl}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Authentication failed');
+                }
+
+                if (isLogin && data.access_token) {
+                    // Store real token
+                    localStorage.setItem('authToken', data.access_token);
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    
+                    // Authentication successful
+                    handleAuthSuccess();
+                } else if (!isLogin) {
+                    // Registration successful, show success message
+                    addChatMessage('assistant', 'Account registration completed successfully. Please proceed with authentication using your new credentials.');
+                    hideAuthModal();
+                    setTimeout(() => showAuthModal('login'), 1000);
+                }
+                
+            } catch (error) {
+                addChatMessage('assistant', `Authentication failed: ${error.message}`);
+            }
+        }
+
+        function handleAuthSuccess() {
+            // Real authentication success
+            isAuthenticated = true;
+            
+            // Hide modal
+            hideAuthModal();
+            
+            // Redirect to main app (index.html) immediately after auth
+            const query = document.getElementById('chatInput')?.value || window.LANDING_STATE?.initialQuery || '';
+            const queryParam = query ? `?from=landing&query=${encodeURIComponent(query)}` : '?from=landing';
+            window.location.href = `/app${queryParam}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // No animations needed
+        
+        // Mobile warning functionality for landing page
+        function isMobileDevice() {
+            const isSmallViewport = window.innerWidth <= 768 || Math.min(window.innerWidth, window.innerHeight) <= 820;
+            const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+            const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            return (isSmallViewport && isTouch) || isMobileUserAgent;
+        }
+
+        function showMobileWarningIfNeeded() {
+            
+            // Check if already dismissed in this session
+            try {
+                const dismissedInSession = sessionStorage.getItem('mobileModalDismissed') === 'true';
+                if (dismissedInSession) {
+                    return;
+                }
+            } catch (e) {}
+            
+            if (isMobileDevice()) {
+                const modal = document.getElementById('mobileWarningModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                } else {
+                }
+            } else {
+            }
+        }
+
+        // Mobile warning banner functionality for landing page
+        function showMobileBannerIfNeeded() {
+            
+            // Check if banner was dismissed in this session
+            try {
+                if (sessionStorage.getItem('mobileBannerDismissed') === 'true') {
+                    return;
+                }
+            } catch (e) {}
+            
+            
+            if (isMobileDevice()) {
+                const banner = document.getElementById('mobileWarningBanner');
+                if (banner) {
+                    banner.classList.remove('hidden');
+                    banner.style.display = 'block';
+                } else {
+                }
+            } else {
+            }
+        }
+
+        // Handle banner dismissal
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'dismissMobileBanner') {
+                const banner = document.getElementById('mobileWarningBanner');
+                if (banner) {
+                    banner.classList.add('hidden');
+                    banner.style.display = 'none';
+                    try { sessionStorage.setItem('mobileBannerDismissed', 'true'); } catch (e) {}
+                }
+            }
+        });
+
+        // Handle modal dismissal
+        document.addEventListener('click', function(e) {
+            if (e.target && (e.target.id === 'closeMobileModal' || e.target.id === 'continueMobileBtn')) {
+                const modal = document.getElementById('mobileWarningModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    try { sessionStorage.setItem('mobileModalDismissed', 'true'); } catch (e) {}
+                    
+                    // Also show the banner after dismissing modal
+                    showMobileBannerIfNeeded();
+                }
+            }
+        });
+
+        // Manual banner controls for testing
+        window.showMobileBanner = function() {
+            const banner = document.getElementById('mobileWarningBanner');
+            if (banner) {
+                banner.classList.remove('hidden');
+                banner.style.display = 'block';
+                try { sessionStorage.removeItem('mobileBannerDismissed'); } catch (e) {}
+            } else {
+            }
+        };
+
+        window.checkMobileBanner = function() {
+            const banner = document.getElementById('mobileWarningBanner');
+            return banner;
+        };
+
+        // Manual modal controls for testing
+        window.showMobileModal = function() {
+            const modal = document.getElementById('mobileWarningModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                try { sessionStorage.removeItem('mobileModalDismissed'); } catch (e) {}
+            }
+        };
+
+        window.hideMobileModal = function() {
+            const modal = document.getElementById('mobileWarningModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                try { sessionStorage.setItem('mobileModalDismissed', 'true'); } catch (e) {}
+            }
+        };
+        
+        // Clear all mobile warnings (useful for testing)
+        window.clearMobileWarnings = function() {
+            try {
+                sessionStorage.removeItem('mobileBannerDismissed');
+                sessionStorage.removeItem('mobileModalDismissed');
+            } catch (e) {
+            }
+        };
+
+        // Show modal and banner on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(showMobileWarningIfNeeded, 100);
+            setTimeout(showMobileBannerIfNeeded, 200);
+        });
+
+        // Force show modal for testing
+        window.forceShowModal = function() {
+            try { sessionStorage.removeItem('mobileModalDismissed'); } catch (e) {}
+            const modal = document.getElementById('mobileWarningModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            } else {
+            }
+        };
+        
+        // Check mobile device status
+        window.checkMobileStatus = function() {
+        };
+
+        // Landing page ticker autocomplete functions
+        function handleLandingTickerAutocomplete() {
+            const searchInput = document.getElementById('landingSearchInput');
+            if (!searchInput) return;
+
+            const text = searchInput.value;
+            const cursorPosition = searchInput.selectionStart;
+            
+            // Find the current word being typed (looking for $ prefix)
+            const beforeCursor = text.substring(0, cursorPosition);
+            
+            // Look for $ followed by letters/numbers (ticker pattern)
+            const tickerMatch = beforeCursor.match(/\$([A-Za-z0-9]*)$/);
+            
+            if (tickerMatch) {
+                const tickerPrefix = tickerMatch[1].toUpperCase();
+                if (tickerPrefix.length >= 1) {
+                    fetchLandingTickerSuggestions(tickerPrefix);
+                } else {
+                    hideLandingTickerSuggestions();
+                }
+            } else {
+                hideLandingTickerSuggestions();
+            }
+        }
+
+        async function fetchLandingTickerSuggestions(tickerPrefix) {
+            try {
+                const config = window.STRATALENS_CONFIG || { apiBaseUrl: 'http://localhost:8000' };
+                const params = new URLSearchParams({
+                    query: tickerPrefix,
+                    limit: 8
+                });
+
+                const response = await fetch(`${config.apiBaseUrl}/companies/public/search?${params.toString()}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.companies) {
+                        showLandingTickerSuggestions(result.companies);
+                    } else {
+                        hideLandingTickerSuggestions();
+                    }
+                } else {
+                    hideLandingTickerSuggestions();
+                }
+
+            } catch (error) {
+                hideLandingTickerSuggestions();
+            }
+        }
+
+        function showLandingTickerSuggestions(companies) {
+            // Remove existing suggestions
+            hideLandingTickerSuggestions();
+
+            if (!companies || companies.length === 0) return;
+
+            const searchInput = document.getElementById('landingSearchInput');
+            if (!searchInput) return;
+
+            // Create suggestions dropdown
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.id = 'landingTickerSuggestions';
+            suggestionsDiv.className = 'absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto';
+            
+            // Position the dropdown below the input
+            const inputRect = searchInput.getBoundingClientRect();
+            suggestionsDiv.style.position = 'fixed';
+            suggestionsDiv.style.top = `${inputRect.bottom + 5}px`;
+            suggestionsDiv.style.left = `${inputRect.left}px`;
+            suggestionsDiv.style.width = `${Math.max(inputRect.width, 300)}px`;
+
+            // Add suggestion items
+            companies.forEach((company, index) => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0';
+                suggestionItem.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-gray-800">$${company.symbol}</span>
+                                    <span class="text-sm text-gray-500">${company.exchangeShortName || ''}</span>
+                                </div>
+                                <span class="text-sm text-gray-600 line-clamp-1">${company.companyName}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end text-xs text-gray-400">
+                            ${company.marketCap ? `<span>${formatLandingMarketCap(company.marketCap)}</span>` : ''}
+                            ${company.sector ? `<span>${company.sector}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                suggestionItem.addEventListener('click', () => {
+                    selectLandingTickerSuggestion(company.symbol);
+                });
+
+                suggestionsDiv.appendChild(suggestionItem);
+            });
+
+            document.body.appendChild(suggestionsDiv);
+
+            // Add click outside to close
+            setTimeout(() => {
+                document.addEventListener('click', handleLandingOutsideClick);
+            }, 100);
+        }
+
+        function hideLandingTickerSuggestions() {
+            const suggestionsDiv = document.getElementById('landingTickerSuggestions');
+            if (suggestionsDiv) {
+                suggestionsDiv.remove();
+            }
+        }
+
+        function selectLandingTickerSuggestion(ticker) {
+            const searchInput = document.getElementById('landingSearchInput');
+            if (!searchInput) return;
+
+            const text = searchInput.value;
+            const cursorPosition = searchInput.selectionStart;
+            
+            // Find the current ticker being typed
+            const beforeCursor = text.substring(0, cursorPosition);
+            const tickerMatch = beforeCursor.match(/\$([A-Za-z0-9]*)$/);
+            
+            if (tickerMatch) {
+                const startPos = cursorPosition - tickerMatch[0].length;
+                const newText = text.substring(0, startPos) + `$${ticker} ` + text.substring(cursorPosition);
+                
+                searchInput.value = newText;
+                
+                // Set cursor position after the inserted ticker
+                const newCursorPos = startPos + ticker.length + 2; // +2 for $ and space
+                searchInput.setSelectionRange(newCursorPos, newCursorPos);
+                
+                // Trigger input event to resize textarea
+                searchInput.dispatchEvent(new Event('input'));
+            }
+
+            hideLandingTickerSuggestions();
+        }
+
+        function handleLandingOutsideClick(event) {
+            const suggestionsDiv = document.getElementById('landingTickerSuggestions');
+            const searchInput = document.getElementById('landingSearchInput');
+            
+            if (suggestionsDiv && !suggestionsDiv.contains(event.target) && 
+                searchInput && !searchInput.contains(event.target)) {
+                hideLandingTickerSuggestions();
+                document.removeEventListener('click', handleLandingOutsideClick);
+            }
+        }
+
+        function formatLandingMarketCap(marketCap) {
+            if (!marketCap) return '';
+            
+            if (marketCap >= 1e12) {
+                return `$${(marketCap / 1e12).toFixed(1)}T`;
+            } else if (marketCap >= 1e9) {
+                return `$${(marketCap / 1e9).toFixed(1)}B`;
+            } else if (marketCap >= 1e6) {
+                return `$${(marketCap / 1e6).toFixed(1)}M`;
+            } else {
+                return `$${marketCap.toFixed(0)}`;
+            }
+        }
+    </script>
+</body>
+</html>

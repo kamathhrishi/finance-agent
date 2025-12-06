@@ -1,0 +1,307 @@
+# Cursor AI Rules for StrataLens AI Project
+
+## General Principles
+
+- Be concise and direct in responses
+- Prioritize code quality and maintainability
+- Follow existing patterns and conventions in the codebase
+- Think before acting - understand the context fully
+
+## Documentation Rules
+
+### ❌ DO NOT Create Documentation Unless Explicitly Asked
+
+- **NEVER** create README.md, CHANGELOG.md, or other documentation files automatically
+- **NEVER** create summary documents for routine changes
+- **NEVER** create migration guides unless specifically requested
+- Only create documentation when the user explicitly asks: "create a readme", "document this", etc.
+- Prefer inline code comments for complex logic instead of separate docs
+
+### ✅ DO Create Documentation When
+
+- User explicitly requests: "create documentation", "write a README", "document this API"
+- Adding new major features that require setup instructions
+- Creating public APIs that external developers will use
+
+## Code Modification Rules
+
+### Making Changes
+
+- **ALWAYS** prefer editing existing files over creating new ones
+- **NEVER** create helper scripts or temporary files unless absolutely necessary
+- If temporary files are created, clean them up immediately after use
+- Ask for clarification if requirements are ambiguous rather than guessing
+
+### Code Style
+
+- Follow existing code style and patterns in the file
+- Use existing helper functions and utilities
+- Don't add emojis to code unless explicitly requested
+- Maintain consistent indentation (spaces vs tabs as per file)
+
+## Python/FastAPI Specific
+
+### Backend Development
+
+- Use type hints for all function parameters and returns
+- Leverage FastAPI's dependency injection (Depends)
+- Use Pydantic models for request/response validation
+- Handle errors with proper HTTP status codes
+- Use async/await for database operations
+- Log important events with appropriate log levels
+
+### Database Operations
+
+- Always use parameterized queries to prevent SQL injection
+- Use connection pooling via `get_db()` dependency
+- Handle database errors gracefully
+- Use transactions for multi-step operations
+
+### Authentication & Security
+
+- Use `get_current_user` for protected endpoints
+- Use `get_optional_user` for endpoints that work both authenticated and anonymous
+- Never log sensitive information (passwords, tokens, etc.)
+- Validate and sanitize all user inputs
+
+## Frontend/JavaScript Specific
+
+### JavaScript Code
+
+- Use modern ES6+ syntax (const/let, arrow functions, async/await)
+- Handle errors with try/catch blocks
+- Show user-friendly error messages
+- Use existing utility functions from utils.js
+- Follow the existing DOM manipulation patterns
+
+### API Calls
+
+- Always handle both success and error cases
+- Include proper headers (Content-Type, Authorization)
+- Use async/await instead of raw promises
+- Show loading states during API calls
+
+## Testing & Deployment
+
+### Before Changes
+
+- Check for existing similar functionality before adding new code
+- Search codebase for related patterns and follow them
+- Consider backward compatibility
+
+### After Changes
+
+- Run linter and fix any errors introduced
+- Test the specific functionality changed
+- Verify no breaking changes for existing features
+- Don't commit automatically unless explicitly asked
+
+## File Organization
+
+### Project Structure
+
+```
+stratalens_ai/
+├── routers/          # API route handlers
+├── models/           # Pydantic models
+├── rag/              # RAG system and AI logic
+├── frontend/         # HTML/CSS/JavaScript files
+├── evaluation/       # Testing and evaluation
+├── migrations/       # Database migrations
+└── utils/            # Shared utilities
+```
+
+### Naming Conventions
+
+- Python files: `snake_case.py`
+- Classes: `PascalCase`
+- Functions/variables: `snake_case`
+- Constants: `UPPER_SNAKE_CASE`
+- Frontend files: `kebab-case.html`, `camelCase.js`
+
+## Common Patterns in This Codebase
+
+### API Endpoints
+
+```python
+@router.post("/endpoint", response_model=ResponseModel)
+async def endpoint_function(
+    request_data: RequestModel,
+    current_user: dict = Depends(get_current_user),
+    db: asyncpg.Connection = Depends(get_db)
+):
+    """Clear docstring explaining what this endpoint does"""
+    try:
+        # Implementation
+        return ResponseModel(success=True, data=result)
+    except Exception as e:
+        logger.error(f"Error in endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+### Database Queries
+
+```python
+# Fetch one
+result = await db.fetchrow('SELECT * FROM table WHERE id = $1', id)
+
+# Fetch many
+results = await db.fetch('SELECT * FROM table WHERE condition = $1', value)
+
+# Execute (INSERT/UPDATE/DELETE)
+await db.execute('INSERT INTO table (col) VALUES ($1)', value)
+```
+
+### Frontend API Calls
+
+```javascript
+async function apiCall() {
+    try {
+        const response = await fetch(`${CONFIG.apiBaseUrl}/endpoint`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error:', error);
+        // Show user-friendly error
+    }
+}
+```
+
+## Rate Limiting & Usage Tracking
+
+- Anonymous users: IP-based rate limiting (in-memory or Redis)
+- Authenticated users: User ID-based with monthly quotas
+- Always record successful queries for billing
+- Log analytics for both successful and failed requests
+
+## Error Handling
+
+### Backend
+
+- Use custom error handlers from `error_handlers.py`
+- Log errors with context (user_id, request details)
+- Return user-friendly error messages (no stack traces to users)
+- Use appropriate HTTP status codes (400, 401, 403, 404, 429, 500)
+
+### Frontend
+
+- Display user-friendly error messages
+- Don't expose technical details to end users
+- Provide actionable next steps when possible
+- Log errors to console for debugging
+
+## Performance Considerations
+
+- Use pagination for large data sets
+- Implement caching where appropriate
+- Use database indexes for frequently queried fields
+- Minimize API calls (batch when possible)
+- Use lazy loading for heavy resources
+
+## Security Best Practices
+
+- Never trust user input - always validate
+- Use parameterized queries (never string concatenation)
+- Sanitize outputs to prevent XSS
+- Use HTTPS in production
+- Implement proper CORS policies
+- Rate limit all public endpoints
+- Hash passwords with bcrypt
+- Use secure JWT tokens with expiration
+
+## Debugging & Logging
+
+- Use appropriate log levels: DEBUG, INFO, WARNING, ERROR
+- Include context in log messages (user_id, request_id, etc.)
+- Don't log sensitive information
+- Use structured logging for important events
+
+## When to Ask vs When to Act
+
+### Ask the User When:
+
+- Requirements are unclear or ambiguous
+- Multiple valid approaches exist
+- Changes could break existing functionality
+- Architecture decisions are needed
+- You're about to create new files or major refactors
+
+### Act Directly When:
+
+- Fixing obvious bugs
+- Following clear instructions
+- Applying established patterns
+- Making requested code changes
+- Removing unused code as requested
+
+## Common Antipatterns to Avoid
+
+❌ Creating unnecessary abstraction layers
+❌ Premature optimization
+❌ Duplicating existing functionality
+❌ Creating documentation files unprompted
+❌ Adding features not requested
+❌ Making breaking changes without discussion
+❌ Ignoring existing error handling patterns
+❌ Hardcoding values that should be configurable
+❌ Writing overly complex code when simple works
+❌ Leaving TODO comments instead of completing work
+
+## This Project's Specific Patterns
+
+### Unified Chat Endpoint
+
+- Single `/chat` endpoint handles both authenticated and anonymous users
+- Use `get_optional_user` for optional authentication
+- Different rate limits based on authentication status
+- Save history only for authenticated users
+
+### RAG System
+
+- Use `create_rag_system()` for initialization
+- Set database connection with `set_database_connection(db)`
+- Process citations with `process_citations_from_rag_result()`
+- Handle async execution with proper error handling
+
+### Analytics
+
+- Log all chat interactions (success and failure)
+- Track user type (DEMO vs AUTHORIZED)
+- Include timing information for performance monitoring
+- Store metadata for future analysis
+
+## Commit Message Format (when asked to commit)
+
+```
+type(scope): brief description
+
+- Detailed change 1
+- Detailed change 2
+- Detailed change 3
+
+BREAKING CHANGES: [if any]
+```
+
+Types: feat, fix, refactor, docs, test, chore
+
+## Summary
+
+**Remember:**
+1. No automatic documentation creation
+2. Follow existing patterns rigorously
+3. Ask when unclear, act when certain
+4. Quality over speed
+5. User experience is paramount
+

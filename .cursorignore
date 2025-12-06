@@ -1,0 +1,30 @@
+# Exclude earnings transcripts from Cursor indexing
+rag/earnings_transcripts/
+rag/earnings_transcripts_2024_q4/
+rag/earnings_transcripts_2025_q1/
+rag/earnings_transcripts_2025_q2/
+rag/earnings_transcripts_*/
+
+# Exclude other large data directories
+rag/logs/
+
+# Exclude database files
+*.duckdb
+
+# Exclude Python cache
+__pycache__/
+*.py[cod]
+
+# Exclude virtual environments
+venv/
+env/
+ENV/
+
+# Exclude temporary files
+*.tmp
+*.temp
+*.log
+
+# Exclude OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,2743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StrataLens - The Finance Search Engine</title>
+    <!-- TODO: Replace with proper Tailwind CSS build for production -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="index-styles.css">
+    <script src="config.js?v=4"></script>
+    <script src="session.js?v=3"></script>
+    <script src="utils.js?v=4"></script>
+    <script src="charts.js?v=4"></script>
+    <script src="chat.js?v=4"></script>
+    <script src="landing-integration.js?v=3"></script>
+    <script src="app.js?v=4"></script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- PostHog Analytics -->
+    <script>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init Ie Ts Ms Ee Es Rs capture Ge calculateEventProperties Os register register_once register_for_session unregister unregister_for_session js getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Ds Fs createPersonProfile Ls Ps opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Cs debug I As getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init('phc_4XnEi5zA3bpVrbuV84dkDae0m9rjj1ZeYo5TXiDMNG0', {
+            api_host: 'https://us.i.posthog.com',
+            defaults: '2025-05-24',
+            person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+        })
+    </script>
+
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'strata-blue': {
+                            50: '#f0f7ff', 100: '#e0eefe', 200: '#c2e0fd', 300: '#a3d1fc',
+                            400: '#6ab8f9', 500: '#329ef6', 600: '#0083f1', 700: '#0070d8',
+                            800: '#005cb6', 900: '#004f97', 950: '#00315e'
+                        },
+                        'strata-slate': {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+                            400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+                            800: '#1e293b', 900: '#0f172a', 950: '#020617'
+                        },
+                    },
+                    fontFamily: { 
+                        'sans': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace', 'SF Mono', 'Monaco']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="antialiased text-text-primary bg-bg-primary">
+    
+    <!-- Auth Loading Screen -->
+    <div id="authLoadingScreen">
+        <div class="flex flex-col items-center justify-center space-y-4">
+            <div class="relative w-10 h-10">
+                <div class="w-10 h-10 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
+                <div class="w-10 h-10 border-2 border-accent-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            </div>
+            <div>
+                <p class="font-medium text-text-primary">Verifying Authentication...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal - Request Access Only -->
+    <div id="authModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
+            <div class="text-center">
+                <div class="w-10 h-10 bg-strata-blue-600 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-layer-group text-white text-lg"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Request Access</h2>
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
+                    <p class="text-slate-800 text-sm font-medium mb-2">Private Beta</p>
+                    <p class="text-slate-600 text-sm mb-4">StrataLens is currently in private beta.</p>
+                    <p class="text-slate-600 text-sm">Contact <strong>hrishi@stratalens.ai</strong> for access</p>
+            </div>
+            
+                <button onclick="hideAuthModal()" class="btn btn-secondary w-full">
+                    Close
+                </button>
+            </div>
+                    </div>
+    </div>
+
+    <!-- Magic Link Modal -->
+    <div id="magicLinkModal" class="fixed inset-0 login-modal z-50 hidden items-center justify-center p-4">
+        <div class="login-form p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-magic text-white text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-text-primary mb-2">Magic Link</h2>
+                <p class="text-text-secondary">We'll send you a secure link to sign in</p>
+            </div>
+            
+            <form id="magicLinkForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
+                    <input type="email" id="magicLinkEmail" class="input-field" placeholder="Enter your email address" autocomplete="email" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">
+                    <span id="magicLinkBtnText">Send Magic Link</span>
+                    <div id="magicLinkSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <button id="backToAuthBtn" class="text-strata-blue-600 hover:text-strata-blue-700 font-medium text-sm">
+                    ← Back to sign in options
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="fixed inset-0 bg-black/70 z-[150] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-strata-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-info-circle text-white text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">About StrataLens</h2>
+                
+                <div class="space-y-4 text-left">
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        AI equity research copilot providing quick insights from U.S. public markets data.
+                    </p>
+                    
+                    <div class="bg-gradient-to-r from-strata-blue-50 to-slate-50 border border-strata-blue-200/50 rounded-lg p-4">
+                        <div class="flex items-start gap-3 mb-3">
+                            <i class="fas fa-shield-check text-strata-blue-600 mt-0.5"></i>
+                            <div>
+                                <h3 class="text-slate-800 font-semibold text-sm mb-1.5">Why StrataLens over ChatGPT or Generic LLMs?</h3>
+                                <p class="text-slate-600 text-xs leading-relaxed">
+                                    StrataLens uses <strong>official SEC filings and earnings transcripts</strong> directly from companies, not news articles or web content. This ensures you get accurate, verifiable insights from primary sources—the same documents that institutional investors rely on.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                        <h3 class="text-slate-800 font-medium mb-2">Created by</h3>
+                        <p class="text-slate-600 text-sm mb-2">Hrishikesh Kamath</p>
+                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center text-strata-blue-600 hover:text-strata-blue-700 text-sm font-medium transition-colors">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            Visit hkamath.com
+                        </a>
+                    </div>
+                    
+                    <p class="text-slate-500 text-xs">
+                        Currently in private beta. Contact hrishi@stratalens.ai for access.
+                    </p>
+                </div>
+                
+                <button onclick="hideAboutModal()" class="btn btn-secondary w-full mt-6">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Guide Modal -->
+    <div id="onboardingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-border-primary">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-accent-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-rocket text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-text-primary">Welcome to StrataLens!</h2>
+                        <p class="text-text-secondary text-sm">Your AI-powered financial analytics platform</p>
+                    </div>
+                </div>
+                <button id="closeOnboardingModal" class="text-text-tertiary hover:text-text-primary">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-6">
+                    <!-- Welcome Message -->
+                    <div class="text-center mb-6">
+                        <p class="text-text-secondary leading-relaxed text-justify">
+                            This is an invite-only platform at an early stage. We appreciate your feedback and you have the ability to shape the platform as per your needs. Your insights and suggestions are invaluable as we build the future of financial analytics together.
+                        </p>
+                    </div>
+
+                    <!-- Current Features -->
+                    <div class="bg-bg-tertiary rounded-lg p-4">
+                        <h4 class="font-semibold text-text-primary mb-3 flex items-center">
+                            <i class="fas fa-chart-line text-accent-primary mr-2"></i>
+                            Current Features
+                        </h4>
+                        <p class="text-text-secondary text-sm leading-relaxed text-justify">
+                            At the present moment, we support a natural language screener for around <strong>9,000 publicly listed US equities</strong> with <strong>30 years of historical financial data</strong> and latest quarter results.
+                        </p>
+                        <div class="mt-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3">
+                            <div class="flex items-start space-x-2">
+                                <i class="fas fa-lightbulb text-yellow-500 mt-0.5"></i>
+                                <div class="text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p class="font-medium">Pro Tip: Be Specific</p>
+                                    <p>The more specific your query, the better the results! For example:</p>
+                                    <p class="mt-1"><i class="fas fa-arrow-right text-xs mr-1"></i> Instead of "Compare tech companies with high growth"</p>
+                                    <p class="mt-1"><i class="fas fa-check text-green-500 text-xs mr-1"></i> Try "Show tech companies with revenue growth > 30% and gross margins > 70% in the last 2 quarters"</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coming Soon -->
+                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center">
+                            <i class="fas fa-clock text-blue-600 dark:text-blue-400 mr-2"></i>
+                            Coming Soon
+                        </h4>
+                        <p class="text-blue-700 dark:text-blue-300 text-sm leading-relaxed text-justify">
+                            In the coming weeks, we will also include <strong>technical indicators</strong>, <strong>latest price movements</strong>, and much more to provide you with comprehensive financial analysis tools.
+                        </p>
+                    </div>
+
+                    <!-- Query Library Reference -->
+                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                        <h4 class="font-semibold text-green-800 dark:text-green-200 mb-3 flex items-center">
+                            <i class="fas fa-book-open text-green-600 dark:text-green-400 mr-2"></i>
+                            Ready to Start?
+                        </h4>
+                        <p class="text-green-700 dark:text-green-300 text-sm leading-relaxed text-justify">
+                            Check out the <strong>"Query Library"</strong> for pre-built queries and examples to get you started quickly!
+                        </p>
+                    </div>
+                    
+                    <!-- Feature Requests & Feedback Section -->
+                    <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                        <h4 class="font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center">
+                            <i class="fas fa-comments text-purple-600 dark:text-purple-400 mr-2"></i>
+                            Have a feature request/feedback or problems?
+                        </h4>
+                        <p class="text-purple-700 dark:text-purple-300 text-sm leading-relaxed text-justify mb-3">
+                            As an early-stage platform, your feedback is invaluable! Schedule a call with us to discuss your ideas, feedback, or any issues you're experiencing.
+                        </p>
+                        <a href="https://calendar.app.google/Wg9H8TkcCStogk2SA" target="_blank" class="btn btn-primary inline-flex items-center">
+                            <i class="fas fa-calendar-plus mr-2"></i>
+                            Book an appointment
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-center p-6 border-t border-border-primary bg-bg-secondary">
+                <button id="completeOnboarding" class="btn btn-primary">
+                    <i class="fas fa-check mr-2"></i>Get Started
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Modal -->
+    <div id="profileModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-border-primary">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-accent-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-user-cog text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-text-primary">User Profile</h2>
+                        <p class="text-text-secondary text-sm">Manage your account information</p>
+                    </div>
+                </div>
+                <button id="closeProfileModal" class="text-text-tertiary hover:text-text-primary">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-border-primary">
+                <button class="profile-tab-btn active" data-profile-tab="profile">
+                    <i class="fas fa-user mr-2"></i>
+                    Profile
+                </button>
+                <button class="profile-tab-btn" data-profile-tab="usage">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Usage
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Profile Tab -->
+                <div id="profileTabContent" class="profile-tab-content active">
+                <form id="profileForm" class="space-y-6">
+                    <!-- Profile Information -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-text-primary border-b border-border-primary pb-2">Profile Information</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">Username *</label>
+                                <input type="text" id="profileUsername" class="input-field" autocomplete="username" required minlength="3" maxlength="50">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">Email</label>
+                                <input type="email" id="profileEmail" class="input-field" autocomplete="email">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">Full Name *</label>
+                                <input type="text" id="profileFullName" class="input-field" autocomplete="name" required minlength="2" maxlength="100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">Company</label>
+                                <input type="text" id="profileCompany" class="input-field" autocomplete="organization" maxlength="100">
+                            </div>
+                            </div>
+                        </div>
+                    </form>
+                        </div>
+                        
+                <!-- Usage Tab -->
+                <div id="usageTabContent" class="profile-tab-content hidden">
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-semibold text-text-primary border-b border-border-primary pb-2">Usage Statistics</h3>
+
+                        <!-- Usage Loading State -->
+                        <div id="profileUsageLoading" class="hidden text-center py-8">
+                            <div class="w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-text-secondary">Loading usage data...</p>
+                    </div>
+
+                        <!-- Usage Content -->
+                        <div id="profileUsageContent" class="hidden space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-bg-secondary rounded-lg p-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-search text-blue-600 dark:text-blue-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-text-secondary">Total Queries</p>
+                                            <p class="text-2xl font-bold text-text-primary" id="profileTotalRequests">0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-bg-secondary rounded-lg p-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-calendar-alt text-green-600 dark:text-green-400"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-text-secondary">This Month</p>
+                                            <p class="text-2xl font-bold text-text-primary" id="profileMonthlyRequests">0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-info-circle text-blue-400 dark:text-blue-300"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm text-blue-700 dark:text-blue-300">
+                                            <p class="font-medium">Monthly Limit: 20 queries</p>
+                                            <p class="mt-1">Your query limit resets at the beginning of each month.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Error State -->
+                        <div id="profileUsageError" class="hidden text-center py-8">
+                            <div class="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                            </div>
+                            <h4 class="font-semibold text-text-primary mb-2">Failed to Load Usage Data</h4>
+                            <p class="text-sm text-text-secondary mb-4">Unable to retrieve your usage statistics</p>
+                            <button onclick="loadProfileUsageData()" class="btn btn-primary btn-sm">
+                                <i class="fas fa-redo mr-2"></i>Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between p-6 border-t border-border-primary bg-bg-secondary">
+                <div class="flex space-x-3">
+                    <button id="changePasswordBtn" class="btn btn-secondary">
+                        <i class="fas fa-key mr-2"></i>Change Password
+                    </button>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="cancelProfileBtn" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                    <button id="saveProfileBtn" class="btn btn-primary">
+                        <span id="saveProfileBtnText">Save Changes</span>
+                        <div id="saveProfileSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-border-primary">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-accent-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-key text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-text-primary">Change Password</h2>
+                        <p class="text-text-secondary text-sm">Update your account password</p>
+                    </div>
+                </div>
+                <button id="closeChangePasswordModal" class="text-text-tertiary hover:text-text-primary">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+                <form id="changePasswordForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text-secondary mb-2">Current Password *</label>
+                        <input type="password" id="currentPassword" class="input-field" autocomplete="current-password" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-secondary mb-2">New Password *</label>
+                        <input type="password" id="newPassword" class="input-field" autocomplete="new-password" required minlength="8" maxlength="128">
+                        <p class="text-xs text-text-tertiary mt-1">Password must be at least 8 characters long</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-secondary mb-2">Confirm New Password *</label>
+                        <input type="password" id="confirmPassword" class="input-field" autocomplete="new-password" required minlength="8" maxlength="128">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end space-x-3 p-6 border-t border-border-primary bg-bg-secondary">
+                <button id="cancelChangePasswordBtn" class="btn btn-secondary">
+                    Cancel
+                </button>
+                <button id="savePasswordBtn" class="btn btn-primary">
+                    <span id="savePasswordBtnText">Change Password</span>
+                    <div id="savePasswordSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <!-- Mobile Warning Banner -->
+        <div id="mobileWarningBanner" class="hidden bg-yellow-500 text-yellow-900 px-4 py-2 text-center text-sm font-medium relative z-50">
+            <div class="flex items-center justify-center space-x-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>StrataLens is optimized for desktop only. Mobile experience may be limited.</span>
+                <button id="dismissMobileBanner" class="ml-2 text-yellow-800 hover:text-yellow-900">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- CLEANED UP HEADER - No navigation links -->
+        <header class="app-header sticky top-0 z-40">
+            <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Left side - Logo and subtitle only -->
+                    <div class="flex items-center space-x-8">
+                        <!-- Mobile Sidebar Toggle -->
+                        <button id="sidebarToggle" class="sidebar-toggle lg:hidden">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-strata-blue-800 dark:bg-strata-blue-950 rounded-md flex items-center justify-center shadow-inner">
+                                <i class="fas fa-layer-group text-strata-blue-300 text-lg"></i>
+                            </div>
+                            <div>
+                                <span class="text-xl font-bold text-slate-800 dark:text-slate-200">StrataLens</span>
+                            </div>
+                        </div>
+                        <!-- REMOVED: Navigation links section completely -->
+                    </div>
+                    
+                    <!-- Right side - Clean user controls -->
+                    <div class="user-section">
+                        <!-- Mobile Navigation Menu -->
+                        <div class="lg:hidden flex items-center space-x-2">
+                            <!-- Mobile About Button -->
+                            <button id="mobileAboutBtn" class="btn btn-outline text-sm" onclick="showAboutModal()">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span>About</span>
+                            </button>
+                            
+                            <!-- Mobile Request Access Button -->
+                            <button id="mobileSignInBtn" class="btn btn-outline text-sm hidden" onclick="showAuthModal()">
+                                <i class="fas fa-envelope mr-1"></i>
+                                <span>Request Access</span>
+                            </button>
+                            
+                            <!-- Mobile Get Started Button -->
+                            <button id="mobileGetStartedBtn" class="btn btn-primary text-sm hidden">
+                                <i class="fas fa-rocket mr-1"></i>
+                                <span>Get Started</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Desktop About Link -->
+                        <div class="hidden lg:flex items-center">
+                            <button id="desktopAboutBtn" class="text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-2 text-sm font-medium transition-colors" onclick="showAboutModal()">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                About
+                            </button>
+                        </div>
+                        
+                        <!-- Authenticated User Controls (hidden by default) -->
+                        <div id="authenticatedControls" class="flex items-center space-x-2 hidden">
+                            <!-- Chat Controls (only visible when in chat section) -->
+                            <div id="chatNavControls" class="chat-nav-controls hidden">
+                                <button id="newChatNavBtn" class="nav-chat-btn primary" title="Start new conversation">
+                                    <i class="fas fa-plus"></i>
+                                    <span class="hidden sm:inline ml-2">New Chat</span>
+                                </button>
+                                <button id="chatHistoryNavBtn" class="nav-chat-btn" title="View chat history">
+                                    <i class="fas fa-history"></i>
+                                    <span class="hidden sm:inline ml-2">History</span>
+                                </button>
+                            </div>
+                            <!-- Onboarding button -->
+                            <button id="onboardingBtn" class="logout-btn mr-2">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span class="hidden sm:inline">Guide</span>
+                            </button>
+                            
+                            <!-- Profile button -->
+                            <button id="profileBtn" class="logout-btn mr-2">
+                                <i class="fas fa-user-cog"></i>
+                                <span class="hidden sm:inline">Profile</span>
+                            </button>
+                            
+                            <!-- Logout button -->
+                            <button id="logoutBtn" class="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span class="hidden sm:inline">Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- App Layout Grid -->
+        <div class="app-layout">
+            <!-- Sidebar Backdrop for Mobile -->
+            <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+            <!-- Sidebar Menu -->
+            <aside class="app-sidebar">
+                <nav class="sidebar-nav">
+                    <div class="sidebar-menu">
+                        <!-- Chat - Now first and default -->
+                        <a href="#" class="sidebar-menu-item active" data-section="chat">
+                            <i class="fas fa-comments"></i>
+                            <span>Chat</span>
+                        </a>
+
+                        <!-- Companies -->
+                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="companies">
+                            <i class="fas fa-building"></i>
+                            <span>Companies</span>
+                        </a>
+
+                        <!-- Screener -->
+                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="search">
+                            <i class="fas fa-filter"></i>
+                            <span>Screener</span>
+                        </a>
+
+                        <!-- Collections -->
+                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="screens">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Collections</span>
+                        </a>
+
+                        <!-- Charting -->
+                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="charting">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Charting</span>
+                        </a>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="app-main">
+            <!-- Coming Soon Modal -->
+            <div id="comingSoonModal">
+                <div class="modal-backdrop" data-close-coming-soon></div>
+                <div class="modal-card">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <i class="fas fa-clock text-accent-primary"></i>
+                        <h3 class="text-lg font-semibold">Coming soon</h3>
+                    </div>
+                    <p class="text-text-secondary text-sm">This section is under active development. Stay tuned!</p>
+                    <div class="modal-actions">
+                        <button class="btn-secondary" data-close-coming-soon>Close</button>
+                        <button class="btn-primary" data-close-coming-soon>OK</button>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Dashboard Generator Section (Legacy) -->
+            <div id="dashboardGeneratorSection" class="main-section hidden">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1">No-Code Dashboard Generator</h1>
+                            <p class="text-slate-600 dark:text-slate-400">Create interactive financial dashboards using natural language descriptions.</p>
+                        </div>
+                        
+                        <form id="dashboardForm" class="space-y-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">App Description</label>
+                                    <textarea id="appDescriptionInput" class="input-field h-32" placeholder="Describe the financial dashboard you want to create (e.g., 'A dashboard showing revenue trends, profit margins, and market cap for tech companies with interactive charts and metrics')" maxlength="2000"></textarea>
+                                    <div class="flex justify-between text-xs text-text-tertiary mt-1">
+                                        <span id="appDescriptionCharCount">0</span>/2000
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">Data Query</label>
+                                    <textarea id="dataQueryInput" class="input-field h-32" placeholder="Query to get the financial data (e.g., 'Show me tech companies with revenue > 1B and profit margins > 20%')" maxlength="1000"></textarea>
+                                    <div class="flex justify-between text-xs text-text-tertiary mt-1">
+                                        <span id="dataQueryCharCount">0</span>/1000
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4 flex flex-wrap items-center gap-2">
+                                <button type="button" id="fillSampleDataBtn" class="btn btn-outline text-sm">
+                                    <i class="fas fa-laptop-code mr-2"></i>Tech Companies
+                                </button>
+                                <button type="button" id="fillAutoSampleBtn" class="btn btn-outline text-sm">
+                                    <i class="fas fa-car mr-2"></i>Auto Industry
+                                </button>
+                                <button type="button" id="fillBankingSampleBtn" class="btn btn-outline text-sm">
+                                    <i class="fas fa-university mr-2"></i>Banking Sector
+                                </button>
+                                <button type="button" id="fillRetailSampleBtn" class="btn btn-outline text-sm">
+                                    <i class="fas fa-shopping-cart mr-2"></i>Retail Companies
+                                </button>
+                                <div id="dashboardAuthStatus" class="text-sm text-text-tertiary ml-auto">
+                                    <i class="fas fa-user-check mr-1"></i>Ready to generate
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">Theme</label>
+                                    <select id="dashboardThemeSelect" class="input-field">
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">Layout</label>
+                                    <select id="dashboardLayoutSelect" class="input-field">
+                                        <option value="auto">Auto</option>
+                                        <option value="grid">Grid</option>
+                                        <option value="list">List</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex items-end space-x-2">
+                                    <button type="button" id="testDashboardBtn" class="btn btn-secondary flex-1">
+                                        <span>Test with Sample</span>
+                                    </button>
+                                    <button type="button" id="generateDashboardBtnLegacy" class="btn btn-primary flex-1">
+                                        <span id="generateDashboardBtnTextLegacy">Generate Dashboard</span>
+                                        <div id="generateDashboardSpinnerLegacy" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                                    </button>
+                                    <button type="button" id="clearDashboardFormBtn" class="btn btn-outline">
+                                        <i class="fas fa-eraser mr-1"></i>
+                                        <span>Clear</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Preview -->
+                <div id="dashboardPreview" class="mt-6 hidden">
+                    <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200">Generated Dashboard</h2>
+                                <div class="flex space-x-2">
+                                    <button id="downloadDashboardBtn" class="btn btn-secondary">
+                                        <i class="fas fa-download mr-2"></i>Download
+                                    </button>
+                                    <button id="resetDashboardBtn" class="btn btn-secondary">
+                                        <i class="fas fa-redo mr-2"></i>Reset
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="dashboardIframeContainer" class="border border-border-primary rounded-lg overflow-hidden">
+                                <iframe id="dashboardIframe" class="w-full h-96 border-0"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Error -->
+                <div id="dashboardError" class="mt-6 hidden">
+                    <div class="card bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                                <h3 class="text-lg font-semibold text-red-800 dark:text-red-200">Dashboard Generation Failed</h3>
+                            </div>
+                            <p id="dashboardErrorMessage" class="text-red-700 dark:text-red-300 mb-4"></p>
+                            <button id="retryDashboardBtn" class="btn btn-primary">
+                                <i class="fas fa-redo mr-2"></i>Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="toast" class="fixed top-20 right-5 transform translate-x-[120%] transition-transform duration-500 ease-in-out z-[100] max-w-sm w-full">
+                <div class="card p-4 shadow-md">
+                    <div class="flex items-start space-x-3">
+                        <div id="toastIconContainer" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+                            <i id="toastIcon" class="fas fa-info-circle text-xl"></i>
+                        </div>
+                        <div class="flex-1 pt-1.5">
+                            <p id="toastMessage" class="text-sm font-medium text-text-primary"></p>
+                        </div>
+                        <button onclick="hideToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screener Section -->
+            <div id="searchSection" class="main-section">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6 border-b border-border-primary">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-3">
+                                    <i class="fas fa-filter text-accent-primary"></i>
+                                    Equity Screener
+                                </h1>
+                                <p class="text-slate-600 dark:text-slate-400">Advanced screening of 9,000+ US public companies with comprehensive financial data</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="promptLibraryBtn" class="btn btn-outline text-sm prompt-library-btn" onclick="openPromptLibrary()">
+                                    <i class="fas fa-database mr-2"></i>
+                                    Query Library
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Interface -->
+                    <div class="p-6 border-b border-border-primary bg-bg-tertiary">
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <div class="flex-1 relative">
+                                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-lg"></i>
+                                <input id="queryInput" type="text" placeholder="Enter screening criteria (e.g., 'Technology companies with revenue growth > 30% and gross margins > 70%')" class="w-full pl-14 pr-20 py-3 text-base border border-border-primary rounded-md bg-bg-primary focus:border-strata-blue-500 focus:ring-1 focus:ring-strata-blue-500/20 transition-all" autocomplete="off" maxlength="1000">
+                                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-text-tertiary">
+                                    <span id="queryCharCount">0</span>/1000
+                                </div>
+                            </div>
+                            <button id="searchBtn" class="btn btn-primary px-6 py-3 text-base font-medium" onclick="if($(this).prop('disabled')) return false;">
+                                <i class="fas fa-search mr-2"></i><span>Execute</span>
+                            </button>
+                        </div>
+                    </div>
+                
+                    <!-- AI REASONING PANEL (moved here) -->
+                    <div id="aiReasoningPanel" class="hidden transition-all duration-500 p-3 border-t border-border-primary">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/40 dark:to-indigo-900/40 p-3 rounded-lg border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div id="aiPanelIconContainer" class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                        <i id="aiPanelIcon" class="fas fa-brain text-blue-600 dark:text-blue-300"></i>
+                                    </div>
+                                    <div>
+                                        <p id="aiPanelTitle" class="font-semibold text-text-primary">AI Analysis</p>
+                                        <p id="aiPanelSubtitle" class="text-xs text-text-secondary">Ready to process your query.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-300">
+                                        <div id="aiPanelStatusDot" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span id="aiPanelStatusText">Idle</span>
+                                    </div>
+                                    <button id="aiPanelToggle" class="text-text-tertiary hover:text-text-primary transition">
+                                        <i class="fas fa-chevron-down chevron-icon transition-transform"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="initialLoadingProgress" class="hidden mb-4">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <span class="text-sm text-text-secondary">Initializing analysis...</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="reasoningStepsContainer" class="pl-4 border-l border-blue-200 dark:border-blue-700 ml-4 space-y-1 max-h-48 overflow-y-auto">
+                               </div>
+                        </div>
+                    </div>
+                    
+                    <!-- LOADING CONTAINER (moved here) -->
+                    <div id="loadingContainer" class="hidden">
+                        <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                            <div class="p-6 text-center">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                                    <div class="relative w-12 h-12">
+                                        <div class="w-12 h-12 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
+                                        <div class="w-12 h-12 border-2 border-accent-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                            </div>
+                            <div>
+                                        <p class="font-medium text-text-primary text-lg">Screening Companies...</p>
+                                        <p class="text-sm text-text-secondary">Analyzing 9,000+ companies with your criteria</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ERROR CONTAINER (moved here) -->
+                    <div id="errorContainer" class="hidden">
+                        <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                            <div class="p-6 text-center">
+                        <div class="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-500 dark:text-red-400"></i>
+                        </div>
+                                <h3 class="text-lg font-semibold text-text-primary mb-1">Query Failed</h3>
+                        <p id="errorMessage" class="text-sm text-text-secondary whitespace-pre-wrap mb-4"></p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                            <button id="retryButton" class="btn btn-primary" onclick="retryLastQuery()">
+                                <i class="fas fa-redo mr-2"></i>
+                                <span>Try Again</span>
+                            </button>
+                            <button class="btn btn-secondary text-sm help-btn" onclick="openErrorReportingModal()">
+                                <i class="fas fa-life-ring mr-2"></i>
+                                <span>Need Help?</span>
+                            </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- SCREENER RESULTS (moved here) -->
+                    <div id="singleSheetContainer" class="hidden">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+                        <!-- Results Header -->
+                        <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-850 border-b border-slate-200 dark:border-slate-700">
+                            <div class="px-6 py-5">
+                                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                    <!-- Left Section - Results Info -->
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-chart-line text-white text-sm"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-1">
+                                                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100" id="singleSheetTitle">Results</h2>
+                                                <span id="singleSheetCacheIndicator" class="hidden inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                                                    <i class="fas fa-bolt text-xs"></i>
+                                                    <span id="singleSheetCacheType">Cached</span>
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
+                                                <div class="flex items-center gap-2">
+                                                    <i class="fas fa-clock text-slate-400 text-xs"></i>
+                                                    <span id="singleSheetTime" class="font-mono text-xs"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right Section - Action Buttons -->
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="resetScreenerToSuggestions()" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            <i class="fas fa-plus text-xs"></i>
+                                            <span>New Search</span>
+                                        </button>
+                                        <button id="saveScreenBtn" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm">
+                                            <i class="fas fa-bookmark text-xs"></i>
+                                            <span>Save Results</span>
+                                        </button>
+                                        <button id="singleSheetExportBtn" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                            <i class="fas fa-download text-xs"></i>
+                                            <span>Export</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                    <!-- Results Content -->
+                    <div class="screener-results-content">
+                    <!-- Pagination Header -->
+                    <div id="singleSheetPaginationContainer" class="hidden bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                        <div class="px-6 py-4">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <!-- Left Section - Results Info -->
+                                <div class="flex items-center gap-4">
+                                    <span id="singleSheetPaginationInfo" class="text-sm font-medium text-slate-700 dark:text-slate-300"></span>
+                                    <div class="flex items-center gap-2">
+                                        <label for="pageSizeSelect" class="text-sm text-slate-600 dark:text-slate-400">Show:</label>
+                                        <select id="pageSizeSelect" class="text-sm px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="10">10</option>
+                                            <option value="20" selected>20</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Section - Pagination Controls -->
+                                <div class="flex items-center gap-1">
+                                    <button id="firstPageBtn" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="First page">
+                                        <i class="fas fa-angle-double-left text-sm"></i>
+                                    </button>
+                                    <button id="prevPageBtn" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Previous page">
+                                        <i class="fas fa-angle-left text-sm"></i>
+                                    </button>
+                                    <div class="flex items-center gap-2 mx-3 text-sm text-slate-600 dark:text-slate-400">
+                                        <span>Page</span>
+                                        <input id="pageJumpInput" type="number" min="1" class="w-14 text-center px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <span id="pageTotal">of 1</span>
+                                    </div>
+                                    <button id="nextPageBtn" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Next page">
+                                        <i class="fas fa-angle-right text-sm"></i>
+                                    </button>
+                                    <button id="lastPageBtn" class="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Last page">
+                                        <i class="fas fa-angle-double-right text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="results-table-wrapper">
+                        <div class="overflow-x-auto">
+                            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                    <div class="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full"></div>
+                                    <span>All monetary values are displayed in USD</span>
+                                </div>
+                            </div>
+                            <table id="singleSheetTable" class="data-grid">
+                                <thead id="singleSheetTableHead"></thead>
+                                <tbody id="singleSheetTableBody"></tbody>
+                            </table>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+
+                <!-- No Results Container -->
+                <div id="noResultsContainer" class="hidden">
+                    <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                        <div class="p-6 text-center">
+                    <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                        <i class="fas fa-search-dollar text-2xl text-slate-400 dark:text-slate-500"></i>
+                    </div>
+                            <h3 class="text-lg font-semibold text-text-primary mb-1">No Results</h3>
+                            <p class="text-sm text-text-secondary mb-4">No companies match the specified criteria. Consider adjusting the parameters or try alternative filters.</p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button onclick="$('#queryInput').focus()" class="btn btn-secondary">
+                                        <i class="fas fa-edit mr-2"></i>
+                                        <span>Modify Search</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Query Categories -->
+                <div class="screener-categories">
+                        <!-- Collapsible Header -->
+                        <div class="p-4 border-b border-border-primary bg-bg-tertiary">
+                            <button id="suggestionsToggle" class="flex items-center justify-between w-full text-left hover:bg-bg-secondary rounded-lg p-2 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-lightbulb text-blue-600 dark:text-blue-400 text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-semibold text-text-primary">Query Suggestions</h3>
+                                        <p class="text-xs text-text-secondary">Click any suggestion to get started</p>
+                                    </div>
+                                </div>
+                                <i id="suggestionsChevron" class="fas fa-chevron-down text-text-tertiary transition-transform"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Collapsible Content -->
+                        <div id="suggestionsContent" class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         <!-- Growth & Performance -->
+                         <div class="category-card">
+                             <div class="category-header">
+                                 <div>
+                                     <h3 class="category-title">Growth & Performance</h3>
+                                     <p class="category-subtitle">Revenue growth, profitability, and operational efficiency metrics</p>
+                                 </div>
+                             </div>
+                            <div class="category-queries">
+                                <button class="query-suggestion-btn" data-query="Consumer companies that have grown their revenue by more than 20% in last 10 years">
+                                    <span class="query-text">High Growth Consumer Companies</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="query-suggestion-btn" data-query="which 50 billion plus market cap companies have grown their profits by more than 50% in latest quarter">
+                                    <span class="query-text">Latest Quarter: High Growth Large Caps</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="query-suggestion-btn" data-query="Companies with gross margins improvement excluding financials and mining in latest quarter">
+                                    <span class="query-text">Margin Improvement Leaders</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                         <!-- Technology & Innovation -->
+                         <div class="category-card">
+                             <div class="category-header">
+                                 <div>
+                                     <h3 class="category-title">Technology & Innovation</h3>
+                                     <p class="category-subtitle">Research & development, technology sector analysis</p>
+                                 </div>
+                             </div>
+                            <div class="category-queries">
+                                <button class="query-suggestion-btn" data-query="Show me all data center stocks that have increased their R&D spend in last quarter beyond their revenue growth and revenue growth is more than 20%">
+                                    <span class="query-text">Data Center R&D Leaders</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="query-suggestion-btn" data-query="show me all semiconductor companies above billon dollar market cap with their total r&d spend to revenue between 2015-2020 and their revenue cagr from 2020-2024">
+                                    <span class="query-text">Semiconductor R&D Analysis</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="query-suggestion-btn" data-query="What is the Revenue, cash, margins and net income data for last 10 years for $AAPL, $MSFT, $NFLX, $TSLA and $GOOG">
+                                    <span class="query-text">Tech Giants: 10-Year Analysis</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                         <!-- Value & Quality -->
+                         <div class="category-card">
+                             <div class="category-header">
+                                 <div>
+                                     <h3 class="category-title">Value & Quality</h3>
+                                     <p class="category-subtitle">Margin analysis, profitability, and valuation metrics</p>
+                                 </div>
+                             </div>
+                            <div class="category-queries">
+                                <button class="query-suggestion-btn" data-query="all consumer companies above billion dollar market cap with gross margins above 80% and with their marketing to revenue spend">
+                                    <span class="query-text">High Margin Consumer Companies</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                <button class="query-suggestion-btn" data-query="compare crypto mining companies revenue growth from 2015-2020 to 2020-2024">
+                                    <span class="query-text">Crypto Mining Growth Analysis</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div>
+                        </div>
+                        
+                        <!-- AI REASONING PANEL (moved here) -->
+                        <div id="aiReasoningPanel" class="hidden transition-all duration-500 p-3 border-t border-border-primary">
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/40 dark:to-indigo-900/40 p-3 rounded-lg border-l-4 border-blue-500">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div id="aiPanelIconContainer" class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                            <i id="aiPanelIcon" class="fas fa-brain text-blue-600 dark:text-blue-300"></i>
+                                        </div>
+                                        <div>
+                                            <p id="aiPanelTitle" class="font-semibold text-text-primary">AI Analysis</p>
+                                            <p id="aiPanelSubtitle" class="text-xs text-text-secondary">Ready to process your query.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-300">
+                                            <div id="aiPanelStatusDot" class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                            <span id="aiPanelStatusText">Idle</span>
+                                        </div>
+                                        <button id="aiPanelToggle" class="text-text-tertiary hover:text-text-primary transition">
+                                            <i class="fas fa-chevron-down chevron-icon transition-transform"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="initialLoadingProgress" class="hidden mb-4">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        <span class="text-sm text-text-secondary">Initializing analysis...</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div id="reasoningStepsContainer" class="pl-4 border-l border-blue-200 dark:border-blue-700 ml-4 space-y-1 max-h-48 overflow-y-auto">
+                                   </div>
+                            </div>
+                        </div>
+                        
+                        <!-- LOADING CONTAINER (moved here) -->
+                        <div id="loadingContainer" class="hidden">
+                            <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                                <div class="p-6 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-4">
+                                        <div class="relative w-12 h-12">
+                                            <div class="w-12 h-12 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
+                                            <div class="w-12 h-12 border-2 border-accent-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                                </div>
+                                <div>
+                                            <p class="font-medium text-text-primary text-lg">Screening Companies...</p>
+                                            <p class="text-sm text-text-secondary">Analyzing 9,000+ companies with your criteria</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ERROR CONTAINER (moved here) -->
+                        <div id="errorContainer" class="hidden">
+                            <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                                <div class="p-6 text-center">
+                            <div class="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                                <i class="fas fa-exclamation-triangle text-2xl text-red-500 dark:text-red-400"></i>
+                            </div>
+                                    <h3 class="text-lg font-semibold text-text-primary mb-1">Query Failed</h3>
+                            <p id="errorMessage" class="text-sm text-text-secondary whitespace-pre-wrap mb-4"></p>
+                            <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                                <button id="retryButton" class="btn btn-primary" onclick="retryLastQuery()">
+                                    <i class="fas fa-redo mr-2"></i>
+                                    <span>Try Again</span>
+                                </button>
+                                <button class="btn btn-secondary text-sm help-btn" onclick="openErrorReportingModal()">
+                                    <i class="fas fa-life-ring mr-2"></i>
+                                    <span>Need Help?</span>
+                                </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SCREENER RESULTS (moved here) -->
+                        <div id="singleSheetContainer" class="hidden">
+                        <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg overflow-hidden">
+                            <div class="px-4 py-3 border-b border-border-primary bg-bg-tertiary">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-7 h-7 bg-accent-primary/10 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-chart-bar text-accent-primary text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-lg font-semibold text-text-primary" id="singleSheetTitle">Results</h2>
+                                            <div class="flex items-center gap-4 text-xs text-text-secondary">
+                                                <span id="singleSheetTime"></span>
+                                                <span id="singleSheetCacheIndicator" class="hidden text-green-600 dark:text-green-400 font-medium">
+                                                    <i class="fas fa-bolt mr-1"></i><span id="singleSheetCacheType">Cached</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="resetScreenerToSuggestions()" class="btn btn-outline btn-sm">
+                                            <i class="fas fa-plus mr-1"></i><span>New</span>
+                                        </button>
+                                        <button id="saveScreenBtn" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-save mr-1"></i><span>Save</span>
+                                        </button>
+                                        <button id="singleSheetExportBtn" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-download mr-1"></i><span>Export</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        
+                        <!-- Results Content -->
+                        <div class="screener-results-content">
+                        <div id="singleSheetPaginationContainer" class="hidden p-2 border-b border-border-primary bg-bg-tertiary">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+                                <div class="flex items-center space-x-3 text-xs text-text-secondary">
+                                    <span id="singleSheetPaginationInfo"></span>
+                                    <div class="flex items-center space-x-1.5">
+                                        <label for="pageSizeSelect">Show:</label>
+                                        <select id="pageSizeSelect" class="text-xs px-2 py-0.5 border rounded-md bg-bg-primary">
+                                            <option value="10">10</option>
+                                            <option value="20" selected>20</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <button id="firstPageBtn" class="btn btn-secondary btn-icon w-7 h-7 p-0 text-xs" title="First page">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </button>
+                                    <button id="prevPageBtn" class="btn btn-secondary btn-icon w-7 h-7 p-0 text-xs" title="Previous page">
+                                        <i class="fas fa-angle-left"></i>
+                                    </button>
+                                    <div class="flex items-center space-x-1.5 text-xs text-text-secondary">
+                                        <span>Page</span>
+                                        <input id="pageJumpInput" type="number" min="1" class="w-12 text-center p-1 border rounded-md bg-bg-primary">
+                                        <span id="pageTotal">of 1</span>
+                                    </div>
+                                    <button id="nextPageBtn" class="btn btn-secondary btn-icon w-7 h-7 p-0 text-xs" title="Next page">
+                                        <i class="fas fa-angle-right"></i>
+                                    </button>
+                                    <button id="lastPageBtn" class="btn btn-secondary btn-icon w-7 h-7 p-0 text-xs" title="Last page">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="results-table-wrapper">
+                            <div class="overflow-x-auto">
+                                <div class="text-xs text-text-secondary mb-2 px-2">
+                                    <i class="fas fa-info-circle mr-1"></i>All monetary values are displayed in USD
+                                </div>
+                                <table id="singleSheetTable" class="data-grid">
+                                    <thead id="singleSheetTableHead"></thead>
+                                    <tbody id="singleSheetTableBody"></tbody>
+                                </table>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+
+                        <!-- No Results Container -->
+                        <div id="noResultsContainer" class="hidden">
+                            <div class="bg-bg-secondary dark:bg-bg-primary border border-border-primary rounded-lg">
+                                <div class="p-6 text-center">
+                        <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                            <i class="fas fa-search-dollar text-2xl text-slate-400 dark:text-slate-500"></i>
+                        </div>
+                                <h3 class="text-lg font-semibold text-text-primary mb-1">No Results</h3>
+                                <p class="text-sm text-text-secondary mb-4">No companies match the specified criteria. Consider adjusting the parameters or try alternative filters.</p>
+                                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button onclick="$('#queryInput').focus()" class="btn btn-secondary">
+                                            <i class="fas fa-edit mr-2"></i>
+                                            <span>Modify Search</span>
+                                        </button>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                                    </div>
+                </div>
+
+                <!-- Warning Banner -->
+                <div id="warningBanner" class="hidden p-4"></div>
+            </div>
+            <!-- End Search Section -->
+
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="main-section hidden">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1">No-Code Dashboard Generator</h1>
+                            <p class="text-slate-600 dark:text-slate-400">Describe your financial app in English and get a fully functional dashboard instantly.</p>
+                            
+                            <!-- Sample Data Notice -->
+                            <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <div class="flex items-start space-x-2">
+                                    <i class="fas fa-lightbulb text-blue-500 mt-0.5"></i>
+                                    <div class="text-sm text-blue-700 dark:text-blue-300">
+                                        <strong>Ready to try!</strong> The form is pre-filled with sample data for a tech companies dashboard. 
+                                        <span class="block mt-1">Click "Generate Dashboard" to test, or modify the fields to create your own custom dashboard.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dashboard Generation Form -->
+                        <div class="space-y-6">
+                            <!-- Single App Description Field -->
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-magic mr-1"></i>
+                                    Describe Your Financial App
+                                </label>
+                                <textarea 
+                                    id="appDescriptionInput" 
+                                    placeholder="e.g., 'Create a dashboard showing the top 10 tech companies by market cap with revenue trends over time, profit margin comparisons, and key financial ratios. Include interactive charts and filters for different time periods.'"
+                                    class="w-full p-4 border rounded-lg bg-bg-primary text-sm border-border-primary resize-none"
+                                    rows="6"
+                                    maxlength="2000"
+                                >Create a comprehensive financial dashboard for the top 10 technology companies by market cap showing their revenue trends over the last 5 years with interactive line charts, profit margin comparisons with bar charts, and key financial ratio metric cards. Include company selection filters and drill-down capabilities for detailed analysis.</textarea>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-xs text-text-tertiary">✨ Our AI will automatically figure out what data you need and create the perfect dashboard</span>
+                                    <span class="text-xs text-text-tertiary">
+                                        <span id="appDescriptionCharCount">0</span>/2000
+                                    </span>
+                                </div>
+                                
+                                <!-- AI Guidance Panel -->
+                                <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-robot text-blue-600 dark:text-blue-400 text-lg mt-0.5"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">AI-Powered Dashboard Generation</h4>
+                                            <div class="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                                <p><strong>💡 What to include:</strong> Company types, financial metrics, chart types, time periods</p>
+                                                <p><strong>📊 Example metrics:</strong> Revenue, profit margins, market cap, growth rates, P/E ratios</p>
+                                                <p><strong>📈 Chart types:</strong> Line charts (trends), bar charts (comparisons), pie charts (breakdowns)</p>
+                                                <p><strong>🎯 Be specific:</strong> "Top 10 tech companies" → Better than just "tech companies"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dashboard Options -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">
+                                        <i class="fas fa-palette mr-1"></i>
+                                        Theme
+                                    </label>
+                                    <select id="dashboardThemeSelect" class="w-full p-3 border rounded-lg bg-bg-primary text-sm border-border-primary">
+                                        <option value="light">Light Theme</option>
+                                        <option value="dark">Dark Theme</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-text-secondary mb-2">
+                                        <i class="fas fa-th mr-1"></i>
+                                        Layout
+                                    </label>
+                                    <select id="dashboardLayoutSelect" class="w-full p-3 border rounded-lg bg-bg-primary text-sm border-border-primary">
+                                        <option value="auto">Auto Layout</option>
+                                        <option value="grid">Grid Layout</option>
+                                        <option value="list">List Layout</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Generate Button -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <button id="generateDashboardBtn" class="btn btn-primary">
+                                        <i class="fas fa-magic mr-2"></i>
+                                        <span>Generate Dashboard</span>
+                                    </button>
+                                    <button id="previewDashboardBtn" class="btn btn-secondary" disabled>
+                                        <i class="fas fa-eye mr-2"></i>
+                                        <span>Preview</span>
+                                    </button>
+                                    <button id="clearDashboardFormBtn" class="btn btn-outline text-sm">
+                                        <i class="fas fa-eraser mr-2"></i>
+                                        <span>Clear Form</span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-2 text-sm text-text-secondary">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Powered by AI</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Loading State -->
+                    <div id="dashboardLoadingContainer" class="hidden p-8 text-center border-t border-border-primary">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <div class="relative w-12 h-12">
+                                <div class="w-12 h-12 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
+                                <div class="w-12 h-12 border-2 border-accent-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                            </div>
+                            <div>
+                                <p class="font-medium text-text-primary">Generating Your Dashboard...</p>
+                                <p class="text-sm text-text-secondary">This may take a few moments</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Error State -->
+                    <div id="dashboardErrorContainer" class="hidden p-8 text-center border-t border-border-primary">
+                        <div class="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-500 dark:text-red-400"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-text-primary mb-1">Dashboard Generation Failed</h3>
+                        <p id="dashboardErrorMessage" class="text-sm text-text-secondary mb-4"></p>
+                        <button class="btn btn-primary" onclick="retryDashboardGeneration()">
+                            <i class="fas fa-redo mr-2"></i>
+                            <span>Try Again</span>
+                        </button>
+                    </div>
+
+                    <!-- Generated Dashboard -->
+                    <div id="generatedDashboardContainer" class="hidden border-t border-border-primary">
+                        <div class="p-4 border-b border-border-primary bg-bg-tertiary">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-text-primary">Generated Dashboard</h3>
+                                    <p class="text-sm text-text-secondary">Your no-code financial dashboard is ready!</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button id="downloadDashboardBtn" class="btn btn-secondary">
+                                        <i class="fas fa-download mr-2"></i>
+                                        <span>Download HTML</span>
+                                    </button>
+                                    <button id="newDashboardBtn" class="btn btn-primary">
+                                        <i class="fas fa-plus mr-2"></i>
+                                        <span>Create New</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="dashboardPreviewContainer" class="p-4">
+                            <!-- Dashboard preview will be embedded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Dashboard Section -->
+
+            <!-- Dashboard History Section -->
+            <div id="dashboardHistorySection" class="main-section">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6 border-b border-border-primary">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-3">
+                                    <i class="fas fa-chart-line text-accent-primary"></i>
+                                    Dashboard History
+                                </h1>
+                                <p class="text-slate-600 dark:text-slate-400">Your generated financial dashboards and analytics.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="refreshDashboardsBtn" class="btn btn-secondary">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Refresh</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard History Content -->
+                    <div class="p-6">
+                        <div id="dashboardHistoryLoading" class="hidden text-center py-8">
+                            <div class="loading-spinner"></div>
+                            <p class="text-text-secondary mt-4">Loading your dashboards...</p>
+                        </div>
+
+                        <div id="dashboardHistoryEmpty" class="hidden text-center py-12">
+                            <div class="empty-icon-container">
+                                <i class="fas fa-chart-line text-4xl"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-text-primary mb-3">No Dashboards Yet</h3>
+                            <p class="text-text-secondary mb-8 max-w-md mx-auto">
+                                Create your first financial dashboard using the Dashboard Generator tab.
+                            </p>
+                            <button onclick="switchToSection('dashboard')" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                <span>Create Dashboard</span>
+                            </button>
+                        </div>
+
+                        <div id="dashboardHistoryList" class="hidden">
+                            <!-- Dashboard history items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Dashboard History Section -->
+
+            <!-- Companies Section -->
+            <div id="companiesSection" class="main-section">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-4 border-b border-border-primary">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-3">
+                                    <i class="fas fa-building text-accent-primary"></i>
+                                    Company Directory
+                                </h1>
+                                <p class="text-slate-600 dark:text-slate-400">Search and explore companies in our database.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="text-sm text-text-secondary">
+                                    <span id="companiesCount">Type to search companies</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Search -->
+                    <div class="p-4 border-b border-border-primary bg-bg-tertiary">
+                        <div class="flex flex-col lg:flex-row gap-3">
+                            <div class="flex-1 relative" style="z-index: 100000;">
+                                <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
+                                <input id="companySearchInput" type="text" 
+                                       placeholder="Start typing to search companies (select from suggestions below)..." 
+                                       class="input-pro search-input" autocomplete="off" maxlength="100">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-tertiary">
+                                    <span id="companyCharCount">0</span>/100
+                                </div>
+                                
+                                <!-- Search Suggestions Dropdown -->
+                                <div id="companySuggestions" class="hidden absolute top-full left-0 right-0 bg-bg-primary border border-border-primary rounded-b-lg shadow-lg max-h-60 overflow-y-auto" style="z-index: 99999;">
+                                    <!-- Suggestions will be populated here -->
+                                </div>
+                            </div>
+                            <button id="companyClearBtn" class="btn btn-secondary">
+                                <i class="fas fa-times"></i><span>Clear</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between mt-3" style="position: relative; z-index: 1;">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-sm font-medium text-text-secondary mr-2">Quick Searches:</span>
+                                <button class="company-quick-search text-xs px-2.5 py-1 bg-bg-primary text-slate-700 rounded-md border border-slate-200 hover:border-accent-primary hover:text-accent-primary transition-all" data-search="AAPL">Apple</button>
+                                <button class="company-quick-search text-xs px-2.5 py-1 bg-bg-primary text-slate-700 rounded-md border border-slate-200 hover:border-accent-primary hover:text-accent-primary transition-all" data-search="MSFT">Microsoft</button>
+                                <button class="company-quick-search text-xs px-2.5 py-1 bg-bg-primary text-slate-700 rounded-md border border-slate-200 hover:border-accent-primary hover:text-accent-primary transition-all" data-search="GOOGL">Google</button>
+                                <button class="company-quick-search text-xs px-2.5 py-1 bg-bg-primary text-slate-700 rounded-md border border-slate-200 hover:border-accent-primary hover:text-accent-primary transition-all" data-search="TSLA">Tesla</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Profile Section -->
+                    <div id="companyProfileSection" class="hidden border-b border-border-primary">
+                        <div class="p-3">
+                            <!-- Company Header -->
+                            <div id="companyHeader" class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="company-logo w-14 h-14 bg-accent-primary/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-building text-accent-primary text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h2 id="companyName" class="text-xl font-bold text-text-primary">Company Name</h2>
+                                        <div class="flex items-center gap-3 mt-1">
+                                            <span id="companySymbol" class="text-lg font-semibold text-accent-primary">TICKER</span>
+                                            <span id="companyExchange" class="text-sm text-text-tertiary px-2 py-1 bg-bg-tertiary rounded">Exchange</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div id="companyPrice" class="text-xl font-bold text-text-primary">--</div>
+                                    <div id="companyChange" class="text-sm">--</div>
+                                </div>
+                            </div>
+
+                            <!-- Company Stats Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                                <div class="stat-card">
+                                    <div class="stat-label">Market Cap</div>
+                                    <div id="marketCap" class="stat-value">--</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">P/E Ratio</div>
+                                    <div id="peRatio" class="stat-value">--</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Revenue (TTM)</div>
+                                    <div id="revenue" class="stat-value">--</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Employees</div>
+                                    <div id="employees" class="stat-value">--</div>
+                                </div>
+                            </div>
+
+                            <!-- Company Details Tabs - Dynamically rendered by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Company Results -->
+                    <div>
+                        <!-- Empty State -->
+                        <div id="companiesEmptyContainer" class="hidden p-12 text-center">
+                            <div class="companies-empty-state">
+                                <div class="empty-icon-container">
+                                    <i class="fas fa-building text-4xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-text-primary mb-3">Find Companies</h3>
+                                <p id="companiesEmptyMessage" class="text-text-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                                    Type to search companies or click on sector/industry badges to find companies in specific sectors.
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button onclick="$('#companySearchInput').focus()" class="btn btn-primary">
+                                        <i class="fas fa-search"></i>
+                                        <span>Start Typing</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Companies Section -->
+
+            <!-- Collections Section -->
+            <div id="screensSection" class="main-section">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6 border-b border-border-primary">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-3">
+                                    <i class="fas fa-layer-group text-accent-primary"></i>
+                                    My Collections
+                                </h1>
+                                <p class="text-slate-600 dark:text-slate-400">Your personal library of screens, watchlists, and portfolios.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <select id="screensFilterType" class="text-sm px-3 py-2 border rounded-md bg-bg-primary">
+                                    <option value="">All Types</option>
+                                    <option value="single_sheet">Single Sheet</option>
+                                    <option value="multi_sheet">Multi Sheet</option>
+                                </select>
+                                <button id="refreshScreensBtn" class="btn btn-secondary">
+                                    <i class="fas fa-sync-alt"></i>
+                                    <span>Refresh</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Collections Sub-Navigation -->
+                    <div class="collections-nav border-b border-border-primary bg-bg-tertiary">
+                        <div class="flex">
+                            <button class="collection-nav-btn active" data-collection-type="screens">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Screens</span>
+                                <span class="collection-count" id="screensNavCount">0</span>
+                            </button>
+                            <button class="collection-nav-btn" data-collection-type="watchlists">
+                                <i class="fas fa-eye"></i>
+                                <span>Watchlists</span>
+                                <span class="collection-count" id="watchlistsNavCount">0</span>
+                                <span class="coming-soon-badge">Soon</span>
+                            </button>
+                            <button class="collection-nav-btn" data-collection-type="portfolios">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Portfolios</span>
+                                <span class="collection-count" id="portfoliosNavCount">0</span>
+                                <span class="coming-soon-badge">Soon</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Collection Type Info -->
+                    <div class="p-4 bg-bg-primary border-b border-border-primary">
+                        <div class="flex items-center gap-4 text-sm text-text-secondary">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="activeCollectionCount">0 screens</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-clock"></i>
+                                <span>Last updated: <span id="screensLastUpdated">Never</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Screens Content -->
+                    <div class="min-h-[400px]">
+                        <!-- Loading State -->
+                        <div id="screensLoadingContainer" class="hidden p-12 text-center">
+                            <div class="flex flex-col items-center justify-center space-y-4">
+                                <div class="relative w-12 h-12">
+                                    <div class="w-12 h-12 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
+                                    <div class="w-12 h-12 border-2 border-accent-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-text-primary">Loading screens...</p>
+                                    <p class="text-sm text-text-secondary">Fetching your saved screens</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error State -->
+                        <div id="screensErrorContainer" class="hidden p-12 text-center">
+                            <div class="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                                <i class="fas fa-exclamation-triangle text-2xl text-red-500 dark:text-red-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-text-primary mb-1">Failed to Load Screens</h3>
+                            <p id="screensErrorMessage" class="text-sm text-text-secondary whitespace-pre-wrap mb-4"></p>
+                            <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                                <button onclick="loadUserScreens()" class="btn btn-primary">
+                                    <i class="fas fa-redo mr-2"></i>
+                                    <span>Try Again</span>
+                                </button>
+                                <button class="btn btn-secondary text-sm help-btn" onclick="openErrorReportingModal()">
+                                    <i class="fas fa-life-ring mr-2"></i>
+                                    <span>Need Help?</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="screensEmptyContainer" class="hidden p-12 text-center">
+                            <div class="screens-empty-state">
+                                <div class="empty-icon-container">
+                                    <i class="fas fa-chart-bar text-4xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-text-primary mb-3">No Screens Yet</h3>
+                                <p class="text-text-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                                    Save your query results as screens to create reusable financial analysis views. 
+                                    Start by running a search and clicking "Save Screen".
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button onclick="switchToSection('search')" class="btn btn-primary">
+                                        <i class="fas fa-search"></i>
+                                        <span>Start Searching</span>
+                                    </button>
+                                    <button onclick="loadUserScreens()" class="btn btn-secondary">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>Refresh</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Watchlists Empty State -->
+                        <div id="watchlistsEmptyContainer" class="hidden p-12 text-center">
+                            <div class="screens-empty-state">
+                                <div class="empty-icon-container">
+                                    <i class="fas fa-eye text-4xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-text-primary mb-3">No Watchlists Yet</h3>
+                                <p class="text-text-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                                    Create watchlists to track specific companies and analyze them.
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button class="btn btn-primary" onclick="showToast('Watchlists - Coming soon! 🚀', 'info')">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Create Watchlist</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Portfolios Empty State -->
+                        <div id="portfoliosEmptyContainer" class="hidden p-12 text-center">
+                            <div class="screens-empty-state">
+                                <div class="empty-icon-container">
+                                    <i class="fas fa-briefcase text-4xl"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-text-primary mb-3">No Portfolios Yet</h3>
+                                <p class="text-text-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                                    Build portfolios to analyze holdings and track performance.
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <button class="btn btn-primary" onclick="showToast('Portfolios - Coming soon! 🚀', 'info')">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Create Portfolio</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Screens List -->
+                        <div id="screensList" class="p-6">
+                            <!-- Screens will be populated here -->
+                        </div>
+
+                        <!-- Pagination -->
+                        <div id="screensPaginationContainer" class="hidden p-4 border-t border-border-primary bg-bg-tertiary">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div class="flex items-center space-x-3 text-sm text-text-secondary">
+                                    <span id="screensPaginationInfo"></span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button id="screensFirstPageBtn" class="btn btn-secondary btn-icon w-8 h-8 p-0 text-sm" title="First page">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </button>
+                                    <button id="screensPrevPageBtn" class="btn btn-secondary btn-icon w-8 h-8 p-0 text-sm" title="Previous page">
+                                        <i class="fas fa-angle-left"></i>
+                                    </button>
+                                    <div class="flex items-center space-x-2 text-sm text-text-secondary">
+                                        <span>Page</span>
+                                        <input id="screensPageJumpInput" type="number" min="1" class="w-16 text-center p-1 border rounded-md bg-bg-primary">
+                                        <span id="screensPageTotal">of 1</span>
+                                    </div>
+                                    <button id="screensNextPageBtn" class="btn btn-secondary btn-icon w-8 h-8 p-0 text-sm" title="Next page">
+                                        <i class="fas fa-angle-right"></i>
+                                    </button>
+                                    <button id="screensLastPageBtn" class="btn btn-secondary btn-icon w-8 h-8 p-0 text-sm" title="Last page">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Screens Section -->
+
+            <!-- Charting Section -->
+            <div id="chartingSection" class="main-section">
+                <div class="card bg-bg-secondary dark:bg-bg-primary overflow-hidden">
+                    <div class="p-6 border-b border-border-primary">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-3">
+                                    <i class="fas fa-chart-line text-accent-primary"></i>
+                                    Financial Charting
+                                </h1>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="clearChartingDataBtn" class="btn btn-secondary" title="Clear all selections">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Clear All</span>
+                                </button>
+                                <button id="exportChartBtn" class="btn btn-primary" title="Download chart as image">
+                                    <i class="fas fa-download"></i>
+                                    <span>Export Chart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Configuration Controls -->
+                    <div class="p-6 bg-bg-tertiary border-b border-border-primary">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Stock Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-building mr-1"></i>
+                                    Select Companies
+                                </label>
+                                <div class="relative charting-stock-container">
+                                    <input 
+                                        type="text" 
+                                        id="chartingStockSearch" 
+                                        placeholder="Search companies..."
+                                        title="Search by company name or ticker"
+                                        class="w-64 max-w-xs p-3 border rounded-lg bg-bg-primary text-sm border-border-primary"
+                                    />
+                                </div>
+                                <div id="chartingStockSuggestions" class="hidden absolute w-64 max-w-xs mt-1 bg-bg-primary border border-border-primary rounded-lg shadow-lg max-h-48 overflow-y-auto" style="z-index: 99999 !important;"></div>
+                            </div>
+
+                            <!-- Metric Type Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-chart-line mr-1"></i>
+                                    Metric Type
+                                </label>
+                                <select id="chartingMetricTypeSelect" class="w-full p-3 border rounded-lg bg-bg-primary text-sm border-border-primary" title="Choose between actual values or growth rates">
+                                    <option value="absolute">Absolute Values</option>
+                                    <option value="growth">Year-over-Year Growth Rate (%)</option>
+                                </select>
+                            </div>
+
+                            <!-- Metric Selection (for financial charts) -->
+                            <div id="chartingFinancialMetrics">
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-chart-bar mr-1"></i>
+                                    KPIs & Segments
+                                </label>
+                                <select id="chartingMetricSelect" class="w-full p-3 border rounded-lg bg-bg-primary text-sm border-border-primary" title="Select financial metric to chart">
+                                    <option value="">Select metric...</option>
+                                    <optgroup label="Income Statement">
+                                        <option value="revenue">Revenue</option>
+                                        <option value="netIncome">Net Income</option>
+                                        <option value="grossProfit">Gross Profit</option>
+                                        <option value="operatingIncome">Operating Income</option>
+                                        <option value="ebitda">EBITDA</option>
+                                        <option value="eps">Earnings Per Share</option>
+                                        <option value="epsDiluted">Diluted EPS</option>
+                                        <option value="costOfRevenue">Cost of Revenue</option>
+                                        <option value="operatingExpenses">Operating Expenses</option>
+                                        <option value="incomeBeforeTax">Income Before Tax</option>
+                                        <option value="incomeTaxExpense">Income Tax Expense</option>
+                                        <option value="interestExpense">Interest Expense</option>
+                                        <option value="interestIncome">Interest Income</option>
+                                        <option value="depreciationAndAmortization">Depreciation & Amortization</option>
+                                        <option value="researchAndDevelopmentExpenses">R&D Expenses</option>
+                                        <option value="sellingAndMarketingExpenses">Selling & Marketing Expenses</option>
+                                        <option value="generalAndAdministrativeExpenses">G&A Expenses</option>
+                                    </optgroup>
+                                    <optgroup label="Balance Sheet">
+                                        <option value="totalAssets">Total Assets</option>
+                                        <option value="totalEquity">Total Equity</option>
+                                        <option value="totalLiabilities">Total Liabilities</option>
+                                        <option value="totalDebt">Total Debt</option>
+                                        <option value="cashAndCashEquivalents">Cash & Equivalents</option>
+                                        <option value="cashAndShortTermInvestments">Cash & Short-term Investments</option>
+                                        <option value="netReceivables">Net Receivables</option>
+                                        <option value="inventory">Inventory</option>
+                                        <option value="totalCurrentAssets">Total Current Assets</option>
+                                        <option value="totalCurrentLiabilities">Total Current Liabilities</option>
+                                        <option value="propertyPlantEquipmentNet">Property, Plant & Equipment</option>
+                                        <option value="goodwill">Goodwill</option>
+                                        <option value="intangibleAssets">Intangible Assets</option>
+                                        <option value="longTermDebt">Long-term Debt</option>
+                                        <option value="shortTermDebt">Short-term Debt</option>
+                                        <option value="retainedEarnings">Retained Earnings</option>
+                                        <option value="commonStock">Common Stock</option>
+                                        <option value="netDebt">Net Debt</option>
+                                    </optgroup>
+                                    <optgroup label="Cash Flow">
+                                        <option value="operatingCashFlow">Operating Cash Flow</option>
+                                        <option value="netCashProvidedByOperatingActivities">Net Cash from Operations</option>
+                                        <option value="freeCashFlow">Free Cash Flow</option>
+                                        <option value="capitalExpenditure">Capital Expenditure</option>
+                                        <option value="investmentsInPropertyPlantAndEquipment">Investments in PP&E</option>
+                                        <option value="netCashUsedForInvestingActivites">Net Cash from Investing</option>
+                                        <option value="netCashUsedProvidedByFinancingActivities">Net Cash from Financing</option>
+                                        <option value="acquisitionsNet">Acquisitions (Net)</option>
+                                        <option value="purchasesOfInvestments">Purchases of Investments</option>
+                                        <option value="salesMaturitiesOfInvestments">Sales/Maturities of Investments</option>
+                                        <option value="commonStockIssued">Common Stock Issued</option>
+                                        <option value="commonStockRepurchased">Common Stock Repurchased</option>
+                                        <option value="netChangeInCash">Net Change in Cash</option>
+                                        <option value="changeInWorkingCapital">Change in Working Capital</option>
+                                    </optgroup>
+                                    <optgroup label="Ratios & Margins">
+                                        <option value="grossProfitRatio">Gross Profit Margin</option>
+                                        <option value="operatingIncomeRatio">Operating Margin</option>
+                                        <option value="netIncomeRatio">Net Margin</option>
+                                    </optgroup>
+                                    <optgroup label="Segments & KPIs">
+                                        <option value="product_segment_revenue">Product Segment Revenue</option>
+                                        <option value="geographic_segment_revenue">Geographic Segment Revenue</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <!-- Segment Type Selection (for segment charts) -->
+                            <div id="chartingSegmentInfo" class="hidden">
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-chart-pie mr-1"></i>
+                                    Segments
+                                </label>
+                                <div class="p-3 border border-border-primary rounded-lg bg-bg-secondary text-sm">
+                                    <p class="text-text-secondary">Revenue by segments</p>
+                                </div>
+                            </div>
+
+                            <!-- Time Period -->
+                            <div>
+                                <label class="block text-sm font-medium text-text-secondary mb-2">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    Time Period
+                                </label>
+                                <select id="chartingTimePeriodSelect" class="w-full p-3 border rounded-lg bg-bg-primary text-sm border-border-primary" title="Select time period for chart">
+                                    <option value="5">Last 5 Years</option>
+                                    <option value="3">Last 3 Years</option>
+                                    <option value="8">Last 8 Years</option>
+                                    <option value="10">Last 10 Years</option>
+                                    <option value="15">Last 15 Years</option>
+                                    <option value="20">Last 20 Years</option>
+                                    <option value="25">Last 25 Years</option>
+                                    <option value="30">Last 30 Years</option>
+                                    <option value="all">All Available Years (up to 50)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Selected Companies Display -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Companies</label>
+                            <div id="chartingSelectedStocks" class="flex flex-wrap gap-2 min-h-[40px] p-3 border border-border-primary rounded-lg bg-bg-primary">
+                                <div class="text-text-tertiary text-sm italic flex items-center">
+                                    No companies selected
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4 flex justify-end">
+                            <button id="generateChartBtn" class="btn btn-primary" title="Create chart with selected data">
+                                <i class="fas fa-chart-line mr-2"></i>
+                                Generate Chart
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Display Area -->
+                    <div class="p-6">
+                        <div id="chartingChartContainer" class="bg-bg-primary border border-border-primary rounded-lg">
+                            <!-- Empty State -->
+                            <div id="chartingEmptyState" class="p-12 text-center">
+                                <div class="w-16 h-16 bg-accent-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-chart-line text-accent-primary text-2xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-text-primary mb-2">Financial Charting</h3>
+                                <p class="text-text-secondary mb-4 max-w-md mx-auto">
+                                    Select companies and metrics to create time series charts
+                                </p>
+                            </div>
+
+                            <!-- Chart Canvas -->
+                            <div id="chartingChartArea" class="hidden p-6">
+                                <div class="mb-4 flex items-center justify-between">
+                                    <div>
+                                        <h3 id="chartingChartTitle" class="text-lg font-semibold text-text-primary"></h3>
+                                        <p id="chartingChartSubtitle" class="text-sm text-text-secondary"></p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button id="chartingFullscreenBtn" class="btn btn-secondary btn-sm" title="Toggle fullscreen">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
+                                        <button id="chartingRefreshBtn" class="btn btn-secondary btn-sm" title="Refresh chart">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="relative" style="height: 400px;">
+                                    <!-- Zoom Controls -->
+                                    <div class="chart-zoom-controls">
+                                        <button class="zoom-btn" id="zoomInBtn" title="Zoom In">
+                                            <i class="fas fa-search-plus"></i>
+                                        </button>
+                                        <button class="zoom-btn" id="zoomOutBtn" title="Zoom Out">
+                                            <i class="fas fa-search-minus"></i>
+                                        </button>
+                                        <button class="zoom-btn" id="resetZoomBtn" title="Reset Zoom">
+                                            <i class="fas fa-home"></i>
+                                        </button>
+                                    </div>
+                                    <canvas id="chartingMainChart"></canvas>
+                                </div>
+                                <div id="chartingChartError" class="hidden mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                                        <span class="text-red-700 dark:text-red-300 text-sm font-medium">Chart Error</span>
+                                    </div>
+                                    <p id="chartingChartErrorMessage" class="text-red-600 dark:text-red-400 text-sm mt-1"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Charting Section -->
+
+            <!-- Chat Section - Full Window -->
+            <div id="chatSection" class="main-section active">
+                <!-- Chat Messages Area - Full Height (reasoning panel will be injected here dynamically) -->
+                <div id="chatMessages" class="chat-messages-full">
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="chat-input-area-clean">
+                    <div class="chat-input-container">
+                        <div class="modern-input-container">
+                            <div class="input-main-area">
+                                <textarea 
+                                    id="chatInput" 
+                                    placeholder="Ask me anything about financial data (please mention tickers with $)..."
+                                    rows="1"
+                                    maxlength="4000"
+                                ></textarea>
+                            </div>
+                            <div class="input-footer-bar">
+                                <div class="flex-1"></div>
+                                <div class="footer-right-actions">
+                                    <button id="sendChatButton" type="button" class="send-btn">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Chat Section -->
+
+            </main>
+        </div>
+
+        <div id="promptLibraryModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-3xl w-full max-h-[85vh] flex flex-col bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold">Query Library</h3>
+                            <p class="text-sm text-text-secondary mt-1">Ready-to-use financial analysis queries</p>
+                        </div>
+                        <button id="closeModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="promptCategoriesContainer" class="p-6 overflow-y-auto flex-grow space-y-6"></div>
+                <div class="px-6 py-3 border-t border-border-primary bg-bg-tertiary text-xs text-text-secondary">
+                    <div class="flex items-center justify-between">
+                        <span>Click any available query to run it immediately</span>
+                        <span class="text-blue-600 dark:text-blue-400">Coming soon features are in development</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Chart Modal - SCALED DOWN FOR BETTER VISIBILITY -->
+        <div id="chartModal" class="fixed inset-0 chart-modal-backdrop z-[60] hidden items-center justify-center p-4">
+            <div id="chartModalContent" class="card w-full flex flex-col bg-bg-primary shadow-2xl">
+                <div class="flex-shrink-0 px-6 h-14 flex items-center justify-between border-b border-border-primary">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-chart-bar text-accent-primary text-lg"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">Chart Analysis</h3>
+                            <p id="chartDescription" class="text-xs text-text-secondary">Loading chart...</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="exportModalChartBtn" class="btn btn-primary btn-sm" title="Download chart as image">
+                            <i class="fas fa-download"></i>
+                            <span>Export</span>
+                        </button>
+                        <button id="closeChartModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 p-4 border-b border-border-primary bg-bg-tertiary">
+                    <div class="chart-controls-grid">
+                        <!-- Simplified Chart Type Toggle - BAR AND LINE ONLY -->
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Chart Type</label>
+                            <div class="chart-type-toggle flex">
+                                <button data-type="bar" class="active flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-l-lg text-sm font-medium transition-all" title="Compare companies/values">
+                                    <i class="fas fa-chart-bar text-sm"></i>
+                                    <span>Compare</span>
+                                </button>
+                                <button data-type="line" class="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-r-lg text-sm font-medium transition-all" title="Analyze trends over time">
+                                    <i class="fas fa-chart-line text-sm"></i>
+                                    <span>Time Series</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">X-Axis</label>
+                            <select id="chartXAxis" class="w-full p-2 border rounded-md bg-bg-primary text-sm border-border-primary"></select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Y-Axis</label>
+                            <select id="chartYAxis" class="w-full p-2 border rounded-md bg-bg-primary text-sm border-border-primary"></select>
+                        </div>
+                        
+                        <!-- Time Period / Data Points Selector -->
+                        <div>
+                            <label id="chartDataPointsLabel" class="block text-sm font-medium text-text-secondary mb-2">Time Period</label>
+                            <select id="chartDataPointsSelect" class="w-full p-2 border rounded-md bg-bg-primary text-sm border-border-primary">
+                                <option value="all">All Time Periods</option>
+                                <option value="3">Last 3 Years</option>
+                                <option value="5">Last 5 Years</option>
+                                <option value="8">Last 8 Years</option>
+                                <option value="10">Last 10 Years</option>
+                                <option value="15">Last 15 Years</option>
+                                <option value="20">Last 20 Years</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2 lg:col-span-1">
+                            <button id="updateChartBtn" class="btn btn-primary w-full h-10">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-grow p-4 overflow-auto">
+                    <div class="chart-container">
+                        <canvas id="interactiveChart"></canvas>
+                        <div id="chartError" class="hidden absolute inset-0 flex items-center justify-center bg-bg-secondary/50 rounded-lg">
+                            <div class="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-700">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-lg mb-2"></i>
+                                <p class="text-red-700 dark:text-red-300 font-medium text-sm"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEC Sources Modal -->
+        <div id="secSourcesModal" class="sec-sources-modal hidden">
+            <div class="sec-sources-modal-content">
+                <div class="sec-sources-modal-header">
+                    <div>
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-file-contract"></i>
+                            SEC Filing Sources
+                        </h3>
+                        <p class="text-sm opacity-90 mt-1">Transparency data for this row</p>
+                    </div>
+                    <button id="closeSecSourcesModalBtn" class="close-modal-btn">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                <div class="sec-sources-modal-body">
+                    <div id="secSourcesContent">
+                        <!-- Dynamic content will be populated here -->
+                    </div>
+                </div>
+                <div class="sec-sources-modal-footer">
+                    <button id="closeSecSourcesFooterBtn" class="btn btn-secondary">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Screen Modal -->
+        <div id="saveScreenModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-md w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-bookmark text-accent-primary"></i>
+                            Save as Screen
+                        </h3>
+                        <button id="closeSaveScreenModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form id="saveScreenForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Screen Name</label>
+                            <input type="text" id="screenName" class="input-field" placeholder="Enter a memorable name for this screen" autocomplete="off" required maxlength="100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Description (Optional)</label>
+                            <textarea id="screenDescription" class="input-field" rows="3" placeholder="Brief description of what this screen shows..." maxlength="500"></textarea>
+                        </div>
+                        <div class="text-xs text-text-tertiary bg-bg-tertiary p-3 rounded-lg">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            This will save your current query results so you can access them later from the Screens section.
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancelSaveScreenBtn" class="btn btn-secondary flex-1">Cancel</button>
+                            <button type="submit" id="saveScreenSubmitBtn" class="btn btn-primary flex-1">
+                                <span id="saveScreenBtnText">Save Screen</span>
+                                <div id="saveScreenSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plot Stocks from Screen Modal -->
+        <div id="plotScreenStocksModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-2xl w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-chart-line text-accent-primary"></i>
+                            Plot Stocks from Screen
+                        </h3>
+                        <button id="closePlotScreenStocksModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Screen</label>
+                            <div id="plotScreenInfo" class="text-sm text-text-primary bg-bg-tertiary p-3 rounded-lg">
+                                <!-- Screen info will be populated here -->
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Select Stocks to Plot</label>
+                            <div class="text-xs text-text-tertiary mb-2">
+                                Choose which stocks from this screen you'd like to plot. First 10 are selected by default.
+                            </div>
+                            <div id="plotScreenStocksList" class="max-h-64 overflow-y-auto border border-border-primary rounded-lg bg-bg-primary">
+                                <!-- Stock checkboxes will be populated here -->
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <button id="selectAllPlotStocksBtn" class="text-sm text-accent-primary hover:text-accent-secondary font-medium">
+                                    Select All
+                                </button>
+                                <span class="text-text-tertiary">|</span>
+                                <button id="deselectAllPlotStocksBtn" class="text-sm text-accent-primary hover:text-accent-secondary font-medium">
+                                    Deselect All
+                                </button>
+                            </div>
+                            <div class="text-sm text-text-secondary">
+                                <span id="plotStocksSelectedCount">0</span> of <span id="plotStocksTotalCount">0</span> selected
+                            </div>
+                        </div>
+                        <div class="text-xs text-text-tertiary bg-bg-tertiary p-3 rounded-lg">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            This will open the Charting section with the selected stocks pre-loaded for analysis.
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancelPlotScreenStocksBtn" class="btn btn-secondary flex-1">Cancel</button>
+                            <button type="button" id="plotScreenStocksBtn" class="btn btn-primary flex-1">
+                                <span id="plotScreenStocksBtnText">Plot Selected Stocks</span>
+                                <div id="plotScreenStocksSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expand Value Modal -->
+        <div id="expandValueModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-2xl w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-expand-alt text-accent-primary"></i>
+                            Full Value
+                        </h3>
+                        <button id="closeExpandValueModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-secondary mb-2">Column</label>
+                        <div id="expandValueColumn" class="text-sm font-medium text-text-primary bg-bg-tertiary p-2 rounded-md"></div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-secondary mb-2">Full Value</label>
+                        <div id="expandValueContent" class="text-sm text-text-primary bg-bg-tertiary p-3 rounded-md border border-border-primary max-h-96 overflow-y-auto whitespace-pre-wrap break-words"></div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button id="closeExpandValueFooterBtn" class="btn btn-secondary">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Modal -->
+        <div id="usageModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-4xl w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-chart-line text-accent-primary"></i>
+                            Usage Statistics
+                        </h3>
+                        <button id="closeUsageModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="usageLoading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary mx-auto"></div>
+                        <p class="mt-2 text-text-secondary">Loading usage data...</p>
+                    </div>
+                    
+                    <div id="usageContent" class="hidden">
+                        <!-- Rate Limits Section -->
+                        <div class="mb-8">
+                            <h4 class="text-lg font-medium text-text-primary mb-4">Rate Limits</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-blue-800 dark:text-blue-200">Per Minute</p>
+                                        <p class="text-3xl font-bold text-blue-900 dark:text-blue-100">3</p>
+                                        <p class="text-xs text-blue-600 dark:text-blue-300">requests per minute</p>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-green-800 dark:text-green-200">Per Month</p>
+                                        <p class="text-3xl font-bold text-green-900 dark:text-green-100">20</p>
+                                        <p class="text-xs text-green-600 dark:text-green-300">queries per month</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Usage Statistics Section -->
+                        <div class="mb-8">
+                            <h4 class="text-lg font-medium text-text-primary mb-4">Usage Statistics</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-bg-tertiary p-4 rounded-lg border border-border-primary">
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-text-secondary">Total Requests</p>
+                                        <p class="text-2xl font-bold text-text-primary" id="totalRequests">-</p>
+                                    </div>
+                                </div>
+                                <div class="bg-bg-tertiary p-4 rounded-lg border border-border-primary">
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-text-secondary">This Month</p>
+                                        <p class="text-2xl font-bold text-text-primary" id="monthlyRequests">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Rate Limit Info -->
+                        <div class="bg-bg-tertiary p-4 rounded-lg border border-border-primary">
+                            <h5 class="font-medium text-text-primary mb-2">Rate Limit Information</h5>
+                            <ul class="text-sm text-text-secondary space-y-1">
+                                <li>• Maximum 3 requests per minute</li>
+                                <li>• Maximum 20 queries per month</li>
+                                <li>• Limits reset automatically</li>
+                                <li>• Exceeding limits will result in temporary blocking</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div id="usageError" class="hidden text-center py-8">
+                        <div class="text-red-500 mb-2">
+                            <i class="fas fa-exclamation-triangle text-2xl"></i>
+                        </div>
+                        <p class="text-text-secondary mb-4" id="usageErrorMessage">Failed to load usage data</p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                            <button onclick="loadUsageData()" class="btn btn-primary">
+                                <i class="fas fa-redo mr-2"></i>
+                                <span>Try Again</span>
+                            </button>
+                            <button class="btn btn-secondary text-sm help-btn" onclick="openErrorReportingModal()">
+                                <i class="fas fa-life-ring mr-2"></i>
+                                <span>Need Help?</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Chat History Modal -->
+        <div id="chatHistoryModal" class="fixed inset-0 bg-black/60 z-[200] hidden items-center justify-center p-4">
+            <div class="card max-w-3xl w-full h-[90vh] bg-bg-secondary dark:bg-bg-primary flex flex-col">
+                <div class="px-6 py-4 border-b border-border-primary flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold flex items-center gap-2">
+                                <i class="fas fa-comments text-accent-primary"></i>
+                                Chat History
+                            </h3>
+                            <p class="text-sm text-text-secondary mt-1">Your chat conversations</p>
+                        </div>
+                        <button id="closeChatHistoryModalBtn" class="w-10 h-10 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Conversation Count Info -->
+                <div class="px-6 py-3 border-b border-border-primary bg-bg-tertiary flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-sm text-text-secondary">
+                            <span id="conversationCount">Loading conversations...</span>
+                            <span id="conversationLastUpdated"></span>
+                        </div>
+                        <button onclick="loadChatHistory()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-sync-alt mr-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex-1 overflow-hidden flex flex-col min-h-0">
+                    <!-- Loading State -->
+                    <div id="chatHistoryLoading" class="hidden p-8 text-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary mx-auto"></div>
+                        <p class="mt-2 text-text-secondary">Loading conversations...</p>
+                    </div>
+                    
+                    <!-- Chat History List -->
+                    <div id="chatHistoryList" class="flex-1 overflow-y-auto p-4 min-h-0">
+                        <!-- Chat history will be populated here -->
+                    </div>
+                    
+                    <!-- Load More Button (for pagination) -->
+                    <div id="chatHistoryLoadMore" class="hidden p-4 border-t border-border-primary bg-bg-tertiary flex-shrink-0">
+                        <div class="flex items-center justify-center">
+                            <button id="loadMoreConversationsBtn" class="btn btn-secondary">
+                                <i class="fas fa-chevron-down mr-2"></i>Load More Conversations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Statistics Modal -->
+        <div id="chatStatsModal" class="fixed inset-0 bg-black/60 z-[200] hidden items-center justify-center p-4">
+            <div class="card max-w-3xl w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-accent-primary"></i>
+                            Chat Statistics
+                        </h3>
+                        <button id="closeChatStatsModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="chatStatsLoading" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary mx-auto"></div>
+                        <p class="mt-2 text-text-secondary">Loading statistics...</p>
+                    </div>
+                    
+                    <div id="chatStatsContent" class="hidden space-y-6">
+                        <!-- Basic Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-bg-tertiary p-4 rounded-lg">
+                                <div class="text-center">
+                                    <p class="text-sm font-medium text-text-secondary">Total Messages</p>
+                                    <p class="text-2xl font-bold text-text-primary" id="totalChatMessages">-</p>
+                                </div>
+                            </div>
+                            <div class="bg-bg-tertiary p-4 rounded-lg">
+                                <div class="text-center">
+                                    <p class="text-sm font-medium text-text-secondary">Active Days</p>
+                                    <p class="text-2xl font-bold text-text-primary" id="activeChatDays">-</p>
+                                </div>
+                            </div>
+                            <div class="bg-bg-tertiary p-4 rounded-lg">
+                                <div class="text-center">
+                                    <p class="text-sm font-medium text-text-secondary">Avg Question Length</p>
+                                    <p class="text-2xl font-bold text-text-primary" id="avgQuestionLength">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity Chart -->
+                        <div class="chat-activity-chart-container">
+                            <h4>Daily Activity (Last 30 Days)</h4>
+                            <div id="chatActivityChart" class="h-64">
+                                <!-- Chart will be rendered here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Top Conversations -->
+                        <div class="top-conversations-container">
+                            <h4>Top Conversations</h4>
+                            <div id="topConversations">
+                                <!-- Top conversations will be listed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Export Modal -->
+        <div id="chatExportModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-md w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-download text-accent-primary"></i>
+                            Export Chat History
+                        </h3>
+                        <button id="closeChatExportModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <form id="chatExportForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Export Format</label>
+                            <select id="chatExportFormat" class="input-field">
+                                <option value="json">JSON (with citations)</option>
+                                <option value="csv">CSV (spreadsheet)</option>
+                                <option value="txt">Plain Text</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-text-secondary mb-2">Date Range (Optional)</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="date" id="chatExportDateFrom" class="input-field" placeholder="From">
+                                <input type="date" id="chatExportDateTo" class="input-field" placeholder="To">
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="chatExportIncludeCitations" checked class="mr-2">
+                            <label for="chatExportIncludeCitations" class="text-sm text-text-secondary">Include citations and analysis</label>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancelChatExportBtn" class="btn btn-secondary flex-1">Cancel</button>
+                            <button type="submit" id="exportChatBtn" class="btn btn-primary flex-1">
+                                <span id="exportChatBtnText">Export</span>
+                                <div id="exportChatSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Reporting Modal -->
+        <div id="errorReportingModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="card max-w-md w-full bg-bg-secondary dark:bg-bg-primary">
+                <div class="px-6 py-4 border-b border-border-primary">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-life-ring text-accent-primary"></i>
+                            Need Help?
+                        </h3>
+                        <button id="closeErrorReportingModalBtn" class="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-envelope text-blue-600 dark:text-blue-400 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-text-primary mb-2">We're Here to Help!</h4>
+                        <p class="text-sm text-text-secondary">If you're experiencing issues or need assistance, please reach out to us directly.</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 mb-6">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                            <div>
+                                <h5 class="font-medium text-blue-800 dark:text-blue-200 mb-1">Contact Support</h5>
+                                <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                    Email us at <strong>hrishi@stratalens.ai</strong> with the subject line:
+                                </p>
+                                <div class="bg-white dark:bg-slate-800 p-3 rounded border border-blue-200 dark:border-blue-600">
+                                    <code class="text-sm text-blue-800 dark:text-blue-200 font-mono">
+                                        StrataLens Support Request
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 p-3 bg-bg-tertiary rounded-lg">
+                            <i class="fas fa-lightbulb text-yellow-600 dark:text-yellow-400"></i>
+                            <div class="text-sm">
+                                <p class="font-medium text-text-primary">Include Details</p>
+                                <p class="text-text-secondary">Describe what you were trying to do and any error messages you saw</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 p-3 bg-bg-tertiary rounded-lg">
+                            <i class="fas fa-clock text-green-600 dark:text-green-400"></i>
+                            <div class="text-sm">
+                                <p class="font-medium text-text-primary">Quick Response</p>
+                                <p class="text-text-secondary">We typically respond within 24 hours</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Requests & Feedback Section -->
+                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700 mb-6">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-comments text-green-600 dark:text-green-400 mt-0.5"></i>
+                            <div>
+                                <h5 class="font-medium text-green-800 dark:text-green-200 mb-1">Have a feature request/feedback or problems?</h5>
+                                <p class="text-sm text-green-700 dark:text-green-300 mb-3">
+                                    Schedule a call with us to discuss your ideas, feedback, or any issues you're experiencing.
+                                </p>
+                                <a href="https://calendar.app.google/Wg9H8TkcCStogk2SA" target="_blank" class="btn btn-primary inline-flex items-center">
+                                    <i class="fas fa-calendar-plus mr-2"></i>
+                                    Book an appointment
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center mt-6">
+                        <button id="closeErrorReportingFooterBtn" class="btn btn-primary">
+                            Got it, thanks!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

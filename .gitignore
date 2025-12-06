@@ -1,0 +1,116 @@
+# Environment variables
+.env
+
+# DuckDB database files
+*.duckdb
+financial_data_new.duckdb
+
+# Data downloads directory (contains all downloaded/generated data)
+agent/rag/data_downloads/
+
+# Earnings transcripts folders (legacy - now in data/)
+agent/rag/earnings_transcripts/
+agent/rag/earnings_transcripts_2024_q4/
+agent/rag/earnings_transcripts_2025_q1/
+agent/rag/earnings_transcripts_2025_q2/
+agent/rag/earnings_transcripts_*/
+agent/rag/data_ingestion/earnings_transcripts/
+
+# Ticker symbol directories in agent/rag (10-K data)
+agent/rag/[A-Z][A-Z]/
+agent/rag/[A-Z][A-Z][A-Z]/
+agent/rag/[A-Z][A-Z][A-Z][A-Z]/
+agent/rag/[A-Z][A-Z][A-Z][A-Z][A-Z]/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+agent_run.log
+server.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Benchmark and evaluation results
+*_results_*.json
+financebench_*.json
+benchmark_*.json
+evaluation_*.json
+
+# Temporary numbered files
+[0-9]
+[0-9][0-9]
+
+# SEC filings RAG (ignore entire directory)
+agent/rag/sec_filings_rag/
+agent/rag/sec_filings_rag_scr/
+
+# All experiments (benchmarks, evaluation, testing)
+experiments/

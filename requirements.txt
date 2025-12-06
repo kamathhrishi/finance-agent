@@ -1,0 +1,58 @@
+# Core FastAPI and web framework
+fastapi
+uvicorn[standard]
+starlette
+
+# Database and ORM
+asyncpg==0.30.0
+psycopg2-binary
+SQLAlchemy
+
+# Authentication and security
+python-jose[cryptography]
+PyJWT
+passlib[bcrypt]==1.7.4
+itsdangerous==2.1.2
+Authlib==1.2.1
+google-auth==2.23.4
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+
+# Data processing
+pandas
+numpy==2.2.5
+python-multipart
+python-dotenv
+finqual
+
+# AI and LLM
+openai
+cerebras-cloud-sdk
+langchain==0.3.18
+langchain-community==0.3.17
+langchain-core==0.3.34
+langchain-openai
+langchain-text-splitters==0.3.6
+sentence-transformers==3.4.1
+tiktoken==0.8.0
+datasets
+
+# Redis and caching
+redis==5.2.1
+
+# HTTP and networking
+requests
+httpx
+websockets==15.0.1
+
+# Utilities
+aiofiles==24.1.0
+pydantic==2.10.6
+pydantic[email]==2.10.6
+pydantic-settings==2.7.1
+pydantic_core==2.27.2
+email-validator
+
+# Development and monitoring
+tenacity==9.0.0
+logfire[fastapi]
