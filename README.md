@@ -1,15 +1,15 @@
-# StrataLens AI
+[Complete README is yet to be updated] 
 
-AI-powered equity research copilot for analyzing US public companies using official SEC filings and earnings transcripts.
+# StrataLens AI
+Stratalens AI is equity research platform. You can ask questions and get answers to questions from 10K filings, earnings calls and news. 
 
 **Live Platform:** [stratalens.ai](https://stratalens.ai)
 
-## What is StrataLens?
+## Features
 
-StrataLens is an AI equity research assistant that provides accurate, citation-backed insights from primary sources:
 - **Earnings Transcripts** (2022-2025) - Word-for-word executive commentary
-- **SEC Filings** (In Development) - Official 10-K and 10-Q reports
-- **Financial Screener** - Natural language queries over company fundamentals
+- **SEC Filings** (10K of 2024-25) - Official 10-K and 10-Q reports
+- **Financial Screener** - Natural language queries over company fundamentals [not in production]
 
 Unlike generic LLMs that rely on web content, StrataLens uses the same authoritative documents that professional analysts depend on.
 
@@ -24,7 +24,7 @@ Unlike generic LLMs that rely on web content, StrataLens uses the same authorita
 ### Prerequisites
 - Python 3.9+
 - PostgreSQL 12+ with pgvector extension
-- OpenAI API key
+- See .env for required services
 
 ### Installation
 
@@ -127,3 +127,4 @@ MIT License - see LICENSE file for details
 ## Contact
 
 For questions or access requests: hrishi@stratalens.ai
+
