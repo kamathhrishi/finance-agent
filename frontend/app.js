@@ -1044,6 +1044,11 @@ $(document).ready(function() {
 
             function showAboutModal() {
                 $('#aboutModal').removeClass('hidden').addClass('flex');
+
+                // Track About modal open
+                if (window.posthog) {
+                    posthog.capture('about_modal_opened', { page: 'app' });
+                }
             }
 
             function hideAboutModal() {

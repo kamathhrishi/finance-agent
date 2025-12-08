@@ -6,12 +6,21 @@
     <title>StrataLens - Equity Research Copilot</title>
     <meta name="description" content="AI equity research copilot providing accurate insights from official SEC filings and earnings transcripts for US public companies.">
     <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RXPF4ZTRYN"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-RXPF4ZTRYN');
+    </script>
+
+    <!-- PostHog Analytics -->
+    <script>
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init('phc_4XnEi5zA3bpVrbuV84dkDae0m9rjj1ZeYo5TXiDMNG0', {
+            api_host: 'https://us.i.posthog.com',
+            person_profiles: 'identified_only'
+        })
     </script>
 
     <!-- TODO: Replace with proper Tailwind CSS build for production -->
@@ -527,7 +536,7 @@
                     </button>
 
                     <!-- Desktop GitHub Link -->
-                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700 hover:text-slate-900">
+                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" onclick="if(window.posthog){posthog.capture('github_link_clicked', {page: 'landing', device: 'desktop'})}" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700 hover:text-slate-900">
                         <i class="fab fa-github text-base"></i>
                         <span>Star</span>
                         <span class="flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
@@ -542,7 +551,7 @@
                     </button>
 
                     <!-- Mobile GitHub Link -->
-                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
+                    <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" onclick="if(window.posthog){posthog.capture('github_link_clicked', {page: 'landing', device: 'mobile'})}" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
                         <i class="fab fa-github"></i>
                     </a>
                 </div>
@@ -755,7 +764,7 @@
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
                         <h3 class="text-slate-800 font-medium mb-2">Created by</h3>
                         <p class="text-slate-600 text-sm mb-2">Hrishikesh Kamath</p>
-                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer"
+                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer" onclick="if(window.posthog){posthog.capture('hkamath_link_clicked', {page: 'landing'})}"
                            class="inline-flex items-center text-strata-blue-600 hover:text-strata-blue-700 text-sm font-medium transition-colors mb-3">
                             <i class="fas fa-external-link-alt mr-1"></i>
                             Visit hkamath.com
@@ -896,17 +905,31 @@
         function insertExampleQuery(query) {
             const searchInput = document.getElementById('landingSearchInput');
             searchInput.value = query;
-            
+
             // Trigger input event to update character count and resize
             searchInput.dispatchEvent(new Event('input'));
             searchInput.focus();
+
+            // Track example query click
+            if (window.posthog) {
+                posthog.capture('example_query_clicked', { query: query });
+            }
         }
 
         function handleLandingSearch() {
             const searchInput = document.getElementById('landingSearchInput');
             const query = searchInput.value.trim();
-            
+
             if (!query) return;
+
+            // Track search query submitted
+            if (window.posthog) {
+                posthog.capture('search_query_submitted', {
+                    query: query,
+                    query_length: query.length,
+                    page: 'landing'
+                });
+            }
 
             // Transition to platform interface
             transitionToPlatform(query);
@@ -1093,6 +1116,11 @@
             const modal = document.getElementById('aboutModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+
+            // Track About modal open
+            if (window.posthog) {
+                posthog.capture('about_modal_opened', { page: 'landing' });
+            }
         }
 
         function hideAboutModal() {

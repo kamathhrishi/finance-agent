@@ -27,12 +27,12 @@
     <script src="app.js?v=4"></script>
     
     <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RXPF4ZTRYN"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-RXPF4ZTRYN');
     </script>
 
     <!-- PostHog Analytics -->
@@ -166,7 +166,7 @@
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
                         <h3 class="text-slate-800 font-medium mb-2">Created by</h3>
                         <p class="text-slate-600 text-sm mb-2">Hrishikesh Kamath</p>
-                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer" 
+                        <a href="https://hkamath.com" target="_blank" rel="noopener noreferrer" onclick="if(window.posthog){posthog.capture('hkamath_link_clicked', {page: 'app'})}"
                            class="inline-flex items-center text-strata-blue-600 hover:text-strata-blue-700 text-sm font-medium transition-colors">
                             <i class="fas fa-external-link-alt mr-1"></i>
                             Visit hkamath.com

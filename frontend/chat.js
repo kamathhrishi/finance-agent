@@ -502,6 +502,15 @@ class ChatInterface {
             return;
         }
 
+        // Track query submitted
+        if (window.posthog) {
+            posthog.capture('search_query_submitted', {
+                query: message,
+                query_length: message.length,
+                page: 'app'
+            });
+        }
+
         // Check character limit
         if (message.length > 4000) {
             this.addMessage('assistant', 
