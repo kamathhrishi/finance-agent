@@ -88,61 +88,127 @@ class ResponseGenerator:
     # CEREBRAS API METHODS
     # ═════════════════════════════════════════════════════════════════════
     
-    def _make_cerebras_call(self, messages: List[Dict], model: str = None, 
-                           temperature: float = None, max_tokens: int = None, 
+    def _make_cerebras_call(self, messages: List[Dict], model: str = None,
+                           temperature: float = None, max_tokens: int = None,
                            stream: bool = False):
         """
         Make Cerebras API call with Qwen model.
-        
+
         Args:
             messages: List of message dictionaries
             model: Cerebras model (default from config)
             temperature: Temperature for generation
             max_tokens: Maximum tokens to generate
             stream: Whether to stream the response
-            
+
         Returns:
             Response content or stream object
         """
         if not self.cerebras_available or not self.cerebras_client:
             raise Exception("Cerebras client not available")
-        
+
         model = model or self.config.get("cerebras_model", "qwen-3-235b-a22b-instruct-2507")
         temperature = temperature if temperature is not None else self.config.get("cerebras_temperature", 0.1)
         max_tokens = max_tokens or self.config.get("cerebras_max_tokens", 8000)
-        
+
+        # Extract prompt info for logging
+        system_prompt = None
+        user_prompt = None
+        for msg in messages:
+            if msg.get('role') == 'system':
+                system_prompt = msg.get('content', '')[:500]  # First 500 chars
+            elif msg.get('role') == 'user':
+                user_prompt = msg.get('content', '')[:500]  # First 500 chars
+
         try:
             rag_logger.info(f"🤖 Cerebras API call: model={model}, temp={temperature}, max_tokens={max_tokens}")
-            
-            completion = self.cerebras_client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=temperature,
-                max_completion_tokens=max_tokens,
-                stream=stream
-            )
-            
-            if stream:
-                return completion
+
+            # Log to Logfire with span for observability
+            if LOGFIRE_AVAILABLE and logfire:
+                with logfire.span(
+                    "cerebras.chat.completions",
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    stream=stream,
+                    system_prompt_preview=system_prompt,
+                    user_prompt_preview=user_prompt,
+                    message_count=len(messages)
+                ):
+                    completion = self.cerebras_client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_completion_tokens=max_tokens,
+                        stream=stream
+                    )
+
+                    if stream:
+                        return completion
+                    else:
+                        if not completion or not completion.choices or len(completion.choices) == 0:
+                            raise Exception("Cerebras API returned invalid response structure")
+
+                        content = completion.choices[0].message.content
+                        finish_reason = getattr(completion.choices[0], 'finish_reason', None)
+
+                        # Log completion details to Logfire
+                        logfire.info(
+                            "cerebras.completion",
+                            model=model,
+                            finish_reason=finish_reason,
+                            response_length=len(content) if content else 0,
+                            response_preview=content[:500] if content else None,
+                            usage_prompt_tokens=getattr(completion.usage, 'prompt_tokens', None) if hasattr(completion, 'usage') else None,
+                            usage_completion_tokens=getattr(completion.usage, 'completion_tokens', None) if hasattr(completion, 'usage') else None
+                        )
+
+                        if finish_reason == 'length':
+                            rag_logger.warning("   ⚠️ Response truncated due to max_tokens limit")
+
+                        if content is None or (isinstance(content, str) and not content.strip()):
+                            raise Exception("Cerebras API returned empty content")
+
+                        return content
             else:
-                if not completion or not completion.choices or len(completion.choices) == 0:
-                    raise Exception("Cerebras API returned invalid response structure")
-                
-                content = completion.choices[0].message.content
-                
-                if hasattr(completion.choices[0], 'finish_reason'):
-                    finish_reason = completion.choices[0].finish_reason
-                    rag_logger.info(f"   📊 Cerebras finish_reason: {finish_reason}")
-                    if finish_reason == 'length':
-                        rag_logger.warning("   ⚠️ Response truncated due to max_tokens limit")
-                
-                if content is None or (isinstance(content, str) and not content.strip()):
-                    raise Exception("Cerebras API returned empty content")
-                
-                return content
-                
+                # Fallback without Logfire
+                completion = self.cerebras_client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_completion_tokens=max_tokens,
+                    stream=stream
+                )
+
+                if stream:
+                    return completion
+                else:
+                    if not completion or not completion.choices or len(completion.choices) == 0:
+                        raise Exception("Cerebras API returned invalid response structure")
+
+                    content = completion.choices[0].message.content
+
+                    if hasattr(completion.choices[0], 'finish_reason'):
+                        finish_reason = completion.choices[0].finish_reason
+                        rag_logger.info(f"   📊 Cerebras finish_reason: {finish_reason}")
+                        if finish_reason == 'length':
+                            rag_logger.warning("   ⚠️ Response truncated due to max_tokens limit")
+
+                    if content is None or (isinstance(content, str) and not content.strip()):
+                        raise Exception("Cerebras API returned empty content")
+
+                    return content
+
         except Exception as e:
             rag_logger.error(f"❌ Cerebras API call failed: {e}")
+            # Log error to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.error(
+                    "cerebras.error",
+                    model=model,
+                    error=str(e),
+                    error_type=type(e).__name__
+                )
             raise e
     
     def _make_model_call(self, messages: List[Dict], model: str = None,

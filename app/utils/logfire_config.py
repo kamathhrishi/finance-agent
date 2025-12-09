@@ -77,6 +77,9 @@ def instrument_all():
     """
     Auto-instrument common libraries used in StrataLens AI.
     Call this after configure_logfire() returns True.
+
+    IMPORTANT: For OpenAI instrumentation to capture prompts/completions,
+    this must be called BEFORE any OpenAI client is instantiated.
     """
     try:
         # Instrument asyncpg for database query tracking
@@ -84,20 +87,26 @@ def instrument_all():
         logger.info("✅ Instrumented asyncpg (database queries)")
     except Exception as e:
         logger.warning(f"⚠️ Could not instrument asyncpg: {e}")
-    
+
     try:
         # Instrument httpx for HTTP client tracking
         logfire.instrument_httpx()
         logger.info("✅ Instrumented httpx (HTTP clients)")
     except Exception as e:
         logger.warning(f"⚠️ Could not instrument httpx: {e}")
-    
+
     try:
         # Instrument OpenAI for LLM call tracking (tokens, costs, latency)
+        # This captures: prompts, completions, token usage, latency, errors
         logfire.instrument_openai()
         logger.info("✅ Instrumented OpenAI (LLM calls, tokens, costs)")
     except Exception as e:
         logger.warning(f"⚠️ Could not instrument OpenAI: {e}")
+
+    # Note: Cerebras is NOT auto-instrumented by Logfire
+    # Manual spans are added in response_generator.py and question_analyzer.py
+    # to capture Cerebras LLM prompts and completions
+    logger.info("ℹ️ Cerebras calls tracked via manual Logfire spans in agent code")
 
 
 # Global flag to track if Logfire is active

@@ -300,16 +300,49 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                 
                 start_time = time.time()
                 cerebras_model = self.config.get("cerebras_model", "qwen-3-235b-a22b-instruct-2507")
-                response = self.client.chat.completions.create(
-                    model=cerebras_model,
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": analysis_prompt}
-                    ],
-                    max_completion_tokens=1000,
-                    temperature=0.1
-                )
-                call_time = time.time() - start_time
+
+                # Log to Logfire with span for observability
+                if LOGFIRE_AVAILABLE and logfire:
+                    with logfire.span(
+                        "cerebras.question_analysis",
+                        model=cerebras_model,
+                        question_preview=question[:200],
+                        has_conversation_context=has_conversation_context,
+                        attempt=attempt + 1,
+                        max_retries=max_retries
+                    ):
+                        response = self.client.chat.completions.create(
+                            model=cerebras_model,
+                            messages=[
+                                {"role": "system", "content": system_message},
+                                {"role": "user", "content": analysis_prompt}
+                            ],
+                            max_completion_tokens=1000,
+                            temperature=0.1
+                        )
+                        call_time = time.time() - start_time
+
+                        # Log completion details
+                        logfire.info(
+                            "cerebras.question_analysis.completion",
+                            model=cerebras_model,
+                            duration_seconds=call_time,
+                            prompt_tokens=response.usage.prompt_tokens if response.usage else None,
+                            completion_tokens=response.usage.completion_tokens if response.usage else None,
+                            total_tokens=response.usage.total_tokens if response.usage else None
+                        )
+                else:
+                    response = self.client.chat.completions.create(
+                        model=cerebras_model,
+                        messages=[
+                            {"role": "system", "content": system_message},
+                            {"role": "user", "content": analysis_prompt}
+                        ],
+                        max_completion_tokens=1000,
+                        temperature=0.1
+                    )
+                    call_time = time.time() - start_time
+
                 rag_logger.info(f"✅ Received response from Cerebras (tokens: {response.usage.total_tokens if response.usage else 'unknown'})")
                 
                 # Parse JSON response
