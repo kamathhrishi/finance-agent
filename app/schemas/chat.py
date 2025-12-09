@@ -1,5 +1,5 @@
 """
-Chat models for RAG-powered conversation endpoints
+Chat models for agent-powered conversation endpoints
 """
 
 from typing import List, Optional, Dict, Any
@@ -28,7 +28,6 @@ class ChatMessage(BaseModel):
     """Chat message model"""
     message: str = Field(..., min_length=1, max_length=1000, description="User message (max 1000 characters)")
     comprehensive: bool = Field(True, description="Whether to use comprehensive search")
-    mode: str = Field("ask", description="Chat mode: 'ask' (fast, single-pass) or 'agent' (iterative refinement)")
     session_id: Optional[str] = Field(None, description="Client-generated session ID for anonymous users")
     conversation_id: Optional[str] = Field(None, description="Conversation thread ID (None for new conversation)")
 
@@ -92,7 +91,6 @@ class ChatConversationRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="Existing conversation ID (None for new conversation)")
     message: str = Field(..., min_length=1, max_length=1000, description="User message (max 1000 characters)")
     comprehensive: bool = Field(True, description="Whether to use comprehensive search")
-    mode: str = Field("ask", description="Chat mode: 'ask' (fast, single-pass) or 'agent' (iterative refinement)")
 
 
 # Legacy models for backward compatibility

@@ -22,6 +22,14 @@ from dotenv import load_dotenv
 # Import required dependencies
 import openai
 
+# Import Logfire for observability (optional)
+try:
+    import logfire
+    LOGFIRE_AVAILABLE = True
+except ImportError:
+    LOGFIRE_AVAILABLE = False
+    logfire = None
+
 # Import analytics utilities
 from analytics.analytics_utils import RAGAnalyticsLogger
 
@@ -1101,15 +1109,12 @@ class RAGAgent:
                                         comprehensive: bool, stream_callback, target_quarter,
                                         target_quarters: List[str], question_analysis: Dict, event_yielder=None, news_context: str = None, ten_k_context: str = None) -> tuple:
         """Run iterative improvement loop to refine the answer.
-        
-        OPTIMIZATION NOTE:
-        - ASK MODE (max_iterations=1): Skips initial answer generation to save time/cost.
-          Goes directly to final streaming answer generation. Result: 1 LLM call total.
-        - AGENT MODE (max_iterations>1): Generates initial answer for evaluation, then
-          iteratively improves, then regenerates with streaming. Result: Multiple LLM calls.
-        
+
+        The agent generates an initial answer, then iteratively evaluates and improves it
+        until the confidence threshold is met or max iterations are reached.
+
         Flow:
-        1. [Agent Mode Only] Generate initial answer for evaluation
+        1. Generate initial answer for evaluation
         2. Iteratively evaluate and improve:
            - Evaluate answer quality with LLM
            - Generate follow-up questions for missing information
@@ -1196,8 +1201,8 @@ class RAGAgent:
         evaluation_context = []
         follow_up_questions_asked = []
         
-        # AGENT MODE: Generate initial answer (NO streaming for initial - we'll stream the final answer only)
-        print(f"🤖 AGENT MODE: Generating initial answer for evaluation")
+        # Generate initial answer (NO streaming for initial - we'll stream the final answer only)
+        print(f"🤖 Generating initial answer for evaluation")
         if is_general_question:
             initial_answer = self.response_generator.generate_multi_ticker_response(
                 question, accumulated_chunks, individual_results, show_details, comprehensive, stream_callback=None, news_context=news_context, ten_k_context=ten_k_context
@@ -1238,6 +1243,16 @@ class RAGAgent:
         for iteration in range(max_iterations):
             print(f"\n🔄 ITERATION {iteration + 1}/{max_iterations}")
             rag_logger.info(f"🔄 Iteration {iteration + 1}/{max_iterations}")
+
+            # Log iteration start to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.info(
+                    "rag.iteration.start",
+                    iteration=iteration + 1,
+                    max_iterations=max_iterations,
+                    current_chunks=len(accumulated_chunks),
+                    current_confidence=best_confidence
+                )
             
             # Stream iteration start event - SEND IMMEDIATELY IN REAL-TIME
             if event_yielder and max_iterations > 1:
@@ -1255,10 +1270,7 @@ class RAGAgent:
                 # Yield control to allow the event to be sent before evaluation starts
                 await asyncio.sleep(0.01)
             
-            # Always run evaluation in agent mode
-            # Evaluation is required for iterative improvement
-            
-            # AGENT MODE: Perform strict evaluation to decide if we should iterate
+            # Perform strict evaluation to decide if we should iterate
             
             # Evaluate answer quality
             from .rag_utils import assess_answer_quality
@@ -1286,7 +1298,20 @@ class RAGAgent:
             
             evaluation_confidence = evaluation.get('overall_confidence', 0.5)
             print(f"📊 Evaluation: confidence={evaluation_confidence:.3f}")
-            
+
+            # Log evaluation to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.info(
+                    "rag.iteration.evaluation",
+                    iteration=iteration + 1,
+                    confidence=evaluation_confidence,
+                    should_iterate=evaluation.get('should_iterate', False),
+                    needs_news_search=evaluation.get('needs_news_search', False),
+                    needs_transcript_search=evaluation.get('needs_transcript_search', False),
+                    completeness_score=evaluation.get('completeness_score', 0),
+                    specificity_score=evaluation.get('specificity_score', 0)
+                )
+
             evaluation_context.append({
                 'iteration': iteration + 1,
                 'evaluation': evaluation,
@@ -1582,9 +1607,7 @@ class RAGAgent:
                 break
         
         # After all iterations complete, generate/regenerate the final answer WITH streaming
-        # AGENT MODE: This regenerates the answer with streaming enabled
         if stream_callback:
-            # AGENT MODE: Regenerate with streaming if requested
             if best_answer is None or stream_callback:
                 print(f"🎬 Generating final answer with streaming...")
                 if event_yielder:
@@ -1808,6 +1831,17 @@ class RAGAgent:
         rag_logger.info(f"📝 Question: '{question}'")
         rag_logger.info(f"🔄 Max iterations: {max_iterations}")
 
+        # Start Logfire span for the entire RAG flow
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "rag.flow.start",
+                question=question,
+                max_iterations=max_iterations,
+                conversation_id=conversation_id,
+                comprehensive=comprehensive,
+                stream=stream
+            )
+
         # Start analytics tracking
         await self.analytics_logger.start_pipeline(
             original_question=question,
@@ -1838,6 +1872,21 @@ class RAGAgent:
         print("QUESTION ANALYSIS: ", question_analysis)
         print("\n\n\n")
         analysis_time = time.time() - analysis_start
+
+        # Log question analysis to Logfire
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "rag.question_analysis",
+                tickers=question_analysis.get('tickers', []),
+                extracted_tickers=question_analysis.get('extracted_tickers', []),
+                data_source=question_analysis.get('data_source', 'earnings_transcripts'),
+                needs_10k=question_analysis.get('needs_10k', False),
+                needs_latest_news=question_analysis.get('needs_latest_news', False),
+                quarter_context=question_analysis.get('quarter_context', 'latest'),
+                target_quarters=target_quarters,
+                confidence=question_analysis.get('confidence', 0),
+                analysis_time_ms=int(analysis_time * 1000)
+            )
         
         # Handle early returns (errors or rejected questions)
         if early_return:
@@ -1898,6 +1947,16 @@ class RAGAgent:
                 
                 if news_results.get("results"):
                     rag_logger.info(f"✅ Found {len(news_results['results'])} news articles")
+
+                    # Log news search to Logfire
+                    if LOGFIRE_AVAILABLE and logfire:
+                        logfire.info(
+                            "rag.news_search",
+                            query=news_query,
+                            articles_found=len(news_results['results']),
+                            tickers=extracted_tickers
+                        )
+
                     if stream:
                         yield {
                             'type': 'news_search',
@@ -1990,6 +2049,17 @@ class RAGAgent:
 
                 if ten_k_results:
                     rag_logger.info(f"✅ Total 10-K results: {len(ten_k_results)} chunks from {len(set(chunk.get('ticker', '') for chunk in ten_k_results))} companies")
+
+                    # Log 10-K search to Logfire
+                    if LOGFIRE_AVAILABLE and logfire:
+                        logfire.info(
+                            "rag.10k_search",
+                            tickers=extracted_tickers[:3],
+                            fiscal_year=fiscal_year,
+                            chunks_found=len(ten_k_results),
+                            companies_found=len(set(chunk.get('ticker', '') for chunk in ten_k_results))
+                        )
+
                     if stream:
                         yield {
                             'type': '10k_search',
@@ -2064,11 +2134,22 @@ class RAGAgent:
             search_phase_start = time.time()
 
             search_results = await self._execute_search(question, question_analysis, target_quarters)
-            
+
             search_phase_end = time.time()
             logger.info(f"🔍 SEARCH PHASE COMPLETED in {search_phase_end - search_phase_start:.3f}s")
             logger.info("=" * 80)
             individual_results, all_chunks, all_citations, search_time, is_general_question, is_multi_ticker, tickers_to_process, target_quarter = search_results
+
+            # Log transcript search to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.info(
+                    "rag.transcript_search",
+                    chunks_found=len(all_chunks),
+                    tickers=tickers_to_process,
+                    target_quarters=target_quarters,
+                    is_multi_ticker=is_multi_ticker,
+                    search_time_ms=int(search_time * 1000)
+                )
         
         if stream:
             # Only show transcript search message if we actually performed transcript search
@@ -2275,6 +2356,23 @@ class RAGAgent:
         logger.info(f"   - Search: {search_time:.3f}s ({search_time/total_time*100:.1f}%)")
         logger.info(f"   - Generation: {generation_time:.3f}s ({generation_time/total_time*100:.1f}%)")
         logger.info("=" * 80)
+
+        # Log RAG flow completion to Logfire
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "rag.flow.complete",
+                total_time_ms=int(total_time * 1000),
+                analysis_time_ms=int(analysis_time * 1000),
+                search_time_ms=int(search_time * 1000),
+                generation_time_ms=int(generation_time * 1000),
+                max_iterations=max_iterations,
+                actual_iterations=len(evaluation_context),
+                chunks_found=len(all_chunks),
+                confidence=best_confidence,
+                tickers=tickers_to_process,
+                data_source=question_analysis.get('data_source', 'earnings_transcripts'),
+                answer_length=len(best_answer) if best_answer else 0
+            )
 
         # Finalize response
         print(f"\n{'='*80}")

@@ -25,6 +25,14 @@ from agent.prompts import (
     get_ticker_rephrasing_prompt
 )
 
+# Import Logfire for observability (optional)
+try:
+    import logfire
+    LOGFIRE_AVAILABLE = True
+except ImportError:
+    LOGFIRE_AVAILABLE = False
+    logfire = None
+
 # Configure logging
 logger = logging.getLogger(__name__)
 rag_logger = logging.getLogger('rag_system')
@@ -369,7 +377,21 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                     rag_logger.warning(f"⚠️ No tickers extracted from question: '{question}'")
                     if conversation_context:
                         rag_logger.warning(f"⚠️ Conversation context was available but no tickers extracted!")
-                
+
+                # Log question analysis to Logfire
+                if LOGFIRE_AVAILABLE and logfire:
+                    logfire.info(
+                        "question.analysis.complete",
+                        is_valid=analysis_result.get('is_valid', False),
+                        question_type=analysis_result.get('question_type', ''),
+                        data_source=analysis_result.get('data_source', 'earnings_transcripts'),
+                        tickers=extracted_tickers,
+                        needs_10k=analysis_result.get('needs_10k', False),
+                        needs_latest_news=analysis_result.get('needs_latest_news', False),
+                        quarter_context=analysis_result.get('quarter_context', 'latest'),
+                        confidence=analysis_result.get('confidence', 0)
+                    )
+
                 return analysis_result
                 
             except json.JSONDecodeError as e:

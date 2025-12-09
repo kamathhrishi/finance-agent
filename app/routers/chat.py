@@ -85,18 +85,12 @@ def get_chat_rag_system():
         )
     return rag_system
 
-def mode_to_iterations(mode: str) -> int:
-    """Convert chat mode to max_iterations count.
-    
-    Business logic for iteration counts lives here, not in frontend.
-    
-    Args:
-        mode: Always 'agent' (ask mode removed)
-        
+def get_max_iterations() -> int:
+    """Get the max iterations for agent mode.
+
     Returns:
-        Number of iterations to use (always 3 for agent mode)
+        Number of iterations (default: 3)
     """
-    # Always use agent mode with 3 iterations
     return 3
 
 def check_and_increment_message_count():
@@ -142,10 +136,9 @@ async def stream_chat_message_v2(
     
     message = chat_request.message
     comprehensive = chat_request.comprehensive
-    mode = chat_request.mode
-    max_iterations = mode_to_iterations(mode)
-    
-    logger.info(f"🔄 Chat mode: {mode}, max_iterations: {max_iterations}")
+    max_iterations = get_max_iterations()
+
+    logger.info(f"🔄 Agent mode: max_iterations: {max_iterations}")
     
     # Create Logfire span for this chat request
     if LOGFIRE_AVAILABLE:
@@ -153,7 +146,6 @@ async def stream_chat_message_v2(
             "chat.stream_v2",
             user_id=user_id,
             is_admin=is_admin,
-            mode=mode,
             max_iterations=max_iterations,
             comprehensive=comprehensive,
             message_length=len(message)
@@ -419,11 +411,10 @@ async def stream_landing_demo_message_v2(
     
     message = chat_request.message
     comprehensive = chat_request.comprehensive
-    mode = chat_request.mode
-    max_iterations = mode_to_iterations(mode)
+    max_iterations = get_max_iterations()
     session_id = chat_request.session_id or f"session_{int(time.time() * 1000)}"
-    
-    logger.info(f"🔄 Chat mode: {mode}, max_iterations: {max_iterations}")
+
+    logger.info(f"🔄 Agent mode: max_iterations: {max_iterations}")
     
     logger.info(f"🌟 Landing page demo stream from session {session_id}: {message[:100]}...")
     logger.info(f"🔄 MAX_ITERATIONS parameter received for demo: {max_iterations}")

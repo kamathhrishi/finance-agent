@@ -22,6 +22,14 @@ from agent.prompts import (
     get_quarter_synthesis_prompt
 )
 
+# Import Logfire for observability (optional)
+try:
+    import logfire
+    LOGFIRE_AVAILABLE = True
+except ImportError:
+    LOGFIRE_AVAILABLE = False
+    logfire = None
+
 # Configure logging
 logger = logging.getLogger(__name__)
 rag_logger = logging.getLogger('rag_system')
@@ -218,12 +226,25 @@ class ResponseGenerator:
 
     def generate_openai_response(self, question: str, context_chunks: List[str], chunk_objects: List[Dict[str, Any]] = None, return_details: bool = False, ticker: str = None, year: int = None, quarter: int = None, stream_callback=None, news_context: str = None, ten_k_context: str = None, previous_answer: str = None) -> str:
         """Generate response using OpenAI API based only on retrieved chunks with citations.
-        
+
         If multiple quarters are detected, automatically uses parallel quarter processing
         for better structured responses.
         """
+        generation_start = time.time()
         rag_logger.info(f"🤖 Starting OpenAI response generation")
         rag_logger.info(f"📊 Input parameters: question_length={len(question)}, chunks={len(context_chunks)}, chunk_objects={len(chunk_objects) if chunk_objects else 0}")
+
+        # Log to Logfire
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "llm.generation.start",
+                provider="openai",
+                ticker=ticker,
+                chunks_count=len(context_chunks),
+                has_news_context=news_context is not None,
+                has_10k_context=ten_k_context is not None,
+                has_previous_answer=previous_answer is not None
+            )
         
         if not self.openai_available:
             rag_logger.error(f"❌ OpenAI not available")
@@ -718,6 +739,19 @@ Provide a natural, professional response in **markdown format** based on the tra
                 rag_logger.info(f"📝 Generated answer: length={len(answer)} characters")
                 rag_logger.info(f"📝 Answer preview: {answer[:300]}...")
             
+            # Log generation completion to Logfire
+            generation_time = time.time() - generation_start
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.info(
+                    "llm.generation.complete",
+                    provider="cerebras" if use_cerebras else "openai",
+                    model=model,
+                    ticker=ticker,
+                    answer_length=len(answer),
+                    generation_time_ms=int(generation_time * 1000),
+                    tokens_used=response.usage.total_tokens if response and response.usage else None
+                )
+
             if return_details:
                 rag_logger.info(f"📊 Returning detailed response with metadata")
                 return {
@@ -730,8 +764,15 @@ Provide a natural, professional response in **markdown format** based on the tra
             else:
                 rag_logger.info(f"📝 Returning simple answer")
                 return answer
-            
+
         except Exception as e:
+            # Log error to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.error(
+                    "llm.generation.error",
+                    error=str(e),
+                    ticker=ticker
+                )
             logger.error(f"Error generating OpenAI response: {e}")
             raise Exception(f"Failed to generate response: {e}")
 
@@ -1470,6 +1511,18 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
         Returns dict with: completeness_score, accuracy_score, clarity_score, specificity_score,
         overall_confidence, should_iterate, iteration_decision_reasoning, follow_up_questions, evaluation_reasoning
         """
+        eval_start = time.time()
+
+        # Log evaluation start to Logfire
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "llm.evaluation.start",
+                question_length=len(original_question),
+                answer_length=len(answer),
+                context_chunks_count=len(context_chunks),
+                previous_iterations=len(evaluation_context) if evaluation_context else 0
+            )
+
         if not self.openai_available:
             raise Exception("OpenAI not available for answer evaluation")
         
@@ -1805,6 +1858,20 @@ EXAMPLE RESPONSE (demonstrating proper level of detail in reasoning):
                             raise ValueError(f"Missing required field: {field}")
                     
                     rag_logger.info(f"✅ Successfully parsed evaluation JSON on attempt {attempt + 1}")
+
+                    # Log evaluation completion to Logfire
+                    eval_time = time.time() - eval_start
+                    if LOGFIRE_AVAILABLE and logfire:
+                        logfire.info(
+                            "llm.evaluation.complete",
+                            overall_confidence=evaluation.get('overall_confidence', 0),
+                            should_iterate=evaluation.get('should_iterate', False),
+                            completeness_score=evaluation.get('completeness_score', 0),
+                            specificity_score=evaluation.get('specificity_score', 0),
+                            follow_up_questions_count=len(evaluation.get('follow_up_questions', [])),
+                            eval_time_ms=int(eval_time * 1000)
+                        )
+
                     return evaluation
                     
                 except (json.JSONDecodeError, ValueError) as e:

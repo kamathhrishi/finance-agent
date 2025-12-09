@@ -4,108 +4,106 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **i
 
 ## Architecture Overview
 
-The agent follows a **broad-to-deep** execution pattern:
-
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         HIGH-LEVEL FLOW                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│   Question ──► Analyze & Route ──► Retrieve from Tools ──► Generate     │
-│                     │                      │                    │        │
-│                     │                      │                    ▼        │
-│                     │                      │              ┌──────────┐   │
-│                     │                      │              │ Evaluate │   │
-│                     │                      │              │ Quality  │   │
-│                     │                      │              └────┬─────┘   │
-│                     │                      │                   │         │
-│                     │                      │         confident?│         │
-│                     │                      │              NO ──┴── YES   │
-│                     │                      │              │         │    │
-│                     │                      ◄─────────────┘         ▼    │
-│                     │                   (iterate)            Final Answer│
-│                     │                                                    │
-│                     ▼                                                    │
-│   ┌─────────────────────────────────────────────────────────┐           │
-│   │              TOOL ROUTING (Question Analyzer)            │           │
-│   │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐    │           │
-│   │  │  Earnings   │ │  SEC 10-K   │ │   Real-Time     │    │           │
-│   │  │ Transcripts │ │   Filings   │ │     News        │    │           │
-│   │  │  (default)  │ │             │ │    (Tavily)     │    │           │
-│   │  └─────────────┘ └─────────────┘ └─────────────────┘    │           │
-│   └─────────────────────────────────────────────────────────┘           │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+                              AGENT PIPELINE
+ ═══════════════════════════════════════════════════════════════════════
+
+ ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
+ │ Question │───►│ Question Analyzer │───►│     Tool Selection       │
+ └──────────┘    │   (Cerebras LLM)  │    │                          │
+                 │                   │    │  • Earnings Transcripts  │
+                 │ Extracts:         │    │  • SEC 10-K Filings      │
+                 │ • Tickers         │    │  • Real-Time News        │
+                 │ • Time periods    │    │                          │
+                 │ • Data source     │    └────────────┬─────────────┘
+                 └───────────────────┘                 │
+                                                       ▼
+                 ┌─────────────────────────────────────────────────────┐
+                 │                  RETRIEVAL LAYER                     │
+                 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
+                 │  │  Earnings   │  │  SEC 10-K   │  │   Tavily    │  │
+                 │  │ Transcripts │  │   Filings   │  │    News     │  │
+                 │  │             │  │             │  │             │  │
+                 │  │ Vector DB   │  │ Vector DB   │  │  Live API   │  │
+                 │  │ + Hybrid    │  │ + Section   │  │             │  │
+                 │  │   Search    │  │   Routing   │  │             │  │
+                 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
+                 └─────────┴────────────────┴────────────────┴─────────┘
+                                            │
+                                            ▼
+                 ┌─────────────────────────────────────────────────────┐
+                 │               ITERATIVE IMPROVEMENT                  │
+                 │                                                      │
+                 │    ┌──────────┐    ┌──────────┐    ┌──────────┐     │
+                 │    │ Generate │───►│ Evaluate │───►│ Iterate? │     │
+                 │    │  Answer  │    │ Quality  │    │          │     │
+                 │    └──────────┘    └──────────┘    └────┬─────┘     │
+                 │         ▲                               │           │
+                 │         │              YES              │           │
+                 │         └───────────────────────────────┘           │
+                 │                        │ NO                         │
+                 └────────────────────────┼────────────────────────────┘
+                                          ▼
+                                   ┌─────────────┐
+                                   │   ANSWER    │
+                                   │ + Citations │
+                                   └─────────────┘
 ```
 
 **Key Concepts:**
-1. **Question Analysis** - LLM determines which data sources to query
-2. **Tool Routing** - Routes to earnings transcripts, SEC filings, or news
-3. **Self-Reflection** - Evaluates answer quality and iterates if needed (Agent Mode)
+1. **Question Analysis** - Cerebras LLM extracts tickers, time periods, and determines data sources
+2. **Tool Routing** - Automatically routes to earnings transcripts, SEC filings, or news based on question
+3. **Self-Reflection** - Evaluates answer quality and iterates until confident (≥90%) or max iterations reached
 
 ---
 
-## Self-Reflection Loop (Agent Mode)
+## Self-Reflection Loop
 
-When running in Agent Mode (`max_iterations > 1`), the system performs iterative self-improvement. This is the core intelligence that separates a simple RAG from an agentic system.
+The agent performs iterative self-improvement until the answer meets quality thresholds.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    ITERATION LOOP                                │
-├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────┐                                           │
-│  │ Generate Answer  │ ◄─────────────────────────────────┐       │
+│  │ Generate Answer  │◄──────────────────────────────────┐       │
 │  └────────┬─────────┘                                   │       │
-│           │                                              │       │
-│           ▼                                              │       │
+│           │                                             │       │
+│           ▼                                             │       │
 │  ┌──────────────────┐                                   │       │
 │  │ Evaluate Quality │                                   │       │
 │  │ • completeness   │                                   │       │
 │  │ • accuracy       │                                   │       │
-│  │ • clarity        │                                   │       │
 │  │ • specificity    │                                   │       │
 │  └────────┬─────────┘                                   │       │
-│           │                                              │       │
-│           ▼                                              │       │
-│  ┌──────────────────┐      YES    ┌─────────────────┐   │       │
-│  │ Should Iterate?  │ ──────────► │ Generate        │   │       │
-│  │ (confidence<0.9) │             │ Follow-up       │ ──┘       │
-│  └────────┬─────────┘             │ Questions       │           │
-│           │ NO                    └─────────────────┘           │
-│           ▼                                                      │
-│  ┌──────────────────┐                                           │
-│  │   Final Answer   │                                           │
-│  └──────────────────┘                                           │
-│                                                                  │
+│           │                                             │       │
+│           ▼                                             │       │
+│  ┌──────────────────┐    YES    ┌─────────────────┐    │       │
+│  │ Confidence < 90% │─────────► │ Search for more │────┘       │
+│  │ & iterations left│           │ context (tools) │            │
+│  └────────┬─────────┘           └─────────────────┘            │
+│           │ NO                                                  │
+│           ▼                                                     │
+│     ┌───────────┐                                               │
+│     │  OUTPUT   │                                               │
+│     └───────────┘                                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Evaluation Criteria:**
-- `completeness_score` (0-10): Does the answer fully address the question?
-- `accuracy_score` (0-10): Is the information factually correct based on context?
-- `clarity_score` (0-10): Is the answer well-structured and easy to understand?
-- `specificity_score` (0-10): Does it include specific numbers, dates, quotes?
-- `overall_confidence` (0-1): Weighted combination used for iteration decisions
+**Evaluation Scores (0-10):**
+- `completeness_score`: Does the answer fully address the question?
+- `accuracy_score`: Is the information factually correct?
+- `specificity_score`: Does it include specific numbers, dates, quotes?
+- `overall_confidence` (0-1): Weighted combination for iteration decisions
 
-**During iteration, the agent can autonomously decide to:**
-- Search for more transcripts via `needs_transcript_search`
-- Search for news via `needs_news_search` (triggers Tavily)
+**During iteration, the agent can:**
+- Search for more transcripts (`needs_transcript_search`)
+- Search for news (`needs_news_search` → Tavily API)
 
-**Stopping Conditions:**
-1. Confidence score ≥ 90% threshold
-2. Agent determines answer is sufficient (`should_iterate=false`)
-3. Max iterations reached
-4. No follow-up questions generated
-
----
-
-## Operating Modes
-
-| Mode | Config | Latency | Use Case |
-|------|--------|---------|----------|
-| **Chat Mode** | `max_iterations=1` | ~3-5s | Production on stratalens.ai |
-| **Agent Mode** | `max_iterations=3-4` | ~10-20s | Local testing, complex queries |
+**Stops when:**
+1. Confidence ≥ 90%
+2. Max iterations reached (default: 3)
+3. Agent decides answer is sufficient
 
 ---
 
@@ -522,26 +520,22 @@ agent = create_agent()
 
 # Earnings transcript question (automatic routing)
 result = await agent.execute_rag_flow_async(
-    question="What did $AAPL say about iPhone sales in Q4 2024?",
-    max_iterations=1
+    question="What did $AAPL say about iPhone sales in Q4 2024?"
 )
 
 # 10-K question (automatically routes to SEC filings)
 result = await agent.execute_rag_flow_async(
-    question="What was Tim Cook's compensation in 2023?",
-    max_iterations=1
+    question="What was Tim Cook's compensation in 2023?"
 )
 
 # News question (automatically routes to Tavily)
 result = await agent.execute_rag_flow_async(
-    question="What's the latest news on $NVDA?",
-    max_iterations=1
+    question="What's the latest news on $NVDA?"
 )
 
 # Streaming
 async for event in agent.execute_rag_flow(
     question="Compare $MSFT and $GOOGL cloud revenue",
-    max_iterations=1,
     stream=True
 ):
     if event['type'] == 'streaming_token':

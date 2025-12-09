@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 
 class AgentConfig:
     """Configuration management for the Agent system.
-    
-    NOTE: All evaluation settings only apply when max_iterations > 1 (Agent mode).
-    In Ask mode (max_iterations=1), evaluation is skipped entirely for performance.
+
+    The agent uses iterative self-improvement to generate high-quality answers.
+    Evaluation settings control when the agent stops iterating.
     """
     
     def __init__(self):

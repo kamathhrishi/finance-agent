@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Agent - Simplified unified agent for financial Q&A
+Agent - Unified agent for financial Q&A
 
 This module provides a unified agent that handles:
-- RAG-based question answering (earnings transcripts)
+- RAG-based question answering (earnings transcripts, 10-K filings, news)
 - Stock screening queries (fundamental data filtering)
-- Iterative improvement (agentic mode)
-- Single-pass answers (chat mode)
+- Iterative self-improvement with quality evaluation
 
 Simplified architecture with no circular dependencies.
 """
