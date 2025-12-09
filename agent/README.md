@@ -1,6 +1,6 @@
 # Agent System
 
-Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **self-reflection** for financial Q&A over earnings transcripts and SEC 10-K filings. This is what runs the chat and analysis features on stratalens.ai.
+Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **intelligent tool routing** and **self-reflection** for financial Q&A. This powers the chat and analysis features on stratalens.ai.
 
 ## File Structure
 
@@ -12,15 +12,15 @@ agent/
 ├── screener_agent.py           # Financial screener (text-to-SQL)
 │
 ├── rag/                        # RAG implementation
-│   ├── rag_agent.py            # Orchestration engine & iteration loop
-│   ├── question_analyzer.py    # Query parsing (tickers, quarters, intent)
+│   ├── rag_agent.py            # Orchestration engine & tool routing
+│   ├── question_analyzer.py    # Query parsing & data source routing
 │   ├── search_engine.py        # Hybrid search (vector + keyword)
 │   ├── response_generator.py   # LLM response & evaluation
 │   ├── database_manager.py     # PostgreSQL/pgvector operations
 │   ├── conversation_memory.py  # Multi-turn conversation state
 │   ├── transcript_service.py   # Transcript metadata
-│   ├── sec_filings_service.py  # SEC 10-K retrieval
-│   ├── tavily_service.py       # Web search augmentation
+│   ├── sec_filings_service.py  # SEC 10-K retrieval with LLM routing
+│   ├── tavily_service.py       # Real-time news search
 │   ├── config.py               # RAG configuration
 │   ├── rag_utils.py            # Utility functions
 │   └── data_ingestion/         # Data pipeline → see data_ingestion/README.md
@@ -29,150 +29,334 @@ agent/
     └── metadata.py             # Screener metadata
 ```
 
-## Overview
+## How the Agent Chooses Tools
 
-Agentic RAG system that combines retrieval, generation, and autonomous quality evaluation:
+The agent doesn't blindly search all sources. It uses **LLM-based routing** in the Question Analyzer to determine which data sources to use based on the question's content.
 
-1. **Query Analysis** - LLM-based extraction of tickers, quarters, and intent with conversation context
-2. **Hybrid Retrieval** - Vector search (70%) + keyword search (30%) with cross-encoder reranking
-3. **Response Generation** - Multi-model LLM generation with citations
-4. **Self-Reflection** - Autonomous evaluation and iterative refinement (agent mode only)
+### Data Source Routing (Question Analyzer)
 
-## Architecture
+When a question comes in, `question_analyzer.py` uses Cerebras LLM to analyze it and returns a `data_source` field:
 
-### System Design
+| `data_source` Value | Description | Tools Used |
+|---------------------|-------------|------------|
+| `earnings_transcripts` | Default - quarterly earnings questions | Earnings transcript vector search |
+| `10k` | Annual report questions (financials, compensation, risks) | SEC 10-K filing search |
+| `latest_news` | Current events, breaking news | Tavily real-time news API |
+| `hybrid` | Questions needing multiple sources | Combination of above |
 
-The agent system follows a modular architecture where the `Agent` class provides a clean API interface to the underlying `RAGAgent` orchestration engine:
+**Routing Rules (from question_analyzer.py):**
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        Agent (agent.py)                       │
-│                   Main Entry Point & API Layer                │
-│                     (delegates to RAGAgent)                    │
-└────────────────────────────┬─────────────────────────────────┘
+10K is chosen when question contains:
+├── "10k", "10-k", "annual report", "SEC filing"
+├── "balance sheet", "income statement", "cash flow statement"
+├── "executive compensation", "CEO salary", "CEO pay"
+├── "risk factors", "legal proceedings", "MD&A"
+└── "assets", "liabilities", "stockholders equity"
+
+LATEST_NEWS is chosen when question contains:
+├── "latest news", "recent news", "current news", "breaking news"
+├── "what's happening", "latest updates", "recent developments"
+└── Questions about very recent events (within days/weeks)
+
+EARNINGS_TRANSCRIPTS is the default for:
+├── Quarterly performance questions
+├── Management commentary and guidance
+├── Analyst Q&A discussions
+└── Revenue, margins, growth discussions
+```
+
+### Tool Execution Flow (rag_agent.py)
+
+After routing, `rag_agent.py` orchestrates tool execution in this order:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    QUESTION ANALYSIS                              │
+│  question_analyzer.py determines:                                 │
+│  • data_source: "10k" | "latest_news" | "earnings_transcripts"   │
+│  • needs_10k: boolean                                             │
+│  • needs_latest_news: boolean                                     │
+│  • extracted_tickers: ["AAPL", "MSFT"]                           │
+│  • quarter_context: "latest" | "multiple" | "specific"           │
+└────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    RAGAgent (rag/rag_agent.py)                │
-│              Orchestration & Self-Reflection Engine           │
-│                                                                │
-│  Initializes and orchestrates all components:                 │
-└─┬──────────┬───────────┬──────────────┬───────────────────┬──┘
-  │          │           │              │                   │
-  │          │           │              │                   │
-  ▼          ▼           ▼              ▼                   ▼
-┌────────┐ ┌────────────────┐ ┌──────────┐ ┌──────────────┐ ┌─────────────┐
-│Database│ │ Question       │ │  Search  │ │  Response    │ │  Analytics  │
-│Manager │ │ Analyzer       │ │  Engine  │ │  Generator   │ │   Logger    │
-└────┬───┘ │                │ └─────┬────┘ └──────────────┘ └─────────────┘
-     │     │  ┌──────────┐  │       │
-     │     │  │Conversa- │  │       │
-     │     │  │tion      │  │       │
-     │     │  │Memory    │  │       │
-     │     │  └──────────┘  │       │
-     │     └────────────────┘       │
-     │                              │
-     └──────────uses────────────────┘
-
-Additional modules:
-• Config (rag/config.py) - shared configuration
-• prompts.py - centralized LLM prompts
-• rag_utils.py - utility functions
-• agent_config.py - agent-specific configuration
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 2.5: NEWS SEARCH                         │
+│  IF needs_latest_news == true:                                    │
+│    → tavily_service.search_news(query)                           │
+│    → Returns: articles with titles, URLs, content, dates         │
+│    → Formats as context with [N1], [N2] citation markers         │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 2.6: 10-K SEARCH                         │
+│  IF data_source in ["10k", "hybrid"] OR needs_10k == true:       │
+│    → sec_filings_service.search_10k_filings_advanced_async()     │
+│    → Uses LLM section routing (Cerebras)                         │
+│    → Uses LLM table selection (Cerebras)                         │
+│    → Hybrid search + cross-encoder reranking                     │
+│    → Returns chunks with [10K1], [10K2] markers                  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 3: TRANSCRIPT SEARCH                     │
+│  IF data_source NOT in ["10k", "latest_news"]:                   │
+│    → search_engine.search_similar_chunks()                       │
+│    → Vector search (70%) + keyword BM25 (30%)                    │
+│    → Returns chunks with citation markers                        │
+│    → SKIPPED if pure 10K or news-only query                      │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 4: RESPONSE GENERATION                   │
+│  All context combined → response_generator                       │
+│  • news_context (from Tavily)                                    │
+│  • ten_k_context (from SEC service)                              │
+│  • transcript chunks (from search engine)                        │
+│  → Single LLM call with all available context                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### RAG Pipeline Flow
+## Deep Dive: Tavily (Real-Time News)
 
-```
-User Question
-     │
-     ▼
-┌─────────────────────────────────────────────┐
-│  1. Question Analysis                        │
-│  • Extract tickers, quarters, intent         │
-│  • Conversation context integration          │
-│  • Validate query appropriateness            │
-└──────────────┬──────────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────────┐
-│  2. Hybrid Retrieval (RAG Core)              │
-│  • Vector search (semantic similarity)       │
-│  • Keyword search (BM25)                     │
-│  • Cross-encoder reranking                   │
-│  • Quarter-aware filtering                   │
-└──────────────┬──────────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────────┐
-│  3. Response Generation                      │
-│  • Context-aware LLM prompting               │
-│  • Multi-quarter parallel processing         │
-│  • Citation and source attribution           │
-└──────────────┬──────────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────────┐
-│  4. Self-Reflection (Agent Mode Only)        │
-│  • Quality scoring (completeness, accuracy)  │
-│  • Gap identification                        │
-│  • Follow-up question generation             │
-│  • Iterative refinement until threshold met  │
-└──────────────┬──────────────────────────────┘
-               │
-               ▼
-          Final Answer
+`tavily_service.py` provides real-time web search for current events that aren't in historical transcripts or filings.
+
+### When Tavily is Used
+
+1. **Question Analyzer Detection**: If question contains news keywords, sets `needs_latest_news=true`
+2. **Agent Mode Iteration**: During self-reflection, if the agent determines current information is needed, it can trigger Tavily search via `needs_news_search` in evaluation
+
+### How Tavily Works
+
+```python
+# tavily_service.py
+class TavilyService:
+    def search_news(self, query: str, max_results: int = 5, include_answer: str = "advanced"):
+        """
+        Searches Tavily API for latest news articles.
+
+        Returns:
+            {
+                "answer": "AI-generated summary of results",
+                "results": [
+                    {
+                        "title": "Article headline",
+                        "url": "https://...",
+                        "content": "Article text preview",
+                        "published_date": "2024-01-15",
+                        "score": 0.95
+                    }
+                ]
+            }
+        """
+
+    def format_news_context(self, news_results):
+        """Formats results with [N1], [N2] citation markers for LLM context"""
+
+    def get_news_citations(self, news_results):
+        """Extracts citation metadata for frontend display"""
 ```
 
-### Key Components
+### Example Flow
 
-#### Core Files
+```
+User: "What's the latest news on NVIDIA?"
 
-- **`agent.py`** - Main entry point providing the unified Agent API for financial Q&A. Handles both streaming and non-streaming execution flows.
+1. Question Analyzer:
+   - Detects "latest news" keyword
+   - Sets data_source="latest_news", needs_latest_news=true
+   - Extracts ticker: NVDA
 
-- **`rag/rag_agent.py`** - RAG orchestration engine with self-reflection capabilities. Coordinates the complete pipeline from question analysis through iterative refinement.
+2. rag_agent.py Stage 2.5:
+   - Calls tavily_service.search_news("What's the latest news on NVIDIA? NVDA")
+   - Returns 5 recent articles
 
-#### Retrieval Layer (RAG Foundation)
+3. Context Formation:
+   === LATEST NEWS (from Tavily) ===
+   Summary: NVIDIA announced record Q4 earnings...
 
-- **`rag/question_analyzer.py`** - Question analysis using Groq (`openai/gpt-oss-20b`). Extracts tickers, quarters, intent. Uses conversation memory to provide context for follow-up questions.
+   [N1] NVIDIA Stock Surges on AI Chip Demand
+      Published: 2024-01-20
+      Source: https://reuters.com/...
+      NVIDIA's stock rose 5% following...
 
-- **`rag/search_engine.py`** - Hybrid search: vector (all-MiniLM-L6-v2 embeddings) + keyword (BM25). Cross-encoder reranking for top results.
+   [N2] Jensen Huang Keynote at CES 2024
+      ...
+   === END NEWS ===
 
-- **`rag/database_manager.py`** - PostgreSQL with pgvector extension. Connection pooling and query optimization.
+4. Response Generator:
+   - Receives news_context parameter
+   - Generates answer citing [N1], [N2]
+```
 
-#### Generation Layer
+## Deep Dive: SEC 10-K Filings
 
-- **`rag/response_generator.py`** - Response generation using OpenAI (`gpt-4.1-mini-2025-04-14`). Supports single/multi-ticker, multi-quarter, streaming. Includes quality evaluation logic for agent mode.
+`sec_filings_service.py` provides sophisticated access to annual SEC 10-K filings with LLM-based intelligent routing.
 
-#### Supporting Components
+### When 10-K is Used
 
-- **`rag/conversation_memory.py`** - Multi-turn conversation state. Used by question analyzer (context for follow-ups) and response generator (evaluation with history).
+1. **Explicit Request**: Question mentions "10k", "10-K", "annual report", "SEC filing"
+2. **Content Detection**: Questions about balance sheets, income statements, executive compensation, risk factors
+3. **Automatic Detection**: Executive compensation questions ALWAYS use 10-K (this data isn't in earnings transcripts)
 
-- **`rag/transcript_service.py`** - Transcript metadata and quarter availability.
+### 10-K Search Pipeline (4 Stages)
 
-- **`agent_config.py`** - Iteration limits, confidence thresholds for agent mode.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 0: LLM Section Routing (Cerebras)                         │
+│  ────────────────────────────────────────                        │
+│  Question: "What are Apple's risk factors?"                      │
+│                                                                   │
+│  LLM analyzes and routes to relevant SEC sections:               │
+│  → ["item_1a"] (Risk Factors section)                            │
+│                                                                   │
+│  Quantitative questions → item_7 (MD&A), item_8 (Financials)     │
+│  Qualitative questions → item_1 (Business), item_1a (Risks)      │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 1: Hybrid Search (TF-IDF + Semantic)                      │
+│  ────────────────────────────────────────────                    │
+│  • Semantic search: 70% weight (vector similarity)               │
+│  • Keyword search: 30% weight (TF-IDF)                           │
+│  • Filter by routed sections from Phase 0                        │
+│  • Retrieve ~100 candidate chunks                                │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 2: Cross-Encoder Reranking                                │
+│  ────────────────────────────────────                            │
+│  • Uses cross-encoder/ms-marco-MiniLM-L-6-v2                     │
+│  • Scores each (query, chunk) pair for relevance                 │
+│  • Reorders results by cross-encoder score                       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 3: LLM-Based Table Selection (Cerebras)                   │
+│  ────────────────────────────────────────────                    │
+│  • Fetches ALL tables for the ticker from ten_k_tables           │
+│  • Prioritizes core financial statements:                        │
+│    🌟 Income Statement (revenue, profit, expenses)               │
+│    🌟 Balance Sheet (assets, liabilities, equity)                │
+│    🌟 Cash Flow Statement (cash flows, capex)                    │
+│  • LLM selects 2-5 most relevant tables                          │
+│  • Selected tables placed BEFORE text chunks in context          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-- **`prompts.py`** - Centralized LLM prompt templates.
+### Table Selection Prompt (Cerebras LLM)
 
-- **`rag/config.py`** - RAG configuration: chunk sizes, search weights, model names.
+The agent uses a detailed prompt for intelligent table selection:
 
-## Operating Modes
+```python
+# From sec_filings_service.py
+prompt = """
+QUESTION: {question}
 
-### Chat Mode (Production)
-- **Status**: Production on stratalens.ai
-- **Config**: `max_iterations=1` (single-pass RAG)
-- **Latency**: ~3-5s
-- **Behavior**: Question → Retrieve → Generate → Answer
+AVAILABLE TABLES:
+1. [🌟 CORE FINANCIAL STATEMENT] Income Statement (item_8) - income_statement
+2. [🌟 CORE FINANCIAL STATEMENT] Balance Sheet (item_8) - balance_sheet
+3. Revenue by Segment (item_7)
+...
 
-### Agent Mode (Experimental)
-- **Status**: Local testing only
-- **Config**: `max_iterations=3-4` (with self-reflection)
-- **Latency**: ~10-20s (3-4x slower)
-- **Behavior**: Question → Retrieve → Generate → Evaluate → (if needed) Refine Query → Retrieve → Generate → Answer
+STEP 1: DEEP QUESTION ANALYSIS
+- What EXACTLY is being asked?
+- Identify key financial metrics
+- Determine if numbers, ratios, or trends needed
 
-#### Self-Reflection Loop
+STEP 2: SYSTEMATIC TABLE EVALUATION
+- For EACH table: Does it DIRECTLY answer the question?
+- Create relevance score (1-10)
 
-The agent mode implements an iterative self-improvement loop:
+STEP 3: MAKE SELECTION
+- PRIORITIZE core financial statements marked with 🌟
+- Maximum 5 tables, prefer fewer highly relevant ones
+- Quality over quantity
+
+Return JSON:
+{"selected_table_indices": [1, 2, 5], "reasoning": "..."}
+"""
+```
+
+### Example 10-K Flow
+
+```
+User: "What was Tim Cook's compensation in 2023?"
+
+1. Question Analyzer:
+   - Detects "compensation" keyword
+   - Sets data_source="10k", needs_10k=true
+   - Note: Executive compensation is ONLY in 10-K filings
+
+2. sec_filings_service Phase 0 (Section Routing):
+   - LLM routes to: ["item_11"] (Executive Compensation)
+
+3. Stage 1 (Hybrid Search):
+   - Searches item_11 chunks for "compensation" "Tim Cook"
+   - Returns 100 candidate chunks
+
+4. Stage 2 (Cross-Encoder Reranking):
+   - Reranks by relevance to exact question
+   - Top chunks about CEO compensation float up
+
+5. Stage 3 (Table Selection):
+   - LLM sees: "Executive Compensation Table", "Stock Awards", etc.
+   - Selects: Summary Compensation Table, Stock Awards Table
+
+6. Context Formation:
+   === 10-K SEC FILINGS DATA ===
+   [10K1] AAPL - FY2023 - Executive Compensation
+   Type: Financial Table
+   Content: [Summary Compensation Table with Tim Cook's salary...]
+
+   [10K2] AAPL - FY2023 - Executive Compensation
+   Content: The CEO's total compensation for fiscal 2023...
+   === END 10-K ===
+
+7. Response Generation:
+   - Uses ten_k_context parameter
+   - Generates answer with specific salary figures
+```
+
+## Earnings Transcript Search
+
+For quarterly earnings questions, the agent uses hybrid search over transcript chunks.
+
+### Search Strategy
+
+```python
+# search_engine.py
+def search_similar_chunks(query, top_k, quarter):
+    """
+    Hybrid search combining:
+    - Vector search: 70% weight (semantic similarity via pgvector)
+    - Keyword search: 30% weight (BM25 via PostgreSQL full-text)
+    """
+```
+
+### Chunk Storage
+
+```
+PostgreSQL Table: transcript_chunks
+├── chunk_text: TEXT (1000 chars max, 200 overlap)
+├── embedding: VECTOR (all-MiniLM-L6-v2, 384 dimensions)
+├── ticker: VARCHAR (e.g., "AAPL")
+├── year: INTEGER (e.g., 2024)
+├── quarter: INTEGER (1-4)
+└── metadata: JSONB
+```
+
+## Agent Mode: Self-Reflection Loop
+
+When running in Agent Mode (`max_iterations > 1`), the system performs iterative self-improvement:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -206,147 +390,144 @@ The agent mode implements an iterative self-improvement loop:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+During iteration, the agent can also autonomously decide to:
+- **Search for more transcripts** via `needs_transcript_search`
+- **Search for news** via `needs_news_search` (triggers Tavily)
+
 **Stopping Conditions:**
 1. Confidence score ≥ 90% threshold
 2. Agent determines answer is sufficient (`should_iterate=false`)
 3. Max iterations reached
 4. No follow-up questions generated
 
-**Evaluation Criteria:**
+## Key Components
+
+### Core Files
+
+| File | Description |
+|------|-------------|
+| `agent.py` | Main entry point - unified Agent API for financial Q&A |
+| `rag/rag_agent.py` | Orchestration engine with tool routing and self-reflection |
+| `rag/question_analyzer.py` | LLM-based query analysis and data source routing (Cerebras) |
+
+### Data Sources (Tools)
+
+| File | Tool | Description |
+|------|------|-------------|
+| `rag/search_engine.py` | Transcript Search | Hybrid vector + keyword search over earnings transcripts |
+| `rag/sec_filings_service.py` | 10-K Search | SEC annual filings with LLM section routing and table selection |
+| `rag/tavily_service.py` | News Search | Real-time news via Tavily API |
+
+### Supporting Components
+
+| File | Description |
+|------|-------------|
+| `rag/response_generator.py` | LLM response generation with streaming and quality evaluation |
+| `rag/database_manager.py` | PostgreSQL/pgvector operations and connection pooling |
+| `rag/conversation_memory.py` | Multi-turn conversation state for context-aware questions |
+| `prompts.py` | Centralized LLM prompt templates |
+| `rag/config.py` | RAG configuration (chunk sizes, search weights, model names) |
+
+## Operating Modes
+
+### Chat Mode (Production)
+- **Status**: Production on stratalens.ai
+- **Config**: `max_iterations=1` (single-pass RAG)
+- **Latency**: ~3-5s
+- **Behavior**: Question → Route → Retrieve → Generate → Answer
+
+### Agent Mode (Experimental)
+- **Status**: Local testing only
+- **Config**: `max_iterations=3-4` (with self-reflection)
+- **Latency**: ~10-20s (3-4x slower)
+- **Behavior**: Question → Route → Retrieve → Generate → Evaluate → (if needed) Search More → Regenerate → Answer
+
+**Evaluation Criteria (Agent Mode):**
 - `completeness_score` (0-10): Does the answer fully address the question?
 - `accuracy_score` (0-10): Is the information factually correct based on context?
 - `clarity_score` (0-10): Is the answer well-structured and easy to understand?
 - `specificity_score` (0-10): Does it include specific numbers, dates, quotes?
 - `overall_confidence` (0-1): Weighted combination used for iteration decisions
 
-**Follow-up Question Generation:**
-When the agent decides to iterate, it generates targeted follow-up questions to:
-- Fill gaps in the current answer
-- Retrieve missing financial data
-- Get additional context from different quarters
-- Clarify ambiguous information
+## Data Storage
 
-## Data Processing & Chunking
-
-### Earnings Transcripts
-
-Transcripts are processed with character-based chunking:
-
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `chunk_size` | 1000 chars | Size of each text chunk |
-| `chunk_overlap` | 200 chars | Overlap between consecutive chunks |
-| `embedding_model` | all-MiniLM-L6-v2 | Sentence transformer for embeddings |
-
-**Storage:** PostgreSQL with pgvector extension
-- Table: `transcript_chunks`
-- Columns: `chunk_text`, `embedding` (vector), `ticker`, `year`, `quarter`, `metadata`
-
-### SEC 10-K Filings
-
-10-K filings are processed with hierarchical chunking that preserves document structure:
-
-| Parameter | Value | Description |
-|-----------|-------|-------------|
-| `chunk_size` | 1000 chars | Size of each text chunk |
-| `chunk_overlap` | 200 chars | Overlap between chunks |
-| `chunk_type` | text/table | Type of content |
-
-**Storage:**
-- Table: `ten_k_chunks` - Text chunks with embeddings
-- Table: `ten_k_tables` - Extracted tables with structured data (JSONB)
-
-**Chunk Metadata:**
-- `sec_section` - SEC section identifier (e.g., "item1", "item7", "item8")
-- `sec_section_title` - Human-readable section title
-- `path_string` - Hierarchical path in document
-- `chunk_type` - Content type (text, table, heading)
-- `is_financial_statement` - Boolean flag for core financial tables
-- `statement_type` - Type: `income_statement`, `balance_sheet`, `cash_flow`
-
-#### LLM-Based Table Selection
-
-For 10-K queries, tables are selected using an LLM (Cerebras) rather than just vector similarity:
+### Database Schema
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   10-K Table Selection Flow                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. Fetch all tables for ticker from ten_k_tables               │
-│                         │                                        │
-│                         ▼                                        │
-│  2. Prioritize core financial statements:                       │
-│     • Income Statement (revenue, profit, expenses)              │
-│     • Balance Sheet (assets, liabilities, equity)               │
-│     • Cash Flow Statement (cash flows, capex)                   │
-│                         │                                        │
-│                         ▼                                        │
-│  3. LLM analyzes question and selects relevant tables           │
-│     • Deep question analysis (metrics, timeframes)              │
-│     • Systematic table evaluation (relevance scoring)           │
-│     • Quality over quantity (2-3 highly relevant > 10 loose)    │
-│                         │                                        │
-│                         ▼                                        │
-│  4. Selected tables + text chunks combined for response         │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+PostgreSQL + pgvector
+├── transcript_chunks       # Earnings call transcripts
+│   ├── chunk_text          # 1000 chars, 200 overlap
+│   ├── embedding           # all-MiniLM-L6-v2 (384 dim)
+│   ├── ticker, year, quarter
+│   └── metadata (JSONB)
+│
+├── ten_k_chunks            # 10-K filing text
+│   ├── chunk_text, embedding
+│   ├── sec_section         # item_1, item_7, item_8, etc.
+│   ├── sec_section_title   # Human-readable section name
+│   └── is_financial_statement
+│
+└── ten_k_tables            # 10-K extracted tables (JSONB)
+    ├── content             # Table data
+    ├── statement_type      # income_statement, balance_sheet, cash_flow
+    └── is_financial_statement
 ```
-
-**Table Selection Criteria:**
-- Financial metrics → Core financial statements prioritized
-- Segment data → Segment reporting tables
-- Specific notes → Exact note tables (e.g., "NOTE 13. EARNINGS PER SHARE")
-- Ratios → Multiple related tables for calculation
 
 ## Key Features
 
-**Core RAG:**
-- Hybrid retrieval: 30% keyword (BM25) + 70% vector (cosine similarity)
-- Cross-encoder reranking on top results
-- Quarter-aware filtering (e.g., "Q4 2024", "latest quarter")
+**Intelligent Tool Routing:**
+- LLM-based data source selection (earnings, 10-K, news)
+- Automatic detection of question intent
+- Skip unnecessary searches based on question type
+
+**Multi-Source RAG:**
+- Earnings transcripts: Hybrid vector + keyword search
+- SEC 10-K filings: LLM section routing + table selection + cross-encoder reranking
+- Real-time news: Tavily API integration
+
+**Core Capabilities:**
 - Multi-ticker comparative analysis (up to 8 tickers)
-- Citation tracking with source attribution
+- Quarter-aware filtering (e.g., "Q4 2024", "latest quarter", "last 3 quarters")
+- Citation tracking with source attribution ([N1] for news, [10K1] for filings)
 - Streaming response generation
-
-**Conversation Handling:**
 - Multi-turn conversation memory
-- Context injection for follow-up questions
-- Conversation-aware question analysis and evaluation
-
-**Additional:**
-- Stock screener agent (text-to-SQL conversion)
-- Configurable chunk sizes, search weights, generation params
-- Analytics logging for query tracking
 
 ## Limitations
 
-- Earnings transcripts only (no real-time market data)
-- Limited to quarterly earnings calls
+- Requires `$TICKER` format for company identification
 - Quarter availability varies by company
-- Companies describe fiscal years differently, so there can be issues when doing cross company comparison. Resolving this. 
-- Currently user has to strictly type the ticker name with a $ symbol. This cna be a issue doing cross company queries like: "Describe more about $ADBE and $FIG merger"
-- Right now it searches latest quarter by default, we need to also resolve earlier quarters where data is available.
-- Retry mechanism when no relevant chunks would be great 
+- Companies describe fiscal years differently (cross-company comparison challenges)
+- No real-time stock price data
 - No strict evals for earnings transcripts at the moment
 
 ## Usage
 
-### Chat Mode (Production)
 ```python
 from agent import create_agent
 
 agent = create_agent()
 
-# Non-streaming
+# Earnings transcript question (automatic routing)
 result = await agent.execute_rag_flow_async(
-    question="What was Apple's revenue in Q4 2024?",
+    question="What did $AAPL say about iPhone sales in Q4 2024?",
+    max_iterations=1
+)
+
+# 10-K question (automatically routes to SEC filings)
+result = await agent.execute_rag_flow_async(
+    question="What was Tim Cook's compensation in 2023?",
+    max_iterations=1
+)
+
+# News question (automatically routes to Tavily)
+result = await agent.execute_rag_flow_async(
+    question="What's the latest news on $NVDA?",
     max_iterations=1
 )
 
 # Streaming
 async for event in agent.execute_rag_flow(
-    question="Compare Microsoft and Google's cloud revenue",
+    question="Compare $MSFT and $GOOGL cloud revenue",
     max_iterations=1,
     stream=True
 ):
@@ -354,47 +535,34 @@ async for event in agent.execute_rag_flow(
         print(event['data'], end='', flush=True)
 ```
 
-### Agent Mode (Experimental)
-```python
-# Local testing only
-result = await agent.execute_rag_flow_async(
-    question="Analyze Apple's profitability trends Q2-Q4 2024",
-    max_iterations=3,
-    comprehensive=True
-)
-
-# Includes evaluation metadata
-print(f"Iterations: {result['metadata']['iterations']}")
-print(f"Quality scores: {result['metadata']['quality_scores']}")
-```
-
 ## Configuration
+
+**Environment Variables**:
+```bash
+OPENAI_API_KEY=...           # Response generation
+CEREBRAS_API_KEY=...         # Question analysis, section routing, table selection
+TAVILY_API_KEY=...           # Real-time news search
+DATABASE_URL=postgresql://...
+```
 
 **Agent Config** (`agent_config.py`):
 - `max_iterations`: Refinement iterations (default: 4)
 - `min_confidence_threshold`: Quality threshold for early stopping (default: 0.90)
-- `evaluation_model`: OpenAI model for self-evaluation (default: gpt-4.1-mini-2025-04-14)
 
 **RAG Config** (`rag/config.py`):
 - `chunks_per_quarter`: Max chunks per quarter (default: 15)
-- `chunk_size`: Tokens per chunk (default: 1000)
 - `keyword_weight` / `vector_weight`: Hybrid search (0.3 / 0.7)
-- `openai_model`: Generation model (default: gpt-4.1-mini-2025-04-14)
-- `groq_model`: Analysis model (default: openai/gpt-oss-20b)
-- `embedding_model`: Sentence transformer (default: all-MiniLM-L6-v2)
-
-**Environment Variables**:
-```bash
-OPENAI_API_KEY=...
-GROQ_API_KEY=...
-DATABASE_URL=postgresql://...
-```
+- `cerebras_model`: Question analysis model (default: qwen-3-235b)
+- `openai_model`: Generation model (default: gpt-4.1-mini)
 
 ## Development Status
 
 | Component | Status |
 |-----------|--------|
-| Chat Mode (single-pass RAG) | ✅ Production |
+| Earnings Transcript Search | ✅ Production |
+| SEC 10-K Filing Search | ✅ Production |
+| Tavily News Search | ✅ Production |
+| LLM Data Source Routing | ✅ Production |
 | Streaming | ✅ Production |
 | Multi-ticker/quarter | ✅ Production |
 | Conversation memory | ✅ Production |
@@ -403,7 +571,7 @@ DATABASE_URL=postgresql://...
 
 ## Data Ingestion
 
-See `agent/rag/data_ingestion/README.md` for transcript ingestion pipeline.
+See `agent/rag/data_ingestion/README.md` for transcript and 10-K ingestion pipelines.
 
 ## Related
 
