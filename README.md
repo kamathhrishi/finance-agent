@@ -4,6 +4,67 @@ Stratalens AI is equity research platform. You can ask questions and get answers
 
 **Live Platform:** [stratalens.ai](https://stratalens.ai)
 
+## Agent System
+
+Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **intelligent tool routing** and **self-reflection** for financial Q&A. This powers the chat and analysis features on stratalens.ai.
+
+### Architecture Overview
+
+```
+                              AGENT PIPELINE
+ ═══════════════════════════════════════════════════════════════════════
+
+ ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
+ │ Question │───►│ Question Analyzer │───►│     Tool Selection       │
+ └──────────┘    │   (Cerebras LLM)  │    │                          │
+                 │                   │    │  • Earnings Transcripts  │
+                 │ Extracts:         │    │  • SEC 10-K Filings      │
+                 │ • Tickers         │    │  • Real-Time News        │
+                 │ • Time periods    │    │                          │
+                 │ • Data source     │    └────────────┬─────────────┘
+                 └───────────────────┘                 │
+                                                       ▼
+                 ┌─────────────────────────────────────────────────────┐
+                 │                  RETRIEVAL LAYER                     │
+                 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
+                 │  │  Earnings   │  │  SEC 10-K   │  │   Tavily    │  │
+                 │  │ Transcripts │  │   Filings   │  │    News     │  │
+                 │  │             │  │             │  │             │  │
+                 │  │ Vector DB   │  │ Vector DB   │  │  Live API   │  │
+                 │  │ + Hybrid    │  │ + Section   │  │             │  │
+                 │  │   Search    │  │   Routing   │  │             │  │
+                 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
+                 └─────────┴────────────────┴────────────────┴─────────┘
+                                            │
+                                            ▼
+                 ┌─────────────────────────────────────────────────────┐
+                 │               ITERATIVE IMPROVEMENT                  │
+                 │                                                      │
+                 │    ┌──────────┐    ┌──────────┐    ┌──────────┐     │
+                 │    │ Generate │───►│ Evaluate │───►│ Iterate? │     │
+                 │    │  Answer  │    │ Quality  │    │          │     │
+                 │    └──────────┘    └──────────┘    └────┬─────┘     │
+                 │         ▲                               │           │
+                 │         │              YES              │           │
+                 │         └───────────────────────────────┘           │
+                 │                        │ NO                         │
+                 └────────────────────────┼────────────────────────────┘
+                                          ▼
+                                   ┌─────────────┐
+                                   │   ANSWER    │
+                                   │ + Citations │
+                                   └─────────────┘
+```
+
+**Key Concepts:**
+1. **Question Analysis** - Cerebras LLM extracts tickers, time periods, and determines data sources
+2. **Tool Routing** - Automatically routes to earnings transcripts, SEC filings, or news based on question
+3. **Self-Reflection** - Evaluates answer quality and iterates until confident (≥90%) or max iterations reached
+
+For detailed agent documentation, see [agent/README.md](agent/README.md).
+
+---
+
 ## Features
 
 - **Earnings Transcripts** (2022-2025) - Word-for-word executive commentary
