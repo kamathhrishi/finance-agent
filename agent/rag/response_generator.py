@@ -587,10 +587,11 @@ Provide a natural, professional response in **markdown format** based on the tra
                 rag_logger.info(f"📋 Prompt length: {len(prompt)} characters")
                 rag_logger.info(f"📊 Context chunks: {len(context_chunks)}")
                 rag_logger.info(f"📋 Prompt preview: {prompt[:400]}...")
-                
+
                 rag_logger.info(f"🌊 Using streaming mode with callback")
                 answer = ""
                 total_tokens = 0
+                response = None  # Initialize response for streaming path
                 
                 start_time = time.time()
                 
@@ -825,7 +826,7 @@ Provide a natural, professional response in **markdown format** based on the tra
                     'prompt': prompt,
                     'context': context,
                     'model': self.config.get("openai_model"),
-                    'tokens_used': response.usage.total_tokens if response.usage else None
+                    'tokens_used': response.usage.total_tokens if response and response.usage else None
                 }
             else:
                 rag_logger.info(f"📝 Returning simple answer")
