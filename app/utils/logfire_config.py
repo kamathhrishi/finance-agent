@@ -81,6 +81,10 @@ def instrument_all():
     IMPORTANT: For OpenAI instrumentation to capture prompts/completions,
     this must be called BEFORE any OpenAI client is instantiated.
     """
+    # Enable capturing of message content (prompts/completions) for GenAI instrumentation
+    # This is REQUIRED for OpenAI prompts to show in Logfire
+    os.environ.setdefault("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true")
+
     try:
         # Instrument asyncpg for database query tracking
         logfire.instrument_asyncpg()
@@ -89,16 +93,17 @@ def instrument_all():
         logger.warning(f"⚠️ Could not instrument asyncpg: {e}")
 
     try:
-        # Instrument httpx for HTTP client tracking
-        logfire.instrument_httpx()
-        logger.info("✅ Instrumented httpx (HTTP clients)")
+        # Instrument httpx for HTTP client tracking with full request/response capture
+        # capture_all=True captures headers and body for both request and response
+        logfire.instrument_httpx(capture_all=True)
+        logger.info("✅ Instrumented httpx (HTTP clients with full request/response)")
     except Exception as e:
         logger.warning(f"⚠️ Could not instrument httpx: {e}")
 
     try:
         # Instrument OpenAI for LLM call tracking (tokens, costs, latency)
         # capture_all=True enables full prompt/completion logging
-        # This captures: prompts, completions, token usage, latency, errors
+        # Also requires OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true (set above)
         logfire.instrument_openai(capture_all=True)
         logger.info("✅ Instrumented OpenAI (LLM calls with full prompts/completions)")
     except Exception as e:
