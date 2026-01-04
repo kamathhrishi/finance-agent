@@ -119,8 +119,9 @@ class RAGAgent:
         # Thread pool for CPU-bound operations
         self.thread_pool = ThreadPoolExecutor(max_workers=4)
 
-        # Initialize OpenAI client (for fallback)
-        self.client = openai.OpenAI(api_key=self.openai_api_key)
+        # Lazy initialization of OpenAI client (created on first use)
+        # This ensures logfire.instrument_openai() is called before client creation
+        self._client = None
 
         # Initialize Cerebras client (primary for response generation - fast inference with Qwen)
         cerebras_api_key = os.getenv("CEREBRAS_API_KEY")
@@ -162,6 +163,14 @@ class RAGAgent:
             logger.info(f"🔀 Hybrid search enabled - Vector weight: {self.config.get('vector_weight', 0.7)}, Keyword weight: {self.config.get('keyword_weight', 0.3)}")
         else:
             logger.info("⚠️ Hybrid search disabled - using vector-only search")
+
+    @property
+    def client(self):
+        """Lazy initialization of OpenAI client to ensure proper Logfire instrumentation."""
+        if self._client is None and self.openai_api_key:
+            self._client = openai.OpenAI(api_key=self.openai_api_key)
+            logger.info("✅ OpenAI client initialized (lazy - after Logfire instrumentation)")
+        return self._client
 
     def set_database_connection(self, db_connection):
         """Set the database connection for retrieving conversation history."""

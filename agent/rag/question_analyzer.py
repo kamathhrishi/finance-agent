@@ -414,10 +414,12 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                     if conversation_context:
                         rag_logger.warning(f"⚠️ Conversation context was available but no tickers extracted!")
 
-                # Log question analysis to Logfire
+                # Log question analysis to Logfire with original and rephrased questions
                 if LOGFIRE_AVAILABLE and logfire:
                     logfire.info(
                         "question.analysis.complete",
+                        original_question=question,
+                        rephrased_question=analysis_result.get('rephrased_question', ''),
                         is_valid=analysis_result.get('is_valid', False),
                         question_type=analysis_result.get('question_type', ''),
                         data_source=analysis_result.get('data_source', 'earnings_transcripts'),

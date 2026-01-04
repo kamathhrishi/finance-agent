@@ -41,16 +41,17 @@ rag_logger = logging.getLogger('rag_system')
 
 class ResponseGenerator:
     """Handles response generation and evaluation for the RAG system."""
-    
+
     def __init__(self, config: Config, openai_api_key: Optional[str] = None):
         """Initialize the response generator."""
         self.config = config
         self.openai_api_key = openai_api_key
-        
-        # Initialize OpenAI client
-        self.client = openai.OpenAI(api_key=self.openai_api_key)
+
+        # Lazy initialization of OpenAI client (created on first use)
+        # This ensures logfire.instrument_openai() is called before client creation
+        self._client = None
         self.openai_available = bool(self.openai_api_key)
-        
+
         # Initialize Cerebras client (primary for response generation - fast inference with Qwen)
         import os
         cerebras_api_key = os.getenv("CEREBRAS_API_KEY")
@@ -71,18 +72,26 @@ class ResponseGenerator:
         else:
             self.cerebras_client = None
             self.cerebras_available = False
-        
+
         # Groq removed - using Cerebras only
         self.groq_client = None
         self.groq_available = False
-        
+
         # Log provider priority
         if self.cerebras_available:
             logger.info("🤖 ResponseGenerator: Cerebras (primary) > OpenAI")
         else:
             logger.info("🤖 ResponseGenerator: OpenAI only")
-        
+
         logger.info("ResponseGenerator initialized successfully")
+
+    @property
+    def client(self):
+        """Lazy initialization of OpenAI client to ensure proper Logfire instrumentation."""
+        if self._client is None and self.openai_api_key:
+            self._client = openai.OpenAI(api_key=self.openai_api_key)
+            logger.info("✅ OpenAI client initialized (lazy - after Logfire instrumentation)")
+        return self._client
     
     # ═════════════════════════════════════════════════════════════════════
     # CEREBRAS API METHODS
@@ -301,12 +310,13 @@ class ResponseGenerator:
         rag_logger.info(f"🤖 Starting OpenAI response generation")
         rag_logger.info(f"📊 Input parameters: question_length={len(question)}, chunks={len(context_chunks)}, chunk_objects={len(chunk_objects) if chunk_objects else 0}")
 
-        # Log to Logfire
+        # Log to Logfire with question for tracing
         if LOGFIRE_AVAILABLE and logfire:
             logfire.info(
                 "llm.generation.start",
                 provider="openai",
                 ticker=ticker,
+                question=question,
                 chunks_count=len(context_chunks),
                 has_news_context=news_context is not None,
                 has_10k_context=ten_k_context is not None,
@@ -807,7 +817,7 @@ Provide a natural, professional response in **markdown format** based on the tra
                 rag_logger.info(f"📝 Generated answer: length={len(answer)} characters")
                 rag_logger.info(f"📝 Answer preview: {answer[:300]}...")
             
-            # Log generation completion to Logfire
+            # Log generation completion to Logfire with full prompt and answer
             generation_time = time.time() - generation_start
             if LOGFIRE_AVAILABLE and logfire:
                 logfire.info(
@@ -817,7 +827,11 @@ Provide a natural, professional response in **markdown format** based on the tra
                     ticker=ticker,
                     answer_length=len(answer),
                     generation_time_ms=int(generation_time * 1000),
-                    tokens_used=response.usage.total_tokens if response and response.usage else None
+                    tokens_used=response.usage.total_tokens if response and response.usage else None,
+                    # Capture full prompt and answer for debugging (truncate to avoid huge logs)
+                    prompt=prompt[:10000] if prompt else None,
+                    answer=answer[:10000] if answer else None,
+                    context_preview=context[:2000] if context else None
                 )
 
             if return_details:
@@ -1581,10 +1595,12 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
         """
         eval_start = time.time()
 
-        # Log evaluation start to Logfire
+        # Log evaluation start to Logfire with question and answer for tracing
         if LOGFIRE_AVAILABLE and logfire:
             logfire.info(
                 "llm.evaluation.start",
+                question=original_question,
+                answer_preview=answer[:3000] if answer else None,
                 question_length=len(original_question),
                 answer_length=len(answer),
                 context_chunks_count=len(context_chunks),
@@ -1927,7 +1943,7 @@ EXAMPLE RESPONSE (demonstrating proper level of detail in reasoning):
                     
                     rag_logger.info(f"✅ Successfully parsed evaluation JSON on attempt {attempt + 1}")
 
-                    # Log evaluation completion to Logfire
+                    # Log evaluation completion to Logfire with full evaluation details
                     eval_time = time.time() - eval_start
                     if LOGFIRE_AVAILABLE and logfire:
                         logfire.info(
@@ -1937,6 +1953,9 @@ EXAMPLE RESPONSE (demonstrating proper level of detail in reasoning):
                             completeness_score=evaluation.get('completeness_score', 0),
                             specificity_score=evaluation.get('specificity_score', 0),
                             follow_up_questions_count=len(evaluation.get('follow_up_questions', [])),
+                            follow_up_questions=evaluation.get('follow_up_questions', []),
+                            evaluation_reasoning=evaluation.get('evaluation_reasoning', ''),
+                            iteration_decision_reasoning=evaluation.get('iteration_decision_reasoning', ''),
                             eval_time_ms=int(eval_time * 1000)
                         )
 
