@@ -3,6 +3,7 @@
 Stratalens AI is equity research platform. You can ask questions and get answers to questions from 10K filings, earnings calls and news.
 
 **Live Platform:** [stratalens.ai](https://stratalens.ai)
+**10K filings breakdown:** https://substack.com/home/post/p-181608263
 
 ## Agent System
 
@@ -225,3 +226,4 @@ MIT License - see LICENSE file for details
 ## Contact
 
 For questions or access requests: hrishi@stratalens.ai
+
