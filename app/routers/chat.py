@@ -1656,6 +1656,36 @@ async def send_message_to_conversation(
                     logger.warning(f"Could not check transcript for {company}: {e}")
                     transcript_available = False
             
+            # Extract year and quarter for frontend (separate fields)
+            year_for_frontend = None
+            quarter_for_frontend = None
+            if chunk_data:
+                year_val = chunk_data.get('year')
+                quarter_val = chunk_data.get('quarter')
+                if year_val and year_val != 'Unknown':
+                    try:
+                        year_for_frontend = int(year_val) if isinstance(year_val, str) else year_val
+                    except (ValueError, TypeError):
+                        pass
+                if quarter_val and quarter_val != 'Unknown':
+                    try:
+                        quarter_for_frontend = int(quarter_val) if isinstance(quarter_val, str) else quarter_val
+                    except (ValueError, TypeError):
+                        pass
+            elif citation_entry:
+                year_val = citation_entry.get('year')
+                quarter_val = citation_entry.get('quarter')
+                if year_val:
+                    try:
+                        year_for_frontend = int(year_val) if isinstance(year_val, str) else year_val
+                    except (ValueError, TypeError):
+                        pass
+                if quarter_val:
+                    try:
+                        quarter_for_frontend = int(quarter_val) if isinstance(quarter_val, str) else quarter_val
+                    except (ValueError, TypeError):
+                        pass
+
             citation_obj = ChatCitation(
                 company=company,
                 quarter=quarter,
@@ -1663,7 +1693,9 @@ async def send_message_to_conversation(
                 chunk_text=chunk_text,
                 relevance_score=relevance_score,
                 source_file=source_file,
-                transcript_available=transcript_available
+                transcript_available=transcript_available,
+                year=year_for_frontend,
+                ticker=company  # Alias for company
             )
             citations.append(citation_obj)
         
@@ -1689,7 +1721,21 @@ async def send_message_to_conversation(
                 citation_dict['ticker'] = citation_dict.get('company', 'Unknown')
                 citation_dict['marker'] = citation_dict.get('chunk_id', '')
                 # fiscal_year and section are already in the dict from ChatCitation
-            
+
+            # For transcript citations, ensure year and ticker are set
+            if citation_dict.get('type') == 'transcript':
+                citation_dict['ticker'] = citation_dict.get('company', citation_dict.get('ticker', 'Unknown'))
+                # year is already in the dict from ChatCitation
+                # Also extract just the quarter number if quarter is in combined format
+                quarter_val = citation_dict.get('quarter', '')
+                if quarter_val and '_Q' in str(quarter_val):
+                    # Extract quarter number from "2025_Q2" format
+                    try:
+                        q_part = str(quarter_val).split('_Q')[-1]
+                        citation_dict['quarter'] = int(q_part)
+                    except (ValueError, IndexError):
+                        pass
+
             citations_dicts.append(citation_dict)
         
         # Save assistant message

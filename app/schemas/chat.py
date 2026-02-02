@@ -22,6 +22,9 @@ class ChatCitation(BaseModel):
     published_date: Optional[str] = Field(None, description="Published date for news citations")
     fiscal_year: Optional[int] = Field(None, description="Fiscal year for 10-K citations")
     section: Optional[str] = Field(None, description="SEC section for 10-K citations")
+    # Transcript-specific fields for frontend
+    year: Optional[int] = Field(None, description="Year for transcript citations (separate from quarter)")
+    ticker: Optional[str] = Field(None, description="Ticker symbol (alias for company)")
 
 
 class ChatMessage(BaseModel):

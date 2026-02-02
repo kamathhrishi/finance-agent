@@ -211,6 +211,7 @@ export function useChat(): UseChatReturn {
               company: c.company,
               ticker: c.ticker,
               quarter: c.quarter,
+              year: c.year,
               chunk_text: c.chunk_text,
               chunk_id: c.chunk_id,
               relevance_score: c.relevance_score,

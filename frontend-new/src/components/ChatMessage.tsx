@@ -19,13 +19,32 @@ function getCitationType(source: Source): 'transcript' | '10k' | 'news' {
   return 'transcript'
 }
 
+// Format quarter display string from source
+function formatQuarterDisplay(source: Source): string {
+  // If we have both year and quarter, combine them
+  if (source.year && source.quarter) {
+    return `Q${source.quarter} ${source.year}`
+  }
+  // If quarter is already formatted (e.g., "2025_Q2" or "2025_q2")
+  const qStr = source.quarter != null ? String(source.quarter) : ''
+  if (qStr.includes('_')) {
+    // "2025_Q2" -> "Q2 2025"
+    const parts = qStr.split('_')
+    if (parts.length === 2) {
+      const yearPart = parts[0]
+      const qPart = parts[1].toUpperCase()
+      return `${qPart} ${yearPart}`
+    }
+  }
+  // Return as-is if can't parse
+  return qStr.replace('_', ' ')
+}
+
 // Get display title for citation
 function getCitationTitle(source: Source, type: 'transcript' | '10k' | 'news'): string {
   if (type === 'transcript') {
     const company = source.company || source.ticker || 'Unknown Company'
-    // Ensure quarter is a string before calling replace
-    const quarterStr = source.quarter != null ? String(source.quarter) : ''
-    const quarter = quarterStr.replace('_', ' ')
+    const quarter = formatQuarterDisplay(source)
     return quarter ? `${company} - ${quarter}` : company
   }
   if (type === '10k') {
@@ -423,19 +442,40 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       </motion.div>
 
       {/* Transcript Modal */}
-      {transcriptModal.source && (
-        <TranscriptModal
-          isOpen={transcriptModal.isOpen}
-          onClose={handleCloseTranscript}
-          company={transcriptModal.source.company || transcriptModal.source.ticker || ''}
-          ticker={transcriptModal.source.ticker || ''}
-          quarter={transcriptModal.source.quarter || ''}
-          relevantChunks={getRelevantChunks(
-            transcriptModal.source.ticker || '',
-            transcriptModal.source.quarter || ''
-          )}
-        />
-      )}
+      {transcriptModal.source && (() => {
+        // Format quarter properly: combine year + quarter if separate
+        const source = transcriptModal.source
+        let formattedQuarter = ''
+
+        if (source.year && source.quarter) {
+          // Combine year and quarter: "2025" + "2" -> "2025_Q2"
+          formattedQuarter = `${source.year}_Q${source.quarter}`
+        } else if (source.quarter) {
+          // Quarter might already be formatted (e.g., "2025_Q2") or just a number
+          const qStr = String(source.quarter)
+          // Check if it's already in a valid format
+          if (qStr.includes('_') || qStr.includes('Q') || qStr.includes('q')) {
+            formattedQuarter = qStr
+          } else {
+            // Just a number - can't determine year, pass as-is
+            formattedQuarter = qStr
+          }
+        }
+
+        return (
+          <TranscriptModal
+            isOpen={transcriptModal.isOpen}
+            onClose={handleCloseTranscript}
+            company={source.company || source.ticker || ''}
+            ticker={source.ticker || ''}
+            quarter={formattedQuarter}
+            relevantChunks={getRelevantChunks(
+              source.ticker || '',
+              formattedQuarter
+            )}
+          />
+        )
+      })()}
     </>
   )
 }
