@@ -32,8 +32,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-# But keep frontend-new/dist (React build output)
-!frontend-new/dist/
+# But keep frontend/dist (React build output)
+!frontend/dist/
 downloads/
 eggs/
 .eggs/

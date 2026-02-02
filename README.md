@@ -116,7 +116,7 @@ stratalens_ai/
 │   ├── routers/           # API endpoints
 │   ├── schemas/           # Pydantic models
 │   └── auth/              # Authentication
-├── frontend-new/          # React + TypeScript frontend
+├── frontend/              # React + TypeScript frontend
 ├── docs/                  # Documentation
 │   └── SEC_AGENT.md       # 10-K agent deep dive
 ├── analytics/             # Usage analytics

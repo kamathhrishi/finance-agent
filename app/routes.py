@@ -60,7 +60,7 @@ def setup_frontend_routes(app: FastAPI):
     import os
 
     # React frontend dist directory
-    FRONTEND_DIR = "frontend-new/dist"
+    FRONTEND_DIR = "frontend/dist"
 
     @app.get("/")
     async def serve_landing():
@@ -85,7 +85,7 @@ def setup_static_routes(app: FastAPI):
     from pathlib import Path
 
     # React frontend dist directory
-    FRONTEND_DIR = "frontend-new/dist"
+    FRONTEND_DIR = "frontend/dist"
 
     @app.get("/favicon.svg")
     async def serve_favicon_svg():
@@ -111,20 +111,6 @@ def setup_static_routes(app: FastAPI):
                 return FileResponse(file_path)
         return Response(status_code=404)
 
-    # Legacy routes for old frontend (can be removed later)
-    @app.get("/styles.css")
-    async def serve_styles():
-        """Serve main stylesheet (legacy)"""
-        if os.path.exists("frontend/styles.css"):
-            return FileResponse("frontend/styles.css")
-        return Response(status_code=404)
-
-    @app.get("/index-styles.css")
-    async def serve_index_styles():
-        """Serve index-specific stylesheet (legacy)"""
-        if os.path.exists("frontend/index-styles.css"):
-            return FileResponse("frontend/index-styles.css")
-        return Response(status_code=404)
 
 
 def setup_cors_handlers(app: FastAPI):
