@@ -41,8 +41,6 @@ from .search_engine import SearchEngine
 from .response_generator import ResponseGenerator
 from .tavily_service import TavilyService
 # SEC 10-K Filing Service (planning + parallel retrieval)
-# To switch to iterative: from .sec_filings_service_iterative import IterativeSECFilingsService as SECFilingsService
-# To switch to one-pass: from .sec_filings_service import SECFilingsService
 from .sec_filings_service_smart_parallel import SmartParallelSECFilingsService as SECFilingsService
 
 # Import RAG utilities

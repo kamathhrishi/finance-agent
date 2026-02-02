@@ -1059,33 +1059,6 @@ async def export_chat_history(
         )
 
 
-# Legacy endpoint for backward compatibility
-@router.delete("/clear")
-async def clear_chat_history_legacy(
-    current_user: dict = Depends(get_current_user),
-    db: asyncpg.Connection = Depends(get_db)
-):
-    """Legacy DELETE endpoint - automatically converts to POST /chat/clear"""
-    # For backward compatibility, automatically clear with confirmation
-    clear_request = ChatClearRequest(confirm=True)
-    return await clear_chat_history(clear_request, current_user, db)
-
-# Legacy endpoint for backward compatibility  
-@router.post("/send")
-async def send_chat_message_legacy(
-    request: dict,
-    current_user: dict = Depends(get_current_user),
-    db: asyncpg.Connection = Depends(get_db)
-):
-    """Legacy send endpoint - automatically converts to POST /chat/message"""
-    # Extract message from old format and convert to new format
-    message = request.get("message", "")
-    if not message:
-        raise HTTPException(status_code=400, detail="Message is required")
-    
-    chat_message = ChatMessage(message=message, comprehensive=True)
-    return await send_chat_message(chat_message, current_user, db)
-
 @router.post("/clear", response_model=ChatClearResponse)
 async def clear_chat_history(
     clear_request: ChatClearRequest,

@@ -10,7 +10,6 @@ import time
 import logging
 import httpx
 from typing import Optional, Dict, Any, Tuple
-from datetime import datetime, timedelta
 
 import jwt
 from jwt import PyJWKClient, PyJWKClientError
@@ -44,18 +43,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
 
-def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token (LEGACY - deprecated, use Clerk for new tokens)"""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
 def decode_access_token(token: str) -> Dict[str, Any]:
     """Decode and verify a JWT access token (LEGACY - deprecated)"""
     try:
@@ -65,16 +52,6 @@ def decode_access_token(token: str) -> Dict[str, Any]:
         raise jwt.ExpiredSignatureError("Token has expired")
     except jwt.InvalidTokenError as e:
         raise jwt.InvalidTokenError(f"Invalid token: {str(e)}")
-
-
-def verify_token(token: str) -> Optional[str]:
-    """Verify token and return user_id if valid (LEGACY - deprecated)"""
-    try:
-        payload = decode_access_token(token)
-        user_id: str = payload.get("sub")
-        return user_id
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        return None
 
 
 # =============================================================================
@@ -221,26 +198,6 @@ def is_clerk_token(token: str) -> bool:
         return header.get("alg") == "RS256"
     except Exception:
         return False
-
-
-def verify_any_token(token: str) -> Tuple[Dict[str, Any], str]:
-    """
-    Verify either a Clerk or legacy token.
-
-    Returns:
-        Tuple of (payload, token_type) where token_type is "clerk" or "legacy"
-
-    Raises:
-        jwt.InvalidTokenError: If token verification fails
-    """
-    # First, try to determine token type
-    if is_clerk_token(token):
-        payload = verify_clerk_token(token)
-        return payload, "clerk"
-    else:
-        # Try legacy verification
-        payload = decode_access_token(token)
-        return payload, "legacy"
 
 
 logger.info("🔐 JWT Config initialized (Clerk + Legacy support)")

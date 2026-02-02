@@ -11,7 +11,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import asyncpg
 import jwt
 
-from .jwt_config import verify_clerk_token, decode_access_token, is_clerk_token, verify_any_token
+from .jwt_config import verify_clerk_token, decode_access_token, is_clerk_token
 from config import settings
 
 logger = logging.getLogger(__name__)
