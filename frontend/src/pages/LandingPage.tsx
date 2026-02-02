@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import StrataLensLogo from '../components/StrataLensLogo'
 import AboutModal from '../components/AboutModal'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
@@ -151,12 +152,29 @@ export default function LandingPage() {
             >
               About
             </button>
-            <button
-              onClick={() => navigate('/chat')}
-              className="px-5 py-2.5 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white text-sm font-semibold rounded-xl hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5"
-            >
-              Get Started
-            </button>
+            <SignedOut>
+              <button
+                onClick={() => navigate('/sign-in')}
+                className="text-slate-600 text-sm font-medium hover:text-slate-900 transition-colors px-2 py-1"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => navigate('/sign-up')}
+                className="px-5 py-2.5 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white text-sm font-semibold rounded-xl hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5"
+              >
+                Get Started
+              </button>
+            </SignedOut>
+            <SignedIn>
+              <button
+                onClick={() => navigate('/chat')}
+                className="px-5 py-2.5 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white text-sm font-semibold rounded-xl hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5"
+              >
+                Open App
+              </button>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
           </div>
         </div>
       </nav>
