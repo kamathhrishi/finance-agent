@@ -18,13 +18,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="index-styles.css">
-    <script src="config.js?v=4"></script>
+    <script src="config.js?v=5"></script>
+    <!-- Clerk Authentication -->
+    <script
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_aW1wcm92ZWQtYmFib29uLTk2LmNsZXJrLmFjY291bnRzLmRldiQ"
+        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"
+    ></script>
+    <script src="auth.js?v=1"></script>
     <script src="session.js?v=3"></script>
     <script src="utils.js?v=4"></script>
     <script src="charts.js?v=4"></script>
-    <script src="chat.js?v=4"></script>
+    <script src="chat.js?v=5"></script>
     <script src="landing-integration.js?v=3"></script>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
     
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-EEFN7KGC53"></script>
@@ -73,8 +82,8 @@
 </head>
 <body class="antialiased text-text-primary bg-bg-primary">
     
-    <!-- Auth Loading Screen -->
-    <div id="authLoadingScreen">
+    <!-- Auth Loading Screen - hidden by default, shown only when needed -->
+    <div id="authLoadingScreen" style="display: none;">
         <div class="flex flex-col items-center justify-center space-y-4">
             <div class="relative w-10 h-10">
                 <div class="w-10 h-10 border-2 border-slate-200 dark:border-slate-700 rounded-full"></div>
@@ -86,52 +95,40 @@
         </div>
     </div>
 
-    <!-- Auth Modal - Request Access Only -->
+    <!-- Auth Modal - Clerk Sign In -->
     <div id="authModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200">
-            <div class="text-center">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-slate-200 relative">
+            <!-- Close button -->
+            <button onclick="hideAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+
+            <div class="text-center mb-6">
                 <div class="w-10 h-10 bg-strata-blue-600 rounded-lg flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-layer-group text-white text-lg"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Request Access</h2>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Sign In to StrataLens</h2>
+                <p class="text-slate-600 text-sm">Access your personalized financial analytics</p>
+            </div>
+
+            <!-- Clerk Sign-In Container -->
+            <div id="clerk-sign-in-container" class="min-h-[300px] flex items-center justify-center">
+                <!-- Clerk will mount sign-in component here -->
+                <div id="clerk-sign-in-loading" class="text-center">
+                    <div class="w-8 h-8 border-2 border-strata-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p class="text-slate-500 text-sm">Loading sign-in...</p>
+                </div>
+            </div>
+
+            <!-- Fallback for when Clerk is not available -->
+            <div id="auth-fallback" class="hidden">
                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
                     <p class="text-slate-800 text-sm font-medium mb-2">Private Beta</p>
                     <p class="text-slate-600 text-sm mb-4">StrataLens is currently in private beta.</p>
                     <p class="text-slate-600 text-sm">Contact <strong>hrishi@stratalens.ai</strong> for access</p>
-            </div>
-            
+                </div>
                 <button onclick="hideAuthModal()" class="btn btn-secondary w-full">
                     Close
-                </button>
-            </div>
-                    </div>
-    </div>
-
-    <!-- Magic Link Modal -->
-    <div id="magicLinkModal" class="fixed inset-0 login-modal z-50 hidden items-center justify-center p-4">
-        <div class="login-form p-8 max-w-md w-full">
-            <div class="text-center mb-6">
-                <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-magic text-white text-xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-text-primary mb-2">Magic Link</h2>
-                <p class="text-text-secondary">We'll send you a secure link to sign in</p>
-            </div>
-            
-            <form id="magicLinkForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
-                    <input type="email" id="magicLinkEmail" class="input-field" placeholder="Enter your email address" autocomplete="email" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-full">
-                    <span id="magicLinkBtnText">Send Magic Link</span>
-                    <div id="magicLinkSpinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </button>
-            </form>
-            
-            <div class="mt-6 text-center">
-                <button id="backToAuthBtn" class="text-strata-blue-600 hover:text-strata-blue-700 font-medium text-sm">
-                    ← Back to sign in options
                 </button>
             </div>
         </div>
@@ -524,66 +521,39 @@
                     </div>
                     
                     <!-- Right side - Clean user controls -->
-                    <div class="user-section">
-                        <!-- Mobile Navigation Menu -->
-                        <div class="lg:hidden flex items-center space-x-2">
-                            <!-- Mobile About Button -->
-                            <button id="mobileAboutBtn" class="btn btn-outline text-sm" onclick="showAboutModal()">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                <span>About</span>
-                            </button>
-                            
-                            <!-- Mobile Request Access Button -->
-                            <button id="mobileSignInBtn" class="btn btn-outline text-sm hidden" onclick="showAuthModal()">
-                                <i class="fas fa-envelope mr-1"></i>
-                                <span>Request Access</span>
-                            </button>
-                            
-                            <!-- Mobile Get Started Button -->
-                            <button id="mobileGetStartedBtn" class="btn btn-primary text-sm hidden">
-                                <i class="fas fa-rocket mr-1"></i>
-                                <span>Get Started</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Desktop About Link -->
-                        <div class="hidden lg:flex items-center">
-                            <button id="desktopAboutBtn" class="text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-2 text-sm font-medium transition-colors" onclick="showAboutModal()">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                About
-                            </button>
-                        </div>
-                        
-                        <!-- Authenticated User Controls (hidden by default) -->
-                        <div id="authenticatedControls" class="flex items-center space-x-2 hidden">
-                            <!-- Chat Controls (only visible when in chat section) -->
-                            <div id="chatNavControls" class="chat-nav-controls hidden">
-                                <button id="newChatNavBtn" class="nav-chat-btn primary" title="Start new conversation">
-                                    <i class="fas fa-plus"></i>
-                                    <span class="hidden sm:inline ml-2">New Chat</span>
+                    <div class="user-section flex items-center space-x-3">
+                        <!-- About Button -->
+                        <button id="navAboutBtn" class="text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-2 text-sm font-medium transition-colors hidden sm:flex items-center" onclick="showAboutModal()">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            About
+                        </button>
+
+                        <!-- Sign In Button (shown when not authenticated) -->
+                        <button id="navSignInBtn" class="bg-strata-blue-600 hover:bg-strata-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5" onclick="openClerkSignIn()">
+                            <i class="fas fa-sign-in-alt text-sm"></i>
+                            <span>Sign In</span>
+                        </button>
+
+                        <!-- User Menu (shown when authenticated) -->
+                        <div id="userMenuApp" class="hidden items-center gap-2">
+                            <div class="relative group">
+                                <button class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                    <img id="userAvatarApp" src="" alt="User" class="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-600 object-cover">
+                                    <span id="userNameApp" class="text-sm font-medium text-slate-700 dark:text-slate-200 hidden sm:inline"></span>
+                                    <i class="fas fa-chevron-down text-xs text-slate-400"></i>
                                 </button>
-                                <button id="chatHistoryNavBtn" class="nav-chat-btn" title="View chat history">
-                                    <i class="fas fa-history"></i>
-                                    <span class="hidden sm:inline ml-2">History</span>
-                                </button>
+                                <!-- Dropdown Menu -->
+                                <div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <button onclick="openUserProfile()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors rounded-t-lg">
+                                        <i class="fas fa-user-cog text-slate-400"></i>
+                                        <span>Profile Settings</span>
+                                    </button>
+                                    <button onclick="signOut()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-b-lg border-t border-slate-100 dark:border-slate-700">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        <span>Sign Out</span>
+                                    </button>
+                                </div>
                             </div>
-                            <!-- Onboarding button -->
-                            <button id="onboardingBtn" class="logout-btn mr-2">
-                                <i class="fas fa-graduation-cap"></i>
-                                <span class="hidden sm:inline">Guide</span>
-                            </button>
-                            
-                            <!-- Profile button -->
-                            <button id="profileBtn" class="logout-btn mr-2">
-                                <i class="fas fa-user-cog"></i>
-                                <span class="hidden sm:inline">Profile</span>
-                            </button>
-                            
-                            <!-- Logout button -->
-                            <button id="logoutBtn" class="logout-btn">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span class="hidden sm:inline">Logout</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -599,34 +569,38 @@
             <aside class="app-sidebar">
                 <nav class="sidebar-nav">
                     <div class="sidebar-menu">
-                        <!-- Chat - Now first and default -->
+                        <!-- Chat - Always available (no auth required) -->
                         <a href="#" class="sidebar-menu-item active" data-section="chat">
                             <i class="fas fa-comments"></i>
                             <span>Chat</span>
                         </a>
 
-                        <!-- Companies -->
-                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="companies">
+                        <!-- Companies - Auth Required -->
+                        <a href="#" class="sidebar-menu-item auth-required" data-section="companies" data-auth-required="true">
                             <i class="fas fa-building"></i>
                             <span>Companies</span>
+                            <i class="fas fa-lock auth-lock-icon text-xs ml-auto opacity-50"></i>
                         </a>
 
-                        <!-- Screener -->
-                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="search">
+                        <!-- Screener - Auth Required -->
+                        <a href="#" class="sidebar-menu-item auth-required" data-section="search" data-auth-required="true">
                             <i class="fas fa-filter"></i>
                             <span>Screener</span>
+                            <i class="fas fa-lock auth-lock-icon text-xs ml-auto opacity-50"></i>
                         </a>
 
-                        <!-- Collections -->
-                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="screens">
+                        <!-- Collections - Auth Required -->
+                        <a href="#" class="sidebar-menu-item auth-required" data-section="screens" data-auth-required="true">
                             <i class="fas fa-layer-group"></i>
                             <span>Collections</span>
+                            <i class="fas fa-lock auth-lock-icon text-xs ml-auto opacity-50"></i>
                         </a>
 
-                        <!-- Charting -->
-                        <a href="#" class="sidebar-menu-item disabled" aria-disabled="true" data-section="charting">
+                        <!-- Charting - Auth Required -->
+                        <a href="#" class="sidebar-menu-item auth-required" data-section="charting" data-auth-required="true">
                             <i class="fas fa-chart-line"></i>
                             <span>Charting</span>
+                            <i class="fas fa-lock auth-lock-icon text-xs ml-auto opacity-50"></i>
                         </a>
                     </div>
                 </nav>
@@ -634,18 +608,25 @@
 
             <!-- Main Content Area -->
             <main class="app-main">
-            <!-- Coming Soon Modal -->
-            <div id="comingSoonModal">
-                <div class="modal-backdrop" data-close-coming-soon></div>
-                <div class="modal-card">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <i class="fas fa-clock text-accent-primary"></i>
-                        <h3 class="text-lg font-semibold">Coming soon</h3>
-                    </div>
-                    <p class="text-text-secondary text-sm">This section is under active development. Stay tuned!</p>
-                    <div class="modal-actions">
-                        <button class="btn-secondary" data-close-coming-soon>Close</button>
-                        <button class="btn-primary" data-close-coming-soon>OK</button>
+            <!-- Sign In Required Modal -->
+            <div id="signInRequiredModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-700">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-strata-blue-100 dark:bg-strata-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-lock text-strata-blue-600 dark:text-strata-blue-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Sign In Required</h3>
+                        <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                            Sign in to access <span id="signInRequiredFeatureName" class="font-medium text-strata-blue-600">this feature</span> and unlock all of StrataLens's powerful tools.
+                        </p>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="hideSignInRequiredModal(); openClerkSignIn();" class="w-full py-2.5 px-4 bg-strata-blue-600 hover:bg-strata-blue-700 text-white font-medium rounded-lg transition-colors">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                            </button>
+                            <button onclick="hideSignInRequiredModal();" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition-colors">
+                                Maybe Later
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

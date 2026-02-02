@@ -28,7 +28,164 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    
+
+    <!-- Clerk Authentication -->
+    <script
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_aW1wcm92ZWQtYmFib29uLTk2LmNsZXJrLmFjY291bnRzLmRldiQ"
+        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"
+    ></script>
+    <script>
+        // Clerk configuration
+        const CLERK_PUBLISHABLE_KEY = 'pk_test_aW1wcm92ZWQtYmFib29uLTk2LmNsZXJrLmFjY291bnRzLmRldiQ';
+        let clerkLoaded = false;
+
+        // Initialize Clerk and set up auth state
+        async function initClerk() {
+            if (clerkLoaded || !window.Clerk) return;
+            try {
+                await window.Clerk.load();
+                clerkLoaded = true;
+                console.log('Clerk initialized on landing page');
+
+                // Update UI based on auth state
+                updateAuthUI();
+
+                // Listen for auth changes
+                window.Clerk.addListener(({ user }) => {
+                    updateAuthUI();
+                });
+            } catch (e) {
+                console.warn('Clerk initialization failed:', e);
+            }
+        }
+
+        // Update UI based on authentication state
+        function updateAuthUI() {
+            const signInBtnDesktop = document.getElementById('signInBtnDesktop');
+            const signInBtnMobile = document.getElementById('signInBtnMobile');
+            const userMenuDesktop = document.getElementById('userMenuDesktop');
+            const userMenuMobile = document.getElementById('userMenuMobile');
+            const userAvatar = document.getElementById('userAvatar');
+            const userName = document.getElementById('userName');
+
+            // If auth is disabled, hide all auth UI
+            if (window.STRATALENS_CONFIG?.authDisabled) {
+                if (signInBtnDesktop) signInBtnDesktop.classList.add('hidden');
+                if (signInBtnMobile) signInBtnMobile.classList.add('hidden');
+                if (userMenuDesktop) userMenuDesktop.classList.add('hidden');
+                if (userMenuMobile) userMenuMobile.classList.add('hidden');
+                return;
+            }
+
+            console.log('updateAuthUI called, user:', window.Clerk?.user ? 'signed in' : 'signed out');
+
+            if (window.Clerk && window.Clerk.user) {
+                // User is signed in - hide sign in buttons, show user menus
+
+                // Hide desktop sign-in (remove the lg:inline-flex that shows it)
+                if (signInBtnDesktop) {
+                    signInBtnDesktop.classList.remove('lg:inline-flex');
+                }
+                // Hide mobile sign-in
+                if (signInBtnMobile) {
+                    signInBtnMobile.classList.add('hidden');
+                }
+                // Show desktop user menu on lg+ (hidden lg:flex = hidden on mobile, flex on lg+)
+                if (userMenuDesktop) {
+                    userMenuDesktop.classList.add('lg:flex');
+                }
+                // Show mobile user menu (flex lg:hidden = flex on mobile, hidden on lg+)
+                if (userMenuMobile) {
+                    userMenuMobile.classList.remove('hidden');
+                    userMenuMobile.classList.add('flex', 'lg:hidden');
+                }
+
+                // Update user info
+                const user = window.Clerk.user;
+                if (userAvatar) {
+                    userAvatar.src = user.imageUrl || '';
+                    userAvatar.alt = user.fullName || user.primaryEmailAddress?.emailAddress || 'User';
+                }
+                if (userName) {
+                    userName.textContent = user.firstName || user.fullName || 'User';
+                }
+            } else {
+                // User is signed out - show sign in buttons, hide user menus
+
+                // Show desktop sign-in on lg+ (hidden lg:inline-flex)
+                if (signInBtnDesktop) {
+                    signInBtnDesktop.classList.add('lg:inline-flex');
+                }
+                // Show mobile sign-in (lg:hidden = shown on mobile, hidden on lg+)
+                if (signInBtnMobile) {
+                    signInBtnMobile.classList.remove('hidden');
+                }
+                // Hide desktop user menu completely
+                if (userMenuDesktop) {
+                    userMenuDesktop.classList.remove('lg:flex');
+                }
+                // Hide mobile user menu completely
+                if (userMenuMobile) {
+                    userMenuMobile.classList.add('hidden');
+                    userMenuMobile.classList.remove('flex', 'lg:hidden');
+                }
+            }
+        }
+
+        // Open Clerk sign-in modal
+        async function openClerkSignIn() {
+            if (window.posthog) {
+                posthog.capture('sign_in_clicked', { page: 'landing' });
+            }
+
+            if (!clerkLoaded) {
+                await initClerk();
+            }
+
+            if (window.Clerk && clerkLoaded) {
+                window.Clerk.openSignIn({
+                    afterSignInUrl: '/app',
+                    afterSignUpUrl: '/app'
+                });
+            } else {
+                alert('Sign-in is loading. Please try again in a moment.');
+            }
+        }
+
+        // Open user profile
+        function openUserProfile() {
+            if (window.Clerk && clerkLoaded) {
+                window.Clerk.openUserProfile();
+            }
+        }
+
+        // Sign out
+        async function signOut() {
+            if (window.Clerk && clerkLoaded) {
+                await window.Clerk.signOut();
+                // Force page reload to ensure clean state
+                window.location.reload();
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait for Clerk script to be ready
+            const checkClerk = setInterval(() => {
+                if (window.Clerk) {
+                    clearInterval(checkClerk);
+                    initClerk();
+                }
+            }, 100);
+
+            // Timeout after 5 seconds
+            setTimeout(() => clearInterval(checkClerk), 5000);
+        });
+    </script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -545,6 +702,34 @@
                         </span>
                     </a>
 
+                    <!-- Desktop Sign In Button (shown by default, hidden when signed in) -->
+                    <button id="signInBtnDesktop" onclick="openClerkSignIn()" class="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium transition-all duration-200 rounded-lg bg-strata-blue-600 hover:bg-strata-blue-700 text-white shadow-sm hover:shadow">
+                        <i class="fas fa-sign-in-alt text-sm"></i>
+                        <span>Sign In</span>
+                    </button>
+
+                    <!-- Desktop User Menu (hidden by default, shown when signed in on lg+ screens) -->
+                    <div id="userMenuDesktop" class="hidden items-center gap-2">
+                        <div class="relative group">
+                            <button class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors">
+                                <img id="userAvatar" src="" alt="User" class="w-8 h-8 rounded-full border-2 border-slate-200 object-cover">
+                                <span id="userName" class="text-sm font-medium text-slate-700"></span>
+                                <i class="fas fa-chevron-down text-xs text-slate-400"></i>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <button onclick="openUserProfile()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors rounded-t-lg">
+                                    <i class="fas fa-user-cog text-slate-400"></i>
+                                    <span>Profile Settings</span>
+                                </button>
+                                <button onclick="signOut()" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg border-t border-slate-100">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Mobile About Button -->
                     <button onclick="showAboutModal()" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
                         <i class="fas fa-info-circle"></i>
@@ -554,6 +739,18 @@
                     <a href="https://github.com/kamathhrishi/stratalens-ai" target="_blank" rel="noopener noreferrer" onclick="if(window.posthog){posthog.capture('github_link_clicked', {page: 'landing', device: 'mobile'})}" class="lg:hidden text-slate-500 hover:text-slate-700 px-2 py-1.5 text-sm font-medium transition-colors">
                         <i class="fab fa-github"></i>
                     </a>
+
+                    <!-- Mobile Sign In Button (shown by default, hidden when signed in) -->
+                    <button id="signInBtnMobile" onclick="openClerkSignIn()" class="lg:hidden bg-strata-blue-600 hover:bg-strata-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </button>
+
+                    <!-- Mobile User Menu (hidden by default, shown when signed in on mobile) -->
+                    <div id="userMenuMobile" class="hidden items-center gap-2">
+                        <button onclick="signOut()" class="text-slate-500 hover:text-red-600 px-2 py-1.5 transition-colors" title="Sign Out">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

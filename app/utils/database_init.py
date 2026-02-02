@@ -76,6 +76,7 @@ async def init_database(database_url: str, db_pool: Optional[asyncpg.Pool] = Non
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                clerk_user_id VARCHAR(255) UNIQUE,
                 username VARCHAR(50) UNIQUE NOT NULL,
                 email VARCHAR(255) UNIQUE,
                 full_name VARCHAR(255) NOT NULL,
@@ -102,6 +103,7 @@ async def init_database(database_url: str, db_pool: Optional[asyncpg.Pool] = Non
         
         # Add missing columns if needed (safely)
         missing_columns = {
+            'clerk_user_id': 'VARCHAR(255) UNIQUE',
             'username': 'VARCHAR(50) UNIQUE NOT NULL',
             'hashed_password': 'VARCHAR(255)',
             'first_name': 'VARCHAR(255)',
@@ -263,6 +265,7 @@ async def init_database(database_url: str, db_pool: Optional[asyncpg.Pool] = Non
         
         # Create indexes for better performance
         indexes = [
+            ('idx_users_clerk_id', 'users', 'clerk_user_id'),
             ('idx_users_username', 'users', 'username'),
             ('idx_users_email', 'users', 'email'),
             ('idx_search_queries_user_id', 'search_queries', 'user_id'),

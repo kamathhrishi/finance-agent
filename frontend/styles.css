@@ -117,6 +117,52 @@
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-full: 9999px;
+
+    /* Z-index Hierarchy */
+    --z-base: 1;
+    --z-raised: 10;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-overlay: 500;
+    --z-modal: 1000;
+    --z-popover: 5000;
+    --z-toast: 9000;
+    --z-max: 9999;
+}
+
+.dark {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --bg-elevated: #1e293b;
+
+    --border-primary: #334155;
+    --border-secondary: #1e293b;
+    --border-subtle: rgba(51, 65, 85, 0.6);
+    --border-focus: rgba(59, 130, 246, 0.5);
+
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --text-quaternary: #475569;
+    --text-muted: #334155;
+
+    --accent-primary: #3b82f6;
+    --accent-primary-hover: #60a5fa;
+    --accent-primary-light: rgba(59, 130, 246, 0.15);
+    --accent-primary-subtle: rgba(59, 130, 246, 0.08);
+    --accent-positive: #10b981;
+    --accent-negative: #ef4444;
+    --accent-warning: #f59e0b;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+    --shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-card-hover: 0 4px 12px rgba(59, 130, 246, 0.15), 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* 2. Base Body & Layout - ENHANCED FOR PROFESSIONAL POLISH */
@@ -231,7 +277,7 @@ main {
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: var(--z-sticky);
 }
 
 .dark .app-header {
@@ -408,6 +454,7 @@ main {
 /* ENHANCED reasoning step styling */
 .reasoning-step {
     transition: all 0.25s ease-in-out;
+    contain: content;
 }
 
 .reasoning-step:hover {
@@ -767,7 +814,7 @@ main {
     text-align: left;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: var(--z-raised);
     font-size: 0.75rem;
     text-transform: none;
     letter-spacing: normal;
@@ -954,7 +1001,7 @@ main {
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
-    z-index: 1000;
+    z-index: var(--z-modal);
     pointer-events: none;
 }
 
@@ -991,7 +1038,6 @@ main {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     font-weight: 400;
     letter-spacing: 0.025em;
-    backdrop-filter: blur(8px);
 }
 
 .input-pro.search-input::placeholder { 
@@ -1028,7 +1074,7 @@ main {
     position: absolute;
     inset: 0;
     background: rgba(255, 255, 255, 0.8);
-    z-index: 10;
+    z-index: var(--z-raised);
 }
 
 .landing-upgrade-prompt {
@@ -1038,8 +1084,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 20;
-    backdrop-filter: blur(4px);
+    z-index: var(--z-raised);
 }
 
 .landing-transition {
@@ -1048,7 +1093,6 @@ main {
 
 .login-modal {
     background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
 }
 
 .login-form {
@@ -1113,7 +1157,7 @@ main {
     position: fixed;
     inset: 0;
     background-color: var(--bg-primary);
-    z-index: 100;
+    z-index: var(--z-dropdown);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1135,7 +1179,7 @@ main {
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-primary);
     border-radius: 8px;
-    z-index: 1000;
+    z-index: var(--z-modal);
     padding: 8px 0;
 }
 
@@ -1207,9 +1251,8 @@ main {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1660,6 +1703,31 @@ main {
     transform: translateX(4px);
 }
 
+/* Auth-required sidebar items */
+.sidebar-menu-item.auth-required {
+    opacity: 0.9;
+}
+
+.sidebar-menu-item.auth-required:hover {
+    opacity: 1;
+}
+
+/* Lock icon for auth-required items */
+.auth-lock-icon {
+    font-size: 0.625rem;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-menu-item:hover .auth-lock-icon {
+    opacity: 0.8;
+}
+
+.auth-lock-icon.hidden {
+    display: none !important;
+}
+
 /* =============================================================================
  * CHARTING SECTION STYLING
  * =============================================================================
@@ -1667,7 +1735,7 @@ main {
 
 /* Stock search suggestions */
 #chartingStockSuggestions {
-    z-index: 9999 !important;
+    z-index: var(--z-max) !important;
     position: absolute !important;
 }
 
@@ -1732,7 +1800,7 @@ main {
     transform: translateX(-50%);
     display: flex;
     gap: 8px;
-    z-index: 10;
+    z-index: var(--z-raised);
 }
 
 .zoom-btn {
@@ -1782,7 +1850,7 @@ main {
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    z-index: 9999 !important;
+    z-index: var(--z-max) !important;
     background: var(--bg-primary) !important;
     border: none !important;
     border-radius: 0 !important;
@@ -2131,7 +2199,7 @@ main {
     white-space: nowrap;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: var(--z-raised);
 }
 
 .dark .screens-table thead th {
@@ -2643,7 +2711,7 @@ main {
 
 /* Modal styles for expand value */
 #expandValueModal {
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7);
 }
 
 #expandValueContent {
@@ -3065,7 +3133,8 @@ main {
     margin: 0;
     width: 100%;
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
+    contain: strict;
 }
 
 /* Refined Custom Scrollbar */
@@ -3102,6 +3171,15 @@ main {
     opacity: 0;
     animation: messageSlideIn 0.35s var(--ease-out-expo) forwards;
     position: relative;
+    contain: content;
+}
+
+.streaming-content {
+    will-change: contents;
+}
+
+.streaming-complete .streaming-content {
+    will-change: auto;
 }
 
 @keyframes messageSlideIn {
@@ -3513,7 +3591,7 @@ main {
     bottom: 0;
     box-shadow: 0 -2px 8px rgba(0, 131, 241, 0.08);
     overflow: visible !important;
-    z-index: 100 !important;
+    z-index: var(--z-dropdown) !important;
 }
 
 .dark .chat-input-container {
@@ -3606,7 +3684,7 @@ main {
     margin: 0 !important;
     position: relative !important;
     overflow: visible !important;
-    z-index: 10 !important;
+    z-index: var(--z-raised) !important;
 }
 
 .dark .input-footer-bar {
@@ -3625,13 +3703,13 @@ main {
     align-items: center !important;
     gap: 8px !important;
     position: relative !important;
-    z-index: 10001 !important;
+    z-index: var(--z-popover) !important;
 }
 
 /* Mode Selector */
 .mode-selector-compact {
     position: relative !important;
-    z-index: 10001 !important;
+    z-index: var(--z-popover) !important;
 }
 
 .mode-btn {
@@ -3686,7 +3764,7 @@ main {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1) !important;
     padding: 8px !important;
     display: none !important;
-    z-index: 99999 !important;
+    z-index: var(--z-max) !important;
     pointer-events: auto !important;
 }
 
@@ -3945,7 +4023,7 @@ main {
     box-shadow: 0 2px 8px rgba(0, 112, 216, 0.2) !important;
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 10 !important;
+    z-index: var(--z-raised) !important;
 }
 
 .send-button:hover:not(:disabled) {
@@ -3971,7 +4049,7 @@ main {
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2) !important;
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 10 !important;
+    z-index: var(--z-raised) !important;
 }
 
 .stop-button:hover:not(:disabled) {
@@ -4013,7 +4091,6 @@ main {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(8px);
     margin: 0.25rem;
 }
 
@@ -4174,7 +4251,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: var(--z-modal);
 }
 
 .chat-export-content {
@@ -4509,7 +4586,7 @@ main {
 
 /* Chat History Modal Container */
 #chatHistoryModal {
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.7);
 }
 
 #chatHistoryModal .card {
@@ -4646,7 +4723,7 @@ main {
 
 /* Transcript Modal - Ensure highest z-index and proper stacking */
 #transcriptModal {
-    z-index: 2147483647 !important; /* Maximum possible z-index */
+    z-index: var(--z-max) !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -4658,15 +4735,13 @@ main {
     align-items: center !important;
     justify-content: center !important;
     background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
     isolation: isolate !important;
     overflow: visible !important;
 }
 
 #transcriptModal > .card,
 #transcriptModal > div:not(.fixed) {
-    z-index: 2147483647 !important;
+    z-index: var(--z-max) !important;
     position: relative !important;
     max-height: 90vh !important;
     overflow: auto !important;
@@ -4736,11 +4811,11 @@ main {
 @keyframes slideDown {
     from {
         opacity: 0;
-        max-height: 0;
+        transform: translateY(-8px);
     }
     to {
         opacity: 1;
-        max-height: 500px;
+        transform: translateY(0);
     }
 }
 
@@ -4897,7 +4972,7 @@ main {
     border-color: var(--accent-primary);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 112, 216, 0.2);
-    z-index: 10;
+    z-index: var(--z-raised);
 }
 
 /* Active/clicked state */
@@ -4950,7 +5025,7 @@ main {
 /* Chunk tooltip styling */
 .chunk-tooltip {
     position: fixed;
-    z-index: 10000;
+    z-index: var(--z-toast);
     pointer-events: none;
     animation: tooltipAppear 0.2s ease-out;
 }
@@ -5176,7 +5251,7 @@ main {
 .citation-info {
     flex: 1;
     position: relative;
-    z-index: 1;
+    z-index: var(--z-base);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -5989,4 +6064,80 @@ main {
         opacity: 1;
         transform: translateX(0);
     }
+}
+
+/* ================================================
+ * SKELETON LOADING STYLES
+ * ================================================ */
+
+@keyframes skeleton-pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0.6; }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+    height: 0.875rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-text:last-child {
+    width: 60%;
+}
+
+.skeleton-heading {
+    height: 1.25rem;
+    width: 40%;
+    margin-bottom: 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.skeleton-card {
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+}
+
+.skeleton-table-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.skeleton-table-row > * {
+    flex: 1;
+    height: 0.875rem;
+    border-radius: var(--radius-sm);
+}
+
+/* ================================================
+ * SECTION TRANSITION STYLES
+ * ================================================ */
+
+.section-panel {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.section-panel.active {
+    opacity: 1;
+    transform: translateY(0);
 }

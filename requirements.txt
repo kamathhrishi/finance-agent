@@ -9,8 +9,12 @@ psycopg2-binary
 SQLAlchemy
 
 # Authentication and security
+# Primary: Clerk authentication (JWKS-based JWT verification)
+PyJWT[crypto]  # Required for RS256 verification with Clerk JWKS
+
+# Legacy dependencies (kept for backward compatibility during migration)
+# TODO: Remove after full Clerk migration is complete
 python-jose[cryptography]
-PyJWT
 passlib[bcrypt]==1.7.4
 itsdangerous==2.1.2
 Authlib==1.2.1

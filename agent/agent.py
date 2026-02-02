@@ -2,7 +2,7 @@
 """
 Agent - Unified agent for financial Q&A
 
-Simple wrapper around RAGAgent for earnings transcript Q&A.
+Simple wrapper around RAGAgent for financial data Q&A (earnings transcripts, 10-K filings, news).
 """
 
 import os
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Agent:
     """
-    Agent for financial Q&A - earnings transcript queries.
+    Agent for financial Q&A - earnings transcripts, 10-K filings, and news.
 
     This is a thin wrapper around RAGAgent that provides:
     - Clean API for query execution
@@ -106,7 +106,7 @@ class Agent:
         """
         *** MAIN ENTRY POINT (STREAMING) ***
 
-        Execute RAG flow for earnings transcript Q&A with streaming events.
+        Execute RAG flow for financial Q&A with streaming events.
 
         Args:
             question: User's question
@@ -114,7 +114,7 @@ class Agent:
                 - show_details (bool): Print debug info
                 - comprehensive (bool): Use comprehensive multi-ticker mode
                 - stream_callback (callable): Callback for streaming
-                - max_iterations (int): Number of iterations (1=chat, 3+=agentic)
+                - max_iterations (int): Number of improvement iterations
                 - conversation_id (str): Conversation ID for memory
                 - stream (bool): Whether to stream events
 

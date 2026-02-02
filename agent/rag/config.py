@@ -67,6 +67,7 @@ class Config:
             
             # Iterative RAG settings
             "max_iterations": int(os.getenv("RAG_MAX_ITERATIONS", "3")),
+            "sec_max_iterations": int(os.getenv("SEC_MAX_ITERATIONS", "5")),  # More iterations for 10-K/SEC queries
             # Use Cerebras model for evaluation as well (no Groq/OpenAI OSS)
             "evaluation_model": os.getenv("RAG_EVALUATION_MODEL", "qwen-3-235b-a22b-instruct-2507"),
             "evaluation_temperature": 0.1,
@@ -240,8 +241,8 @@ class Config:
             return "Limited quarterly data available in our database."
         
         context_parts = [
-            "AVAILABLE TRANSCRIPT DATA:",
-            f"Our database contains earnings transcripts for {len(available_quarters)} quarters:",
+            "AVAILABLE FINANCIAL DATA:",
+            f"Our database contains financial data for {len(available_quarters)} quarters (earnings transcripts and 10-K filings):",
         ]
         
         for quarter_id in available_quarters:
@@ -268,19 +269,20 @@ class Config:
         
         context_parts.extend([
             "",
-            "QUARTER FORMAT: Always use database format (e.g., 2025_q1, 2025_q2)",
+            "PERIOD FORMAT: Use database format for quarters (e.g., 2025_q1) or fiscal years (FY 2024)",
             "FISCAL QUARTERS: Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec",
-            f"LATEST QUARTER: {latest_quarter} (this is the most recent data available across all companies)",
+            f"LATEST QUARTER: {latest_quarter} (most recent quarterly data available)",
             f"OLDEST QUARTER: {available_quarters[-1] if available_quarters else 'Unknown'}",
             "",
             "DATA AVAILABILITY:",
-            f"Our database contains earnings transcript data ({len(available_quarters)} quarters total).",
-            "**IMPORTANT**: The latest available quarter may differ by company. Always determine the latest quarter",
-            "for each specific company based on the available quarters listed above.",
-            "When users ask about 'latest' or 'most recent' data, use the latest quarter available for that specific company.",
-            "Each transcript includes both:",
-            "- Chunked text segments for semantic search and analysis",
-            "- Complete transcripts available for detailed review"
+            f"Our database contains financial data ({len(available_quarters)} quarters total).",
+            "Data types: Earnings transcripts (quarterly), 10-K SEC filings (annual), and news sources.",
+            "**IMPORTANT**: The latest available data may differ by company and data type.",
+            "When users ask about 'latest' or 'most recent' data, use the most appropriate source for their question.",
+            "Data includes:",
+            "- Earnings transcripts: Quarterly calls with management commentary, guidance, and analyst Q&A",
+            "- 10-K filings: Annual SEC filings with audited financials, risk factors, compensation data",
+            "- News: Recent developments, announcements, and market updates"
         ])
         
         return "\n".join(context_parts)

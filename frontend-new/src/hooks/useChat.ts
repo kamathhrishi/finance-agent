@@ -1,0 +1,294 @@
+import { useState, useCallback } from 'react'
+import {
+  streamChat,
+  generateMessageId,
+  type ChatMessage,
+  type ReasoningStep,
+  type Source,
+  type SSEEvent,
+} from '../lib/api'
+
+interface UseChatReturn {
+  messages: ChatMessage[]
+  isLoading: boolean
+  error: string | null
+  sendMessage: (content: string) => Promise<void>
+  clearMessages: () => void
+  currentReasoning: ReasoningStep[]
+}
+
+export function useChat(): UseChatReturn {
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [currentReasoning, setCurrentReasoning] = useState<ReasoningStep[]>([])
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || isLoading) return
+
+    setError(null)
+    setIsLoading(true)
+    setCurrentReasoning([])
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: generateMessageId(),
+      role: 'user',
+      content: content.trim(),
+      timestamp: new Date(),
+    }
+
+    // Add placeholder assistant message
+    const assistantMessageId = generateMessageId()
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      reasoning: [],
+      sources: [],
+      timestamp: new Date(),
+      isStreaming: true,
+    }
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage])
+
+    try {
+      let accumulatedContent = ''
+      const accumulatedReasoning: ReasoningStep[] = []
+      let accumulatedSources: Source[] = []
+
+      for await (const event of streamChat(content)) {
+        // Debug log
+        console.log('SSE Event:', event.type, event)
+
+        handleSSEEvent(
+          event,
+          assistantMessageId,
+          accumulatedContent,
+          accumulatedReasoning,
+          accumulatedSources,
+          (newContent) => {
+            accumulatedContent = newContent
+          },
+          (newSources) => {
+            accumulatedSources = newSources
+          }
+        )
+      }
+
+      // Mark streaming as complete
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, isStreaming: false }
+            : msg
+        )
+      )
+    } catch (err) {
+      console.error('Chat error:', err)
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setError(errorMessage)
+
+      // Update assistant message with error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: 'Sorry, an error occurred while processing your request. Please try again.',
+                isStreaming: false,
+              }
+            : msg
+        )
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isLoading])
+
+  const handleSSEEvent = useCallback(
+    (
+      event: SSEEvent,
+      messageId: string,
+      currentContent: string,
+      currentReasoningSteps: ReasoningStep[],
+      _currentSources: Source[],
+      setContent: (content: string) => void,
+      setSources: (sources: Source[]) => void
+    ) => {
+      switch (event.type) {
+        case 'token':
+          // Backend sends token in 'content' field, not 'token'
+          const tokenContent = event.content || event.token
+          if (tokenContent) {
+            const newContent = currentContent + tokenContent
+            setContent(newContent)
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId ? { ...msg, content: newContent } : msg
+              )
+            )
+          }
+          break
+
+        // All reasoning/progress event types
+        case 'reasoning':
+        case 'progress':
+        case 'analysis':
+        case 'search':
+        case 'news_search':
+        case 'iteration_start':
+        case 'iteration_search':
+        case 'iteration_transcript_search':
+        case 'iteration_news_search':
+        case 'iteration_followup':
+        case 'iteration_complete':
+        case 'iteration_final':
+        case 'agent_decision':
+        case 'planning_start':
+        case 'planning_complete':
+        case 'retrieval_complete':
+        case 'evaluation_complete':
+        case 'search_complete':
+        case '10k_planning':
+        case '10k_retrieval':
+        case '10k_evaluation':
+          if (event.message) {
+            const newStep: ReasoningStep = {
+              message: event.message,
+              step: event.step || event.type,
+              data: event.data,
+            }
+            currentReasoningSteps.push(newStep)
+            setCurrentReasoning([...currentReasoningSteps])
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, reasoning: [...currentReasoningSteps] }
+                  : msg
+              )
+            )
+          }
+          break
+
+        case 'result':
+        case '10k_answer': {
+          // Handle answer - could be in various nested locations
+          const data = event.data as Record<string, unknown> | undefined
+          const response = data?.response as Record<string, unknown> | undefined
+
+          // Try multiple paths: event.answer -> event.data.answer -> event.data.response.answer
+          const answerContent = event.answer ||
+            data?.answer as string ||
+            response?.answer as string
+
+          console.log('Result event - answer found:', !!answerContent, answerContent?.substring(0, 100))
+
+          if (answerContent) {
+            setContent(answerContent)
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId ? { ...msg, content: answerContent } : msg
+              )
+            )
+          }
+
+          // Handle citations - could be in various nested locations
+          // Backend sends citations with fields: company, ticker, quarter, chunk_text, chunk_id, etc.
+          const citationsData = event.citations ||
+            data?.citations ||
+            response?.citations
+          if (citationsData && Array.isArray(citationsData)) {
+            // Pass through ALL fields from backend - cast to any to avoid type stripping
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const newSources: Source[] = citationsData.map((c: any) => ({
+              // Common
+              title: c.title,
+              type: c.type,
+              marker: c.marker,
+
+              // Transcript fields
+              company: c.company,
+              ticker: c.ticker,
+              quarter: c.quarter,
+              chunk_text: c.chunk_text,
+              chunk_id: c.chunk_id,
+              relevance_score: c.relevance_score,
+              transcript_available: c.transcript_available,
+
+              // 10-K fields
+              fiscal_year: c.fiscal_year,
+              section: c.section,
+              chunk_type: c.chunk_type,
+              path: c.path,
+
+              // News fields
+              url: c.url,
+              published_date: c.published_date,
+
+              // Legacy
+              page: c.page,
+            }))
+            setSources(newSources)
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId ? { ...msg, sources: newSources } : msg
+              )
+            )
+          }
+          break
+        }
+
+        case 'error':
+          setError(event.message || 'An error occurred')
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === messageId
+                ? { ...msg, content: event.message || 'An error occurred', isStreaming: false }
+                : msg
+            )
+          )
+          break
+
+        case 'done':
+          // Stream complete - no action needed
+          break
+
+        default:
+          // Handle any unknown event types that have a message
+          if (event.message) {
+            const newStep: ReasoningStep = {
+              message: event.message,
+              step: event.step || event.type,
+              data: event.data,
+            }
+            currentReasoningSteps.push(newStep)
+            setCurrentReasoning([...currentReasoningSteps])
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === messageId
+                  ? { ...msg, reasoning: [...currentReasoningSteps] }
+                  : msg
+              )
+            )
+          }
+      }
+    },
+    []
+  )
+
+  const clearMessages = useCallback(() => {
+    setMessages([])
+    setError(null)
+    setCurrentReasoning([])
+  }, [])
+
+  return {
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    clearMessages,
+    currentReasoning,
+  }
+}

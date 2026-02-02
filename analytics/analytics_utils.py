@@ -160,7 +160,6 @@ class RAGAnalyticsLogger:
                 'chunks_retrieved': self.analytics_data.get('chunks_retrieved', 0),
                 'chunks_used': self.analytics_data.get('chunks_used', 0),
                 'similarity_threshold': self.analytics_data.get('similarity_threshold'),
-                'chunks_per_quarter': self.analytics_data.get('chunks_per_quarter'),
                 'retrieval_time_ms': self.analytics_data.get('retrieval_time_ms'),
                 'chunk_details': self.analytics_data.get('chunk_details'),
                 'llm_success': self.analytics_data.get('llm_success'),
@@ -184,14 +183,14 @@ class RAGAnalyticsLogger:
                     question_analyzer_response_time_ms, is_valid, question_type, extracted_ticker,
                     extracted_tickers, rephrased_question, confidence, quarter_context,
                     quarter_count, quarter_reference, chunks_retrieved, chunks_used,
-                    similarity_threshold, chunks_per_quarter, retrieval_time_ms, chunk_details,
+                    similarity_threshold, retrieval_time_ms, chunk_details,
                     llm_success, llm_error, llm_retry_count, llm_response_time_ms,
                     tokens_used, model_used, final_answer, answer_length,
                     total_pipeline_time_ms, overall_success, error_stage
                 ) VALUES (
                     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
                     $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-                    $31, $32, $33, $34, $35
+                    $31, $32, $33, $34
                 )
             """, *insert_data.values())
             

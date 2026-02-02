@@ -1,6 +1,6 @@
 # StrataLens AI
 
-Stratalens AI is equity research platform. You can ask questions and get answers to questions from 10K filings, earnings calls and news.
+Stratalens AI is an equity research platform. Ask questions and get answers from 10-K filings, earnings calls, and news.
 
 **Live Platform:** [www.stratalens.ai](https://www.stratalens.ai)
 
@@ -8,7 +8,7 @@ Stratalens AI is equity research platform. You can ask questions and get answers
 
 ## Agent System
 
-Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **intelligent tool routing** and **self-reflection** for financial Q&A. This powers the chat and analysis features on stratalens.ai.
+Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **semantic data source routing**, **research planning**, and **iterative self-improvement** for financial Q&A.
 
 ### Architecture Overview
 
@@ -17,29 +17,34 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **i
  ═══════════════════════════════════════════════════════════════════════
 
  ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
- │ Question │───►│ Question Analyzer │───►│     Tool Selection       │
+ │ Question │───►│ Question Analyzer │───►│  Semantic Data Routing   │
  └──────────┘    │   (Cerebras LLM)  │    │                          │
                  │                   │    │  • Earnings Transcripts  │
                  │ Extracts:         │    │  • SEC 10-K Filings      │
                  │ • Tickers         │    │  • Real-Time News        │
-                 │ • Time periods    │    │                          │
-                 │ • Data source     │    └────────────┬─────────────┘
+                 │ • Time periods    │    │  • Hybrid (multi-source) │
+                 │ • Intent          │    └────────────┬─────────────┘
                  └───────────────────┘                 │
                                                        ▼
+                 ┌─────────────────────────────────────────────────────┐
+                 │              RESEARCH PLANNING                       │
+                 │  Agent generates reasoning: "I need to find..."     │
+                 └────────────────────────┬────────────────────────────┘
+                                          ▼
                  ┌─────────────────────────────────────────────────────┐
                  │                  RETRIEVAL LAYER                     │
                  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
                  │  │  Earnings   │  │  SEC 10-K   │  │   Tavily    │  │
                  │  │ Transcripts │  │   Filings   │  │    News     │  │
                  │  │             │  │             │  │             │  │
-                 │  │ Vector DB   │  │ Vector DB   │  │  Live API   │  │
-                 │  │ + Hybrid    │  │ + Section   │  │             │  │
-                 │  │   Search    │  │   Routing   │  │             │  │
+                 │  │ Vector DB   │  │ Section     │  │  Live API   │  │
+                 │  │ + Hybrid    │  │ Routing +   │  │             │  │
+                 │  │   Search    │  │ Reranking   │  │             │  │
                  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
                  └─────────┴───────────┬────┴────────────────┴─────────┘
                                        │ ▲
                                        │ │ Re-query with
-                                       │ │ different sources
+                                       │ │ follow-up questions
                                        ▼ │
                  ┌─────────────────────────────────────────────────────┐
                  │               ITERATIVE IMPROVEMENT                  │
@@ -60,13 +65,20 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **i
 ```
 
 **Key Concepts:**
-1. **Question Analysis** - Cerebras LLM extracts tickers, time periods, and determines data sources
-2. **Tool Routing** - Automatically routes to earnings transcripts, SEC filings, or news based on question
-3. **Self-Reflection** - Evaluates answer quality and iterates until confident (≥90%) or max iterations reached
+1. **Semantic Routing** - Routes to data sources based on question **intent**, not just keywords
+2. **Research Planning** - Agent explains reasoning before searching ("I need to find...")
+3. **Multi-Source RAG** - Combines earnings transcripts, SEC 10-K filings, and news
+4. **Self-Reflection** - Evaluates answer quality and iterates until confident (≥90%)
 
-**Benchmark:** 85% accuracy on [FinanceBench](https://github.com/patronus-ai/financebench) (SEC filings only), evaluated using LLM-as-a-judge. Full benchmark setup coming soon.
+**Benchmark:** 85% accuracy on [FinanceBench](https://github.com/patronus-ai/financebench) (SEC filings only), evaluated using LLM-as-a-judge.
 
-For detailed agent documentation, see [agent/README.md](agent/README.md).
+### Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[agent/README.md](agent/README.md)** | Complete agent architecture, pipeline stages, configuration |
+| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: section routing, table selection, reranking |
+| **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** | Data ingestion pipelines for transcripts and 10-K filings |
 
 ---
 
@@ -199,10 +211,14 @@ See `agent/rag/data_ingestion/README.md` for detailed ingestion instructions.
 
 ## AI Agent Documentation
 
-For detailed documentation on the AI agent architecture and RAG system, see:
+For detailed documentation on the AI agent architecture and RAG system:
 
-- **[agent/README.md](agent/README.md)** - Complete agent architecture, RAG pipeline, self-reflection system, and usage examples
-- **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** - Data ingestion scripts for transcripts, embeddings, and SEC filings
+| Document | Description |
+|----------|-------------|
+| **[agent/README.md](agent/README.md)** | Complete agent architecture, semantic routing, research planning, iteration loop |
+| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: 4-stage pipeline, section routing, table selection, cross-encoder reranking |
+| **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** | Data ingestion pipelines for transcripts, embeddings, and SEC filings |
+| **[experiments/sec_filings_rag/README.md](experiments/sec_filings_rag/README.md)** | SEC hierarchical parsing experiments and RAG prototype |
 
 ## Development Status
 

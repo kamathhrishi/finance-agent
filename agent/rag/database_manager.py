@@ -420,30 +420,31 @@ class DatabaseManager:
     async def _search_postgres_with_ticker_async(self, query_embedding: np.ndarray, ticker: str, target_quarter: str = None) -> List[Dict[str, Any]]:
         """Async version of PostgreSQL search with ticker filtering."""
         try:
+            ticker = ticker.upper()  # Normalize ticker case to match DB storage
             rag_logger.info(f"🔍 Starting async PostgreSQL search for ticker: {ticker}, quarter: {target_quarter}")
-            
+
             if not self.pgvector_pool:
                 await self._initialize_async_pools()
-            
+
             async with self.pgvector_pool.acquire() as conn:
                 # Build query with optional quarter filtering
                 if target_quarter:
                     year, quarter = target_quarter.split('_')
                     quarter_num = quarter[1:]  # Remove 'q' prefix
-                    
+
                     query = """
                     SELECT chunk_text, metadata, year, quarter, ticker, 1 - (embedding <=> $1::vector) as similarity, chunk_index
-                    FROM transcript_chunks 
-                    WHERE ticker = $2 AND year = $3 AND quarter = $4
+                    FROM transcript_chunks
+                    WHERE UPPER(ticker) = $2 AND year = $3 AND quarter = $4
                     ORDER BY embedding <=> $1::vector
                     LIMIT $5
                     """
-                    
+
                     params = (
-                        query_embedding.flatten().tolist(), 
-                        ticker, 
-                        int(year), 
-                        int(quarter_num), 
+                        query_embedding.flatten().tolist(),
+                        ticker,
+                        int(year),
+                        int(quarter_num),
                         self.config.get("chunks_per_quarter")
                     )
                     
@@ -454,23 +455,23 @@ class DatabaseManager:
                 else:
                     query = """
                     SELECT chunk_text, metadata, year, quarter, ticker, 1 - (embedding <=> $1::vector) as similarity, chunk_index
-                    FROM transcript_chunks 
-                    WHERE ticker = $2
+                    FROM transcript_chunks
+                    WHERE UPPER(ticker) = $2
                     ORDER BY embedding <=> $1::vector
                     LIMIT $3
                     """
-                    
+
                     params = (
-                        query_embedding.flatten().tolist(), 
-                        ticker, 
+                        query_embedding.flatten().tolist(),
+                        ticker,
                         self.config.get("chunks_per_quarter")
                     )
-                    
+
                     # Run EXPLAIN ANALYZE in debug mode
                     await self._explain_analyze_query_async(query, params)
-                    
+
                     rows = await conn.fetch(query, *params)
-                
+
                 rag_logger.info(f"✅ Async PostgreSQL returned {len(rows)} results for ticker {ticker}")
                 
                 # Convert to expected format
@@ -513,10 +514,11 @@ class DatabaseManager:
     def _search_postgres_with_ticker(self, query_embedding: np.ndarray, ticker: str, target_quarter: str = None) -> List[Dict[str, Any]]:
         """Search using PostgreSQL with pgvector, ticker filtering, and optional quarter filtering."""
         try:
+            ticker = ticker.upper()  # Normalize ticker case to match DB storage
             search_start = time.time()
             rag_logger.info(f"🔍 Starting PostgreSQL search for ticker: {ticker}, quarter: {target_quarter}")
             rag_logger.info(f"📊 Query embedding shape: {query_embedding.shape}")
-            
+
             # Time connection acquisition
             conn_start = time.time()
             rag_logger.info(f"🔗 Getting connection from pool...")
@@ -524,17 +526,17 @@ class DatabaseManager:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
             conn_time = time.time() - conn_start
             rag_logger.info(f"✅ Connected to PostgreSQL database ({conn_time:.3f}s)")
-            
+
             # Build query with optional quarter filtering
             if target_quarter:
                 # Extract year and quarter from target_quarter (e.g., "2025_q1" -> year=2025, quarter=1)
                 year, quarter = target_quarter.split('_')
                 quarter_num = quarter[1:]  # Remove 'q' prefix
-                
+
                 query = """
                 SELECT chunk_text, metadata, year, quarter, ticker, 1 - (embedding <=> %s::vector) as similarity, chunk_index
-                FROM transcript_chunks 
-                WHERE ticker = %s AND year = %s AND quarter = %s
+                FROM transcript_chunks
+                WHERE UPPER(ticker) = %s AND year = %s AND quarter = %s
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """
@@ -554,8 +556,8 @@ class DatabaseManager:
                 # Search without quarter filtering
                 query = """
                 SELECT chunk_text, metadata, year, quarter, ticker, 1 - (embedding <=> %s::vector) as similarity, chunk_index
-                FROM transcript_chunks 
-                WHERE ticker = %s
+                FROM transcript_chunks
+                WHERE UPPER(ticker) = %s
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """
@@ -634,9 +636,10 @@ class DatabaseManager:
             rag_logger.info("=" * 80)
             
             return chunks
-            
+
         except Exception as e:
-            logger.error(f"Failed to search PostgreSQL: {e}")
+            logger.error(f"Failed to search PostgreSQL (ticker={ticker}, quarter={target_quarter}): {e}", exc_info=True)
+            rag_logger.error(f"❌ PostgreSQL search EXCEPTION for ticker={ticker}, quarter={target_quarter}: {type(e).__name__}: {e}")
             return []
 
     # ═════════════════════════════════════════════════════════════════════
@@ -739,9 +742,10 @@ class DatabaseManager:
             
             rag_logger.info(f"🎯 PostgreSQL general search final results: {len(chunks)} chunks above threshold {threshold}")
             return chunks
-            
+
         except Exception as e:
-            logger.error(f"Failed to search PostgreSQL: {e}")
+            logger.error(f"Failed to search PostgreSQL (general search): {e}", exc_info=True)
+            rag_logger.error(f"❌ PostgreSQL general search EXCEPTION: {type(e).__name__}: {e}")
             return []
     
     # ═════════════════════════════════════════════════════════════════════
@@ -760,6 +764,7 @@ class DatabaseManager:
             List of table dictionaries with metadata
         """
         try:
+            ticker = ticker.upper()  # Normalize ticker case
             if not self.pgvector_pool:
                 await self._initialize_async_pools()
 
@@ -770,7 +775,7 @@ class DatabaseManager:
                            path_string, sec_section, sec_section_title,
                            is_financial_statement, statement_type, priority
                     FROM ten_k_tables
-                    WHERE ticker = $1 AND fiscal_year = $2
+                    WHERE UPPER(ticker) = $1 AND fiscal_year = $2
                     ORDER BY priority DESC, sec_section
                     """
                     params = (ticker, fiscal_year)
@@ -781,8 +786,8 @@ class DatabaseManager:
                            path_string, sec_section, sec_section_title,
                            is_financial_statement, statement_type, priority
                     FROM ten_k_tables
-                    WHERE ticker = $1
-                      AND fiscal_year = (SELECT MAX(fiscal_year) FROM ten_k_tables WHERE ticker = $1)
+                    WHERE UPPER(ticker) = $1
+                      AND fiscal_year = (SELECT MAX(fiscal_year) FROM ten_k_tables WHERE UPPER(ticker) = $1)
                     ORDER BY priority DESC, sec_section
                     """
                     params = (ticker,)
@@ -816,6 +821,7 @@ class DatabaseManager:
     async def search_10k_filings_async(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None) -> List[Dict[str, Any]]:
         """Search 10-K filings using vector similarity (async)."""
         try:
+            ticker = ticker.upper()  # Normalize ticker case to match DB storage
             rag_logger.info(f"📄 Starting async 10-K search for ticker: {ticker}, fiscal_year: {fiscal_year}")
 
             if not self.pgvector_pool:
@@ -826,7 +832,7 @@ class DatabaseManager:
                 # asyncpg needs the vector as a string representation that PostgreSQL can parse
                 embedding_list = query_embedding.flatten().tolist()
                 embedding_str = '[' + ','.join(str(x) for x in embedding_list) + ']'
-                
+
                 # Build query with optional fiscal year filtering
                 if fiscal_year:
                     query = """
@@ -834,13 +840,13 @@ class DatabaseManager:
                            sec_section, sec_section_title, path_string, chunk_index,
                            1 - (embedding <=> $1::vector) as similarity
                     FROM ten_k_chunks
-                    WHERE ticker = $2 AND fiscal_year = $3
+                    WHERE UPPER(ticker) = $2 AND fiscal_year = $3
                     ORDER BY embedding <=> $1::vector
                     LIMIT $4
                     """
                     rows = await conn.fetch(
                         query,
-                        embedding_str,  # Pass as string for asyncpg
+                        embedding_str,
                         ticker,
                         fiscal_year,
                         self.config.get("chunks_per_quarter", 15)
@@ -851,13 +857,13 @@ class DatabaseManager:
                            sec_section, sec_section_title, path_string, chunk_index,
                            1 - (embedding <=> $1::vector) as similarity
                     FROM ten_k_chunks
-                    WHERE ticker = $2
+                    WHERE UPPER(ticker) = $2
                     ORDER BY embedding <=> $1::vector
                     LIMIT $3
                     """
                     rows = await conn.fetch(
                         query,
-                        embedding_str,  # Pass as string for asyncpg
+                        embedding_str,
                         ticker,
                         self.config.get("chunks_per_quarter", 15)
                     )
@@ -902,6 +908,7 @@ class DatabaseManager:
     def search_10k_filings(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None) -> List[Dict[str, Any]]:
         """Search 10-K filings using vector similarity (sync)."""
         try:
+            ticker = ticker.upper()  # Normalize ticker case to match DB storage
             rag_logger.info(f"📄 Starting 10-K search for ticker: {ticker}, fiscal_year: {fiscal_year}")
 
             conn = self._get_db_connection()
@@ -914,7 +921,7 @@ class DatabaseManager:
                        sec_section, sec_section_title, path_string, chunk_index,
                        1 - (embedding <=> %s::vector) as similarity
                 FROM ten_k_chunks
-                WHERE ticker = %s AND fiscal_year = %s
+                WHERE UPPER(ticker) = %s AND fiscal_year = %s
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """
@@ -931,7 +938,7 @@ class DatabaseManager:
                        sec_section, sec_section_title, path_string, chunk_index,
                        1 - (embedding <=> %s::vector) as similarity
                 FROM ten_k_chunks
-                WHERE ticker = %s
+                WHERE UPPER(ticker) = %s
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """

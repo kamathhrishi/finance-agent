@@ -12,7 +12,7 @@ This file contains all LLM prompts used across the agent system for:
 # TICKER-SPECIFIC REPHRASING PROMPTS
 # ============================================================================
 
-TICKER_REPHRASING_SYSTEM_PROMPT = """You are a financial analyst assistant that creates ticker-specific search queries for earnings transcripts. Be precise and focused."""
+TICKER_REPHRASING_SYSTEM_PROMPT = """You are a financial analyst assistant that creates ticker-specific search queries for financial data. Our database includes earnings transcripts (quarterly), 10-K SEC filings (annual), and news sources. Be precise and focused."""
 
 def get_ticker_rephrasing_prompt(original_question: str, ticker: str) -> str:
     """
@@ -25,22 +25,24 @@ def get_ticker_rephrasing_prompt(original_question: str, ticker: str) -> str:
     Returns:
         Formatted ticker rephrasing prompt
     """
-    return f"""Rephrase this question to be specific to {ticker} while maintaining the core business topic. Make it more targeted for searching {ticker}'s earnings transcripts.
+    return f"""Rephrase this question to be specific to {ticker} while maintaining the core business topic. Make it more targeted for searching {ticker}'s financial data.
 
 Original Question: "{original_question}"
 Target Ticker: {ticker}
 
 Instructions:
-1. Keep the core business topic (revenue, AI, guidance, etc.)
+1. Keep the core business topic (revenue, AI, guidance, financials, etc.)
 2. Make it specific to {ticker}
 3. Remove other ticker references but keep {ticker}
-4. Make it a clear search query for {ticker}'s earnings data
+4. Make it a clear search query for {ticker}'s financial data
 5. Keep it concise and focused
 
 Examples:
-- "How do $AAPL and $MSFT compare on AI?" → "What did {ticker} say about AI investments?"
+- "How do $AAPL and $MSFT compare on AI?" → "What is {ticker}'s AI strategy and investments?"
 - "What were the revenue highlights for $AAPL and $MSFT?" → "What were {ticker}'s revenue highlights?"
 - "How do companies compare on guidance?" → "What guidance did {ticker} provide?"
+- "Compare balance sheets" → "What is {ticker}'s balance sheet and financial position?"
+- "What's the latest on these companies?" → "What are the latest developments for {ticker}?"
 
 Respond with ONLY the rephrased question, no other text."""
 
@@ -49,7 +51,7 @@ Respond with ONLY the rephrased question, no other text."""
 # PARALLEL QUARTER SYNTHESIS PROMPTS
 # ============================================================================
 
-QUARTER_SYNTHESIS_SYSTEM_PROMPT = """You are a financial analyst assistant that synthesizes multi-quarter earnings data into comprehensive, well-organized responses. Your synthesis must DIRECTLY ANSWER the original question. ALWAYS include ALL financial figures from ALL quarters with EXACT numbers, percentages, and dollar amounts. ALWAYS maintain quarter and company metadata in human-friendly format (Q1 2025, Q2 2025). ALWAYS cite guidance, projections, and forward-looking statements. Show trends, comparisons, and complete financial progression across periods with specific quarter-over-quarter metrics. Be EXTREMELY DETAILED and ELABORATE with all quantitative data. NEVER omit any financial figures - if a number appeared in any quarter response, include it in the synthesis. Preserve all nuances, executive quotes, strategic insights, and contextual information. Your response should be analyst-quality, comprehensive, and directly address what was asked."""
+QUARTER_SYNTHESIS_SYSTEM_PROMPT = """You are a financial analyst assistant that synthesizes multi-period financial data into comprehensive, well-organized responses. Data sources may include earnings transcripts (quarterly), 10-K SEC filings (annual), and news. Your synthesis must DIRECTLY ANSWER the original question. ALWAYS include ALL financial figures from ALL sources with EXACT numbers, percentages, and dollar amounts. ALWAYS maintain period and company metadata in human-friendly format (Q1 2025, FY 2024, etc.). ALWAYS cite guidance, projections, and forward-looking statements. Show trends, comparisons, and complete financial progression across periods with specific period-over-period metrics. Be EXTREMELY DETAILED and ELABORATE with all quantitative data. NEVER omit any financial figures - if a number appeared in any source, include it in the synthesis. Preserve all nuances, executive quotes, strategic insights, and contextual information. Your response should be analyst-quality, comprehensive, and directly address what was asked."""
 
 def get_quarter_synthesis_prompt(question: str, quarter_responses: list, company_name: str,
                                 quarters_human: list) -> str:
@@ -94,12 +96,12 @@ Instructions for Synthesis - READ CAREFULLY:
    - Show the complete picture across the time period
    - Make it read as ONE analysis, not separate quarter reports
 
-3. **ALWAYS Maintain Quarter & Company Metadata** - CRITICAL for context:
-   - Reference specific quarters when citing data (e.g., "In Q1 2025, {company_name} reported...")
-   - Use human-friendly format: "Q1 2025", "Q2 2025", "Q4 2024" (NOT "2025_q1")
+3. **ALWAYS Maintain Period & Company Metadata** - CRITICAL for context:
+   - Reference specific periods when citing data (e.g., "In Q1 2025, {company_name} reported...", "In FY 2024...")
+   - Use human-friendly format: "Q1 2025", "Q2 2025", "FY 2024" (NOT "2025_q1")
    - Always mention {company_name} by name when discussing metrics
-   - Provide source attribution: "According to {company_name}'s Q1 2025 earnings transcript..."
-   - Track and display quarter-over-quarter changes with specific quarter references
+   - Provide source attribution based on data type: "According to {company_name}'s Q1 2025 earnings call...", "Per {company_name}'s FY 2024 10-K filing..."
+   - Track and display period-over-period changes with specific references
 
 4. **CRITICAL - ALWAYS MENTION ALL FINANCIAL FIGURES & PROJECTIONS**:
    - **Include EVERY financial number from EVERY quarter** - NEVER omit any figure
@@ -157,6 +159,94 @@ IMPORTANT REMINDER: The original question was "{question}" - make sure your synt
 # ============================================================================
 # CONTEXT-AWARE FOLLOW-UP PROMPTS
 # ============================================================================
+
+# ============================================================================
+# QUESTION PLANNING/REASONING PROMPTS
+# ============================================================================
+
+QUESTION_PLANNING_SYSTEM_PROMPT = """You are a financial research analyst who thinks through questions before searching. You explain your reasoning process in a natural, verbose way - like thinking out loud about how to approach a research question. Write in first person ("I need to...", "The user is asking...", "I should look for...")."""
+
+def get_question_planning_prompt(question: str, question_analysis: dict, available_quarters: list = None, current_date: str = None) -> str:
+    """
+    Generate prompt for planning the approach to answer a question.
+
+    Args:
+        question: Original user question
+        question_analysis: Analysis from question analyzer (tickers, data_source, etc.)
+        available_quarters: List of available quarters in database (e.g., ["2024_q4", "2025_q1"])
+        current_date: Current date string for context
+
+    Returns:
+        Formatted planning prompt
+    """
+    from datetime import datetime
+
+    tickers = question_analysis.get('extracted_tickers', [])
+    data_source = question_analysis.get('data_source', 'earnings_transcripts')
+    quarter_context = question_analysis.get('quarter_context', 'latest')
+    quarter_count = question_analysis.get('quarter_count')
+    needs_10k = question_analysis.get('needs_10k', False)
+    needs_news = question_analysis.get('needs_latest_news', False)
+
+    # Current date context
+    if not current_date:
+        current_date = datetime.now().strftime("%B %d, %Y")
+
+    # Build context about what we know
+    ticker_info = f"Companies: {', '.join(tickers)}" if tickers else "General market question (no specific ticker)"
+
+    # Data sources available
+    source_info = []
+    if data_source == '10k' or needs_10k:
+        source_info.append("10-K SEC filings (annual reports, detailed financials, risk factors)")
+    if data_source == 'earnings_transcripts' or data_source == 'hybrid':
+        source_info.append("earnings call transcripts (quarterly results, management commentary, analyst Q&A)")
+    if needs_news or data_source == 'latest_news':
+        source_info.append("latest news via web search")
+
+    sources_text = ", ".join(source_info) if source_info else "earnings call transcripts"
+
+    # Time period context
+    time_info = ""
+    if quarter_context == 'multiple' and quarter_count:
+        time_info = f"User wants last {quarter_count} quarters"
+    elif quarter_context == 'latest':
+        time_info = "User wants most recent data"
+    elif quarter_context == 'specific':
+        ref = question_analysis.get('quarter_reference', '')
+        time_info = f"User asked for {ref}" if ref else ""
+
+    # Available data context
+    data_availability = ""
+    if available_quarters:
+        formatted_quarters = []
+        for q in sorted(available_quarters, reverse=True)[:6]:
+            parts = q.split('_')
+            if len(parts) == 2:
+                formatted_quarters.append(f"{parts[1].upper()} {parts[0]}")
+            else:
+                formatted_quarters.append(q)
+        data_availability = f"\n- Database has: {', '.join(formatted_quarters)}" + (f" (+{len(available_quarters) - 6} more)" if len(available_quarters) > 6 else "")
+
+    return f"""The user asked: "{question}"
+
+TODAY: {current_date}
+{ticker_info}
+{time_info}
+Data sources: {sources_text}{data_availability}
+
+Write a reasoning statement (3-5 sentences) explaining:
+- What the user is really trying to understand
+- What specific metrics, data points, or quotes I need to find
+- What I should focus my search on
+- How I'll approach this given available data
+
+Write in first person. Be specific.
+
+Example: "The user is asking about Microsoft's cloud business, so I need to find Azure revenue figures and growth rates. I should look for management commentary on competitive positioning vs AWS/Google Cloud, margin trends, and any forward guidance. Key metrics: quarterly revenue, YoY growth %, operating margins. I'll focus on the most recent quarters available."
+
+Output ONLY your reasoning paragraph:"""
+
 
 CONTEXT_AWARE_FOLLOWUP_SYSTEM_PROMPT = """You are a financial analyst assistant. Always respond with valid JSON arrays only. No additional text or formatting."""
 

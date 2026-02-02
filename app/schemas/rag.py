@@ -15,9 +15,9 @@ class QuestionAnalysisResult(BaseModel):
     suggested_improvements: List[str] = Field(description="Suggestions for better questions")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the analysis (0.0 to 1.0)")
     quarter_reference: Optional[str] = Field(description="Detected quarter reference in database format")
-    quarter_context: str = Field(description="Context about quarter timing")
+    quarter_context: Optional[str] = Field(default=None, description="Context about quarter timing (null for invalid questions)")
     quarter_count: Optional[int] = Field(description="Number of quarters requested")
-    data_source: str = Field(default="earnings_transcripts", description="Primary data source: '10k', 'latest_news', 'earnings_transcripts', or 'hybrid'")
+    data_source: Optional[str] = Field(default=None, description="Primary data source: '10k', 'latest_news', 'earnings_transcripts', or 'hybrid' (null for invalid questions)")
     needs_latest_news: bool = Field(default=False, description="Whether the question requires latest news search")
     needs_10k: bool = Field(default=False, description="Whether the question requires 10-K SEC filings")
 
@@ -35,13 +35,17 @@ class QuestionAnalysisResult(BaseModel):
 
     @validator('quarter_context')
     def validate_quarter_context(cls, v):
+        if v is None:
+            return v  # Allow None for invalid questions
         valid_contexts = ["latest", "previous", "specific", "multiple"]
         if v not in valid_contexts:
             raise ValueError(f"quarter_context must be one of {valid_contexts}")
         return v
-    
+
     @validator('data_source')
     def validate_data_source(cls, v):
+        if v is None:
+            return v  # Allow None for invalid questions
         valid_sources = ["10k", "latest_news", "earnings_transcripts", "hybrid"]
         if v not in valid_sources:
             raise ValueError(f"data_source must be one of {valid_sources}")

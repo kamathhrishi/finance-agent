@@ -28,6 +28,7 @@ class AgentConfig:
         self.config = {
             # Iterative improvement settings
             "max_iterations": int(os.getenv("RAG_MAX_ITERATIONS", "4")),
+            "sec_max_iterations": int(os.getenv("SEC_MAX_ITERATIONS", "5")),  # More iterations for 10-K/SEC queries
             "min_confidence_threshold": 0.90,  # Very high bar to stop early - use all iterations
             "min_completeness_threshold": 0.90,  # Very high bar to stop early - use all iterations
             

@@ -56,71 +56,75 @@ def setup_routes(app: FastAPI):
 
 
 def setup_frontend_routes(app: FastAPI):
-    """Setup frontend serving routes"""
-    
+    """Setup frontend serving routes for React SPA"""
+    import os
+
+    # React frontend dist directory
+    FRONTEND_DIR = "frontend-new/dist"
+
     @app.get("/")
     async def serve_landing():
-        """Serve the landing page at root"""
-        return FileResponse("frontend/landing.html")
-    
+        """Serve the React app landing page"""
+        return FileResponse(f"{FRONTEND_DIR}/index.html")
+
+    @app.get("/chat")
+    async def serve_chat():
+        """Serve the React app for /chat route (SPA)"""
+        return FileResponse(f"{FRONTEND_DIR}/index.html")
+
     @app.get("/app")
     async def serve_app():
-        """Serve the main application"""
-        return FileResponse("frontend/index.html")
+        """Serve the React app (legacy route)"""
+        return FileResponse(f"{FRONTEND_DIR}/index.html")
 
 
 def setup_static_routes(app: FastAPI):
-    """Setup static file serving routes"""
-    
+    """Setup static file serving routes for React SPA"""
+    from fastapi.staticfiles import StaticFiles
+    import os
+    from pathlib import Path
+
+    # React frontend dist directory
+    FRONTEND_DIR = "frontend-new/dist"
+
+    @app.get("/favicon.svg")
+    async def serve_favicon_svg():
+        """Serve favicon SVG"""
+        return FileResponse(f"{FRONTEND_DIR}/favicon.svg", media_type="image/svg+xml")
+
+    @app.get("/favicon.ico")
+    async def serve_favicon_ico():
+        """Serve favicon - redirect to SVG"""
+        return FileResponse(f"{FRONTEND_DIR}/favicon.svg", media_type="image/svg+xml")
+
+    @app.get("/assets/{path:path}")
+    async def serve_assets(path: str):
+        """Serve static assets (JS, CSS, etc.)"""
+        file_path = f"{FRONTEND_DIR}/assets/{path}"
+        if os.path.exists(file_path):
+            # Determine content type based on extension
+            if path.endswith(".js"):
+                return FileResponse(file_path, media_type="application/javascript")
+            elif path.endswith(".css"):
+                return FileResponse(file_path, media_type="text/css")
+            else:
+                return FileResponse(file_path)
+        return Response(status_code=404)
+
+    # Legacy routes for old frontend (can be removed later)
     @app.get("/styles.css")
     async def serve_styles():
-        """Serve main stylesheet"""
-        return FileResponse("frontend/styles.css")
-    
+        """Serve main stylesheet (legacy)"""
+        if os.path.exists("frontend/styles.css"):
+            return FileResponse("frontend/styles.css")
+        return Response(status_code=404)
+
     @app.get("/index-styles.css")
     async def serve_index_styles():
-        """Serve index-specific stylesheet"""
-        return FileResponse("frontend/index-styles.css")
-    
-    @app.get("/utils.js")
-    async def serve_utils():
-        """Serve utils JavaScript"""
-        return FileResponse("frontend/utils.js")
-    
-    @app.get("/config.js")
-    async def serve_config():
-        """Serve config JavaScript"""
-        return FileResponse("frontend/config.js")
-    
-    @app.get("/chat.js")
-    async def serve_chat():
-        """Serve chat JavaScript"""
-        return FileResponse("frontend/chat.js")
-    
-    @app.get("/app.js")
-    async def serve_app_js():
-        """Serve app JavaScript"""
-        return FileResponse("frontend/app.js")
-    
-    @app.get("/charts.js")
-    async def serve_charts():
-        """Serve charts JavaScript"""
-        return FileResponse("frontend/charts.js")
-    
-    @app.get("/session.js")
-    async def serve_session():
-        """Serve session JavaScript"""
-        return FileResponse("frontend/session.js")
-    
-    @app.get("/landing-integration.js")
-    async def serve_landing_integration():
-        """Serve landing integration JavaScript"""
-        return FileResponse("frontend/landing-integration.js")
-    
-    @app.get("/favicon.ico")
-    async def serve_favicon():
-        """Serve favicon - return 204 No Content to avoid 404 errors"""
-        return Response(status_code=204)
+        """Serve index-specific stylesheet (legacy)"""
+        if os.path.exists("frontend/index-styles.css"):
+            return FileResponse("frontend/index-styles.css")
+        return Response(status_code=404)
 
 
 def setup_cors_handlers(app: FastAPI):

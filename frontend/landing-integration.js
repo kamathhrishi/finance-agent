@@ -264,27 +264,47 @@ function insertInitialQuery() {
             return true;
         };
         
+        // Check if auth is ready (either auth disabled, Clerk initialized, or token in localStorage)
+        const isAuthReady = () => {
+            // If auth is disabled, we're always ready
+            if (window.STRATALENS_CONFIG?.authDisabled) {
+                return true;
+            }
+            // Check if Clerk is loaded and has a session
+            if (window.strataAuth?.initialized && window.strataAuth?.clerk?.loaded) {
+                return true;
+            }
+            // Fallback: check localStorage for token
+            const token = localStorage.getItem('authToken');
+            return !!token;
+        };
+
         // Auto-send the query with retry mechanism
         const attemptAutoSend = (retryCount = 0) => {
-            
+            // Wait for auth to be ready before sending
+            if (!isAuthReady()) {
+                console.log('Auto-send waiting for auth...', retryCount);
+                return false;
+            }
+
             // Verify mode is set correctly before sending
             if (!isModeReady()) {
                 return false;
             }
-            
+
             // Method 1: Try using the global chat interface (most reliable)
             if (window.chatInterface && typeof window.chatInterface.sendMessage === 'function') {
                 window.chatInterface.sendMessage();
                 return true;
             }
-            
+
             // Method 2: Try triggering the send button click
             const sendButton = document.getElementById('sendChatButton');
             if (sendButton && typeof sendButton.click === 'function') {
                 sendButton.click();
                 return true;
             }
-            
+
             // Method 3: Simulate Enter key press on the input
             const enterEvent = new KeyboardEvent('keydown', {
                 key: 'Enter',
@@ -300,16 +320,21 @@ function insertInitialQuery() {
         
         // Wait for mode to be restored, then send
         let attempts = 0;
-        const maxAttempts = 15; // Try for up to 3 seconds
+        const maxAttempts = 25; // Try for up to 5 seconds
         const sendInterval = setInterval(() => {
             attempts++;
-            
+
             if (attemptAutoSend(attempts - 1)) {
                 clearInterval(sendInterval);
+                console.log('Auto-send successful on attempt', attempts);
             } else if (attempts >= maxAttempts) {
                 clearInterval(sendInterval);
+                console.warn('Auto-send failed after', maxAttempts, 'attempts');
             }
         }, 200); // Check every 200ms
+
+        // Clear the initial query after attempting to send to prevent re-sends
+        window.LANDING_STATE.initialQuery = null;
     }
 }
 

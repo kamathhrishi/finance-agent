@@ -19,7 +19,9 @@ from collections import defaultdict
 from .config import Config
 from agent.prompts import (
     QUARTER_SYNTHESIS_SYSTEM_PROMPT,
-    get_quarter_synthesis_prompt
+    get_quarter_synthesis_prompt,
+    QUESTION_PLANNING_SYSTEM_PROMPT,
+    get_question_planning_prompt
 )
 
 # Import Logfire for observability (optional)
@@ -83,7 +85,229 @@ class ResponseGenerator:
         else:
             logger.info("🤖 ResponseGenerator: OpenAI only")
 
+        # Cache system prompt templates (built once, reused with substitution)
+        self._system_prompt_cache = {}
+        self._init_system_prompt_templates()
+
         logger.info("ResponseGenerator initialized successfully")
+
+    def _init_system_prompt_templates(self):
+        """Initialize cached system prompt templates for reuse."""
+        # Base template for single-ticker responses
+        self._system_prompt_cache['base'] = (
+            "You are a financial analyst assistant. Answer questions based on the provided {sources}. "
+            "Always include source attribution using human-friendly format like {attribution}. "
+            "Do not use any knowledge beyond the data provided. Format all responses using markdown "
+            "with **bold** for emphasis, bullet points for lists, and proper formatting. CRITICAL: Always use "
+            "human-friendly format for quarters (e.g., Q1 2025, Q2 2025, Q4 2024) and fiscal years (e.g., FY 2024). "
+            "IMPORTANT: Provide ELABORATE and COMPREHENSIVE responses with MAXIMUM DETAIL. ALWAYS MENTION ALL "
+            "FINANCIAL FIGURES AND PROJECTIONS PRESENT in the provided data when they are relevant to the question - "
+            "include EXACT numbers, percentages, dollar amounts, growth rates, margins, guidance ranges, and any "
+            "quantitative metrics mentioned. Never omit important financial figures. Always provide the COMPLETE "
+            "CONTEXT around financial figures including year-over-year comparisons, sequential comparisons, and "
+            "guidance ranges. Be thorough and detailed in your analysis. "
+            "CRITICAL - CONTEXT RELEVANCE CHECK: Before answering, verify the provided context actually relates to "
+            "the question. If the context does NOT contain information relevant to the question, clearly state: "
+            "\"I don't have information about [topic] in the available data.\" Be honest about limitations - "
+            "if you only have partial information, say what you found and what's missing."
+        )
+
+        # Multi-ticker template with news
+        self._system_prompt_cache['multi_ticker_news'] = (
+            "You are a financial analyst assistant that provides evidence-based analysis of multiple companies' "
+            "financial data AND the provided news context. Data sources may include earnings transcripts, 10-K filings, and news. "
+            "Always reference specific companies by name, include relevant quotes and metrics, and structure responses clearly. "
+            "Always include source attribution using human-friendly format like \"According to [Company]'s Q1 2025 "
+            "earnings call...\" or \"Per [Company]'s FY 2024 10-K filing...\", and refer to news sources using their citation markers "
+            "(e.g., [N1], [N2]) when you use them. Do not use any knowledge beyond the provided data sources. "
+            "CRITICAL: Always use human-friendly format for periods (e.g., Q1 2025, FY 2024). "
+            "IMPORTANT: Provide ELABORATE and COMPREHENSIVE responses with MAXIMUM DETAIL. ALWAYS MENTION ALL "
+            "FINANCIAL FIGURES AND PROJECTIONS PRESENT FOR ANY COMPANY in the data when they "
+            "are relevant to the question - include EXACT numbers, percentages, dollar amounts, growth rates, "
+            "margins, guidance ranges, and any quantitative metrics mentioned for EACH company. Never omit "
+            "important financial figures. Always provide the COMPLETE CONTEXT around financial figures including "
+            "year-over-year comparisons, sequential comparisons, guidance ranges, and cross-company comparisons. "
+            "Financial figures should appear in almost every relevant response for all companies. Be thorough and "
+            "detailed in your analysis, leaving no financial metric or figure unexplained for any company. "
+            "CRITICAL: If you include a source attribution section, you MUST acknowledge ALL sources used "
+            "(earnings calls, 10-K filings, news with citation markers like [N1], [N2]) when provided. "
+            "CRITICAL - CONTEXT RELEVANCE CHECK: Before answering, verify the provided context actually relates to "
+            "the question. If the context does NOT contain information relevant to the question, clearly state: "
+            "\"I don't have information about [topic] in the available data.\" Be honest about limitations - "
+            "if you only have partial information, say what you found and what's missing."
+        )
+
+        # Multi-ticker template without news
+        self._system_prompt_cache['multi_ticker'] = (
+            "You are a financial analyst assistant that provides evidence-based analysis of multiple companies' "
+            "financial data. Data sources may include earnings transcripts and 10-K filings. Always reference specific companies by name, "
+            "include relevant quotes and metrics, and structure responses clearly with specific company references. Always include source "
+            "attribution using human-friendly format like \"According to [Company]'s Q1 2025 earnings call...\" or \"Per [Company]'s FY 2024 10-K filing...\" "
+            "Use all available evidence from the provided data. CRITICAL: Always use human-friendly "
+            "format for periods (e.g., Q1 2025, FY 2024). IMPORTANT: Provide ELABORATE and COMPREHENSIVE "
+            "responses with MAXIMUM DETAIL. ALWAYS MENTION ALL FINANCIAL FIGURES AND PROJECTIONS PRESENT FOR ANY "
+            "COMPANY - include EXACT numbers, percentages, dollar amounts, growth rates, margins, guidance ranges, "
+            "and any quantitative metrics mentioned for EACH company. NEVER omit financial figures - if any company "
+            "mentioned a number, include it in your response. Always provide the COMPLETE CONTEXT around financial "
+            "figures including year-over-year comparisons, sequential comparisons, guidance ranges, and cross-company "
+            "comparisons. Financial figures should appear in almost every relevant response for all companies. Be "
+            "thorough and detailed in your analysis, leaving no financial metric or figure unexplained for any "
+            "company. "
+            "CRITICAL - CONTEXT RELEVANCE CHECK: Before answering, verify the provided context actually relates to "
+            "the question. If the context does NOT contain information relevant to the question, clearly state: "
+            "\"I don't have information about [topic] in the available data.\" Be honest about limitations - "
+            "if you only have partial information, say what you found and what's missing."
+        )
+
+        logger.info("✅ System prompt templates cached")
+
+    def _get_system_prompt(self, template_key: str, **kwargs) -> str:
+        """Get a system prompt from cache with optional substitutions."""
+        template = self._system_prompt_cache.get(template_key, self._system_prompt_cache['base'])
+        if kwargs:
+            return template.format(**kwargs)
+        return template
+
+    def _build_citation_instructions(self, has_news: bool = False, has_10k: bool = False) -> str:
+        """Build unified citation instructions based on available data sources.
+
+        Consolidates news and 10-K citation templates into a single reusable method.
+        """
+        if not has_news and not has_10k:
+            return ""
+
+        # Build source descriptions dynamically
+        sources = []
+        markers = []
+
+        if has_news:
+            sources.append("news sources ([N1], [N2], etc.) for current context and recent developments")
+            markers.append("[N1], [N2] for news")
+
+        if has_10k:
+            sources.append("10-K filings ([10K1], [10K2], etc.) for annual financials, risk factors, and audited data")
+            markers.append("[10K1], [10K2] for 10-K filings")
+
+        sources_list = "\n   - ".join(sources)
+        markers_text = " and ".join(markers)
+
+        return f"""
+4. **Additional Data Sources Available**: You have access to earnings transcripts plus:
+   - {sources_list}
+   - Earnings transcripts provide quarterly updates, management commentary, and Q&A discussions
+   Use whichever sources best answer the question. When multiple are relevant, integrate them naturally.
+5. **Citation Markers**: Use {markers_text}. Attribute clearly (e.g., "According to the FY2024 10-K filing ([10K1])").
+6. **Source Attribution**: Reflect the sources you actually used. Mention all sources consulted."""
+
+    # ═════════════════════════════════════════════════════════════════════
+    # STAGE 1.5: QUESTION PLANNING/REASONING
+    # ═════════════════════════════════════════════════════════════════════
+
+    async def plan_question_approach(self, question: str, question_analysis: Dict[str, Any], available_quarters: list = None) -> str:
+        """
+        Generate a freeform reasoning statement about how to approach the question.
+
+        This is the REASONING step that happens before the RAG loop.
+        Returns a natural, verbose statement like:
+        "The user is asking about Apple's AI strategy, so I need to find..."
+
+        Args:
+            question: Original user question
+            question_analysis: Analysis from question analyzer
+            available_quarters: List of quarters available in database
+
+        Returns:
+            str: Freeform reasoning statement explaining the approach
+        """
+        plan_start = time.time()
+        rag_logger.info(f"🧠 Starting question planning/reasoning...")
+
+        # Get available quarters from config if not provided
+        if available_quarters is None:
+            available_quarters = self.config.get('available_quarters', [])
+
+        # Log planning start to Logfire
+        if LOGFIRE_AVAILABLE and logfire:
+            logfire.info(
+                "llm.planning.start",
+                question=question,
+                tickers=question_analysis.get('extracted_tickers', []),
+                data_source=question_analysis.get('data_source', 'earnings_transcripts'),
+                available_quarters_count=len(available_quarters) if available_quarters else 0
+            )
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Get the planning prompt with data context
+                planning_prompt = get_question_planning_prompt(question, question_analysis, available_quarters)
+
+                rag_logger.info(f"🤖 ===== QUESTION PLANNING LLM CALL ===== (attempt {attempt + 1}/{max_retries})")
+
+                # Use Cerebras for fast planning
+                if self.cerebras_available and self.cerebras_client:
+                    cerebras_model = self.config.get("cerebras_model", "qwen-3-235b-a22b-instruct-2507")
+                    rag_logger.info(f"🔍 Using Cerebras model: {cerebras_model}")
+
+                    start_time = time.time()
+                    response = self.cerebras_client.chat.completions.create(
+                        model=cerebras_model,
+                        messages=[
+                            {"role": "system", "content": QUESTION_PLANNING_SYSTEM_PROMPT},
+                            {"role": "user", "content": planning_prompt}
+                        ],
+                        temperature=0.3,
+                        max_completion_tokens=500
+                    )
+                    call_time = time.time() - start_time
+                else:
+                    # Fallback to OpenAI
+                    rag_logger.info(f"🔍 Using OpenAI for planning")
+                    start_time = time.time()
+                    response = self.client.chat.completions.create(
+                        model="gpt-4.1-mini-2025-04-14",
+                        messages=[
+                            {"role": "system", "content": QUESTION_PLANNING_SYSTEM_PROMPT},
+                            {"role": "user", "content": planning_prompt}
+                        ],
+                        temperature=0.3,
+                        max_tokens=500
+                    )
+                    call_time = time.time() - start_time
+
+                rag_logger.info(f"✅ Planning LLM call completed in {call_time:.3f}s")
+
+                # Get the freeform reasoning text
+                reasoning = response.choices[0].message.content.strip()
+
+                # Clean up any quotes if the model wrapped it
+                if reasoning.startswith('"') and reasoning.endswith('"'):
+                    reasoning = reasoning[1:-1]
+
+                plan_time = time.time() - plan_start
+                rag_logger.info(f"🧠 Planning completed in {plan_time:.3f}s")
+                rag_logger.info(f"📋 Reasoning: {reasoning[:200]}...")
+
+                # Log to Logfire
+                if LOGFIRE_AVAILABLE and logfire:
+                    logfire.info(
+                        "llm.planning.complete",
+                        reasoning=reasoning,
+                        plan_time_ms=int(plan_time * 1000)
+                    )
+
+                return reasoning
+
+            except Exception as e:
+                rag_logger.error(f"❌ Planning error on attempt {attempt + 1}: {e}")
+                if attempt == max_retries - 1:
+                    # Return a basic reasoning statement on failure
+                    tickers = question_analysis.get('extracted_tickers', [])
+                    ticker_text = f" for {', '.join(tickers)}" if tickers else ""
+                    return f"The user is asking about{ticker_text}: {question}. I need to search the available financial data to find relevant information to answer this question."
+
+        # Fallback (should not reach here)
+        return f"Analyzing the question: {question}"
 
     @property
     def client(self):
@@ -409,36 +633,36 @@ class ResponseGenerator:
         quarters_info = self.config.get_quarter_context_for_llm()
         
         if is_multi_quarter:
-            quarter_info = "earnings transcripts"
+            quarter_info = "financial data"
             quarters_list = ", ".join(sorted(quarters_mentioned))
-            source_description = f"{company_name}'s earnings transcripts ({quarters_list})"
+            source_description = f"{company_name}'s financial data ({quarters_list})"
             available_quarters = self.config.get('available_quarters', [])
-            data_limitation_note = f"Note: Our database contains earnings transcripts for {len(available_quarters)} quarters: {', '.join(available_quarters)}. The analysis covers the available quarters that match your request. Please determine the latest available quarter based on the available quarters listed above."
+            data_limitation_note = f"Note: Our database contains financial data for {len(available_quarters)} quarters: {', '.join(available_quarters)}. This includes earnings transcripts (quarterly) and 10-K filings (annual). The analysis covers the available periods that match your request."
         else:
             if year and quarter:
                 quarter_info = f"{year}_q{quarter}"
-                source_description = f"{company_name}'s {quarter_info} earnings transcript"
-                base_note = f"the {quarter_info} earnings transcript"
+                source_description = f"{company_name}'s {quarter_info} financial data"
+                base_note = f"the {quarter_info} financial data"
             else:
-                quarter_info = "earnings transcript"
-                source_description = f"{company_name}'s earnings transcript"
-                base_note = "available earnings transcripts"
+                quarter_info = "financial data"
+                source_description = f"{company_name}'s financial data"
+                base_note = "available financial data"
             available_quarters = self.config.get('available_quarters', [])
             data_limitation_note = (
-                f"Note: This analysis is based on {base_note}. Our database contains transcripts for "
-                f"{len(available_quarters)} quarters: {', '.join(available_quarters)}. "
-                f"Please determine the latest available quarter based on the available quarters listed above."
+                f"Note: This analysis is based on {base_note}. Our database contains data for "
+                f"{len(available_quarters)} quarters, including earnings transcripts and 10-K filings. "
+                f"Please determine the latest available period based on the available quarters listed above."
             )
 
         # Add news context if available
         news_section = ""
         if news_context:
-            news_section = f"\n\n{news_context}\n\nNote: The above news sources provide recent developments and current information. Use them alongside the earnings transcript data below as appropriate for answering the question."
+            news_section = f"\n\n{news_context}\n\nNote: The above news sources provide recent developments and current information. Use them alongside other available data sources as appropriate for answering the question."
 
         # Add 10-K SEC filings context if available
         ten_k_section = ""
         if ten_k_context:
-            ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this alongside earnings call transcripts as appropriate for answering the question."
+            ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this data as appropriate for answering the question, combining with other available sources when relevant."
 
         # Add previous answer if available (for iterative improvement)
         previous_answer_section = ""
@@ -487,7 +711,7 @@ Do NOT start from scratch - improve and expand the previous answer."""
         if ten_k_context:
             available_sources.append("10-K SEC filings")
         if available_sources:
-            data_sources_text = f" {', '.join(available_sources)}, and earnings transcript data are available - use whichever is most relevant for answering the question."
+            data_sources_text = f" {', '.join(available_sources)} are available - use whichever sources are most relevant for answering the question."
         else:
             data_sources_text = " Do not use any external knowledge."
 
@@ -543,43 +767,31 @@ Provide a natural, professional response in **markdown format** based on the tra
             
             rag_logger.info(f"📊 Request parameters: max_tokens={max_tokens}, temperature={temperature}")
             
-            # Define system prompt
+            # Define system prompt using cached template with dynamic substitutions
+            # Build list of available sources for the prompt
+            available_sources = []
+            if context_chunks:
+                available_sources.append("financial filings")
+            if ten_k_context:
+                available_sources.append("10-K SEC filings")
             if news_context:
-                # When news_context is present, allow using BOTH transcripts and news (Tavily) content
-                system_prompt = (
-                    "You are a financial analyst assistant. Answer questions based on the provided earnings transcript "
-                    "information AND the provided news context. Always include source attribution using human-friendly "
-                    "format like \"According to [Company]'s Q1 2025 earnings transcript...\" for transcript data, and "
-                    "refer to news sources using their citation markers (e.g., [N1], [N2]) when you use them. Do not use "
-                    "any knowledge beyond the transcripts and news context provided. Format all responses using markdown "
-                    "with **bold** for emphasis, bullet points for lists, and proper formatting. CRITICAL: Always use "
-                    "human-friendly format for quarters (e.g., Q1 2025, Q2 2025, Q4 2024). IMPORTANT: Provide ELABORATE "
-                    "and COMPREHENSIVE responses with MAXIMUM DETAIL. ALWAYS MENTION ALL FINANCIAL FIGURES AND "
-                    "PROJECTIONS PRESENT in the transcripts or news context when they are relevant to the question - "
-                    "include EXACT numbers, percentages, dollar amounts, growth rates, margins, guidance ranges, and any "
-                    "quantitative metrics mentioned. Never omit important financial figures. Always provide the COMPLETE "
-                    "CONTEXT around financial figures including year-over-year comparisons, sequential comparisons, and "
-                    "guidance ranges. Be thorough and detailed in your analysis. CRITICAL: If you include a source attribution "
-                    "section, you MUST acknowledge BOTH earnings transcripts AND news sources (using citation markers like [N1], [N2]) "
-                    "when news context is provided. Never say 'No external news sources were used' when news context has been provided."
-                )
-            else:
-                # Transcript-only mode (no web/news)
-                system_prompt = (
-                    "You are a financial analyst assistant. Answer questions based ONLY on the provided earnings "
-                    "transcript information. Always include source attribution using human-friendly format like "
-                    "\"According to [Company]'s Q1 2025 earnings transcript...\" Do not use external knowledge. "
-                    "Format all responses using markdown with **bold** for emphasis, bullet points for lists, and "
-                    "proper formatting. CRITICAL: Always use human-friendly format for quarters (e.g., Q1 2025, "
-                    "Q2 2025, Q4 2024). IMPORTANT: Provide ELABORATE and COMPREHENSIVE responses with MAXIMUM DETAIL. "
-                    "ALWAYS MENTION ALL FINANCIAL FIGURES AND PROJECTIONS PRESENT IN THE TRANSCRIPT - include EXACT "
-                    "numbers, percentages, dollar amounts, growth rates, margins, guidance ranges, and any quantitative "
-                    "metrics mentioned. NEVER omit financial figures - if a number is mentioned, include it in your "
-                    "response. Always provide the COMPLETE CONTEXT around financial figures including year-over-year "
-                    "comparisons, sequential comparisons, and guidance ranges. Financial figures should appear in almost "
-                    "every relevant response. Be thorough and detailed in your analysis, leaving no financial metric or "
-                    "figure unexplained."
-                )
+                available_sources.append("news sources")
+
+            sources_text = " and ".join(available_sources) if available_sources else "the provided financial data"
+
+            # Build source attribution instructions based on what's available
+            attribution_instructions = []
+            if context_chunks:
+                attribution_instructions.append("\"According to [Company]'s Q1 2025 earnings call...\" or \"Per [Company]'s FY 2024 10-K filing...\"")
+            if ten_k_context:
+                attribution_instructions.append("[10K1], [10K2] markers for 10-K data")
+            if news_context:
+                attribution_instructions.append("[N1], [N2] for news sources")
+
+            attribution_text = ", ".join(attribution_instructions) if attribution_instructions else "appropriate source citations"
+
+            # Use cached template with substitutions
+            system_prompt = self._get_system_prompt('base', sources=sources_text, attribution=attribution_text)
             
             messages = [
                 {"role": "system", "content": system_prompt},
@@ -892,7 +1104,7 @@ Provide a natural, professional response in **markdown format** based on the tra
             similarity = chunk['similarity']
             year = chunk.get('year', 'Unknown')
             quarter = chunk.get('quarter', 'Unknown')
-            quarter_info = f"{year}_q{quarter}" if year != 'Unknown' and quarter != 'Unknown' else "earnings transcript"
+            quarter_info = f"{year}_q{quarter}" if year != 'Unknown' and quarter != 'Unknown' else "financial data"
             context_parts.append(f"[{ticker}] {quarter_info} (similarity: {similarity:.3f}): {chunk['chunk_text']}")
             rag_logger.info(f"📄 {ticker} {quarter_info} Chunk {i+1}: length={len(chunk['chunk_text'])}, similarity={similarity:.3f}")
         
@@ -902,12 +1114,12 @@ Provide a natural, professional response in **markdown format** based on the tra
         # Add news context if available
         news_section = ""
         if news_context:
-            news_section = f"\n\n{news_context}\n\nNote: The above news sources provide recent developments and current information. Use them alongside the earnings transcript data below as appropriate for answering the question."
+            news_section = f"\n\n{news_context}\n\nNote: The above news sources provide recent developments and current information. Use them alongside other available data sources as appropriate for answering the question."
 
         # Add 10-K SEC filings context if available
         ten_k_section = ""
         if ten_k_context:
-            ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this alongside earnings call transcripts as appropriate for answering the question."
+            ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this data as appropriate for answering the question, combining with other available sources when relevant."
 
         # Add previous answer if available (for iterative improvement)
         previous_answer_section = ""
@@ -926,29 +1138,11 @@ IMPORTANT: You are improving the previous answer. Build upon it by:
 Do NOT start from scratch - improve and expand the previous answer."""
         
         # Create prompt based on comprehensive setting
-        # Only include news-specific citation instructions when news_context is present
-        news_sources_instruction = ""
-        if news_context:
-            news_sources_instruction = """
-4. **News Sources Available**: You have access to both earnings transcripts and recent news sources. Use whichever sources best answer the question:
-   - News sources ([N1], [N2], etc.) provide current context, recent developments, and competitive dynamics
-   - Earnings transcripts provide official company statements, financial metrics, and management commentary
-   - When both are relevant, naturally integrate them; when only one is relevant, use only that source
-   - Neither source type is more authoritative - choose based on what the question asks for
-5. **When referencing news sources**: Use the citation markers (e.g., [N1], [N2]) and attribute them clearly.
-6. **Source Attribution**: Reflect the sources you actually used. If you used both, mention both; if you only used one type, that's fine too."""
-
-        # Only include 10-K-specific citation instructions when ten_k_context is present
-        ten_k_sources_instruction = ""
-        if ten_k_context:
-            ten_k_sources_instruction = """
-4. **10-K SEC Filing Data Available**: You have access to 10-K annual report data alongside earnings call transcripts. Use whichever sources best answer the question:
-   - 10-K filings ([10K1], [10K2], etc.) provide comprehensive annual financial statements, detailed business disclosures, risk factors, and audited financial data
-   - Earnings transcripts provide quarterly updates, management commentary, and Q&A discussions
-   - When both are relevant, naturally integrate them; when only one is relevant, use only that source
-   - For balance sheet, comprehensive financial statements, or annual data questions, 10-K filings are typically most appropriate
-5. **When referencing 10-K sources**: Use the citation markers (e.g., [10K1], [10K2]) and attribute them clearly (e.g., "According to the FY2024 10-K filing ([10K1])").
-6. **Source Attribution**: Reflect the sources you actually used. If you used both, mention both; if you only used one type, that's fine too."""
+        # Build unified citation instructions based on available sources
+        additional_sources_instruction = self._build_citation_instructions(
+            has_news=bool(news_context),
+            has_10k=bool(ten_k_context)
+        )
 
         # Determine what data sources are available for prompt text
         available_sources = []
@@ -957,7 +1151,7 @@ Do NOT start from scratch - improve and expand the previous answer."""
         if ten_k_context:
             available_sources.append("10-K SEC filings")
         if available_sources:
-            data_sources_text = f" {', '.join(available_sources)}, and earnings transcript data are available - use whichever is most relevant for answering the question."
+            data_sources_text = f" {', '.join(available_sources)} are available - use whichever sources are most relevant for answering the question."
         else:
             data_sources_text = ""
 
@@ -973,8 +1167,8 @@ Question: {question}
 Instructions:
 1. Provide a COMPREHENSIVE analysis using ALL available evidence from the chunks{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}
 2. Always reference specific companies by name (e.g., "Apple said...", "Microsoft reported...", "According to Apple...")
-3. Always include source attribution using human-friendly format: "According to [Company]'s Q1 2025 earnings transcript..." (e.g., "According to Apple's Q1 2025 earnings transcript...")
-{news_sources_instruction}{ten_k_sources_instruction}
+3. Always include source attribution using human-friendly format based on data source (e.g., "According to Apple's Q1 2025 earnings call...", "Per Apple's FY 2024 10-K filing...")
+{additional_sources_instruction}
 4. Structure your response clearly with specific company sections or comparative analysis
 5. Include specific quotes, numbers, and details from the transcripts when available
 6. Highlight similarities and differences between companies with specific evidence
@@ -1001,8 +1195,8 @@ Question: {question}
 Instructions:
 1. Provide a CONCISE but complete answer using evidence from the chunks{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}
 2. Always reference specific companies by name (e.g., "Apple said...", "Microsoft reported...")
-3. Always include source attribution using human-friendly format: "According to [Company]'s Q1 2025 earnings transcript..." (e.g., "According to Apple's Q1 2025 earnings transcript...")
-{news_sources_instruction}{ten_k_sources_instruction}
+3. Always include source attribution using human-friendly format based on data source (e.g., "According to Apple's Q1 2025 earnings call...", "Per Apple's FY 2024 10-K filing...")
+{additional_sources_instruction}
 4. Include key quotes, numbers, and details from the transcripts
 5. Highlight main similarities and differences between companies
 6. Use the company labels [TICKER] to reference specific sections
@@ -1016,46 +1210,11 @@ Provide a concise, evidence-based answer in **markdown format** that covers each
 IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earnings calls," "transcript data," or "earnings information" instead."""
 
         rag_logger.info(f"📝 Multi-ticker prompt created: length={len(prompt)}")
-        
-        # Define system prompt for multi-ticker
-        if news_context:
-            multi_ticker_system_prompt = (
-                "You are a financial analyst assistant that provides evidence-based analysis of multiple companies' "
-                "earnings transcripts AND the provided news context. Always reference specific companies by name, "
-                "include relevant quotes and metrics, and structure responses clearly with specific company references. "
-                "Always include source attribution using human-friendly format like \"According to [Company]'s Q1 2025 "
-                "earnings transcript...\" for transcript data, and refer to news sources using their citation markers "
-                "(e.g., [N1], [N2]) when you use them. Do not use any knowledge beyond the transcripts and news context "
-                "provided. CRITICAL: Always use human-friendly format for quarters (e.g., Q1 2025, Q2 2025, Q4 2024). "
-                "IMPORTANT: Provide ELABORATE and COMPREHENSIVE responses with MAXIMUM DETAIL. ALWAYS MENTION ALL "
-                "FINANCIAL FIGURES AND PROJECTIONS PRESENT FOR ANY COMPANY in the transcripts or news context when they "
-                "are relevant to the question - include EXACT numbers, percentages, dollar amounts, growth rates, "
-                "margins, guidance ranges, and any quantitative metrics mentioned for EACH company. Never omit "
-                "important financial figures. Always provide the COMPLETE CONTEXT around financial figures including "
-                "year-over-year comparisons, sequential comparisons, guidance ranges, and cross-company comparisons. "
-                "Financial figures should appear in almost every relevant response for all companies. Be thorough and "
-                "detailed in your analysis, leaving no financial metric or figure unexplained for any company. "
-                "CRITICAL: If you include a source attribution section, you MUST acknowledge BOTH earnings transcripts "
-                "AND news sources (using citation markers like [N1], [N2]) when news context is provided. Never say "
-                "'No external news sources were used' when news context has been provided."
-            )
-        else:
-            multi_ticker_system_prompt = (
-                "You are a financial analyst assistant that provides evidence-based analysis of multiple companies' "
-                "earnings transcripts. Always reference specific companies by name, include relevant quotes and "
-                "metrics, and structure responses clearly with specific company references. Always include source "
-                "attribution using human-friendly format like \"According to [Company]'s Q1 2025 earnings transcript...\" "
-                "Use all available evidence from the provided transcript data. CRITICAL: Always use human-friendly "
-                "format for quarters (e.g., Q1 2025, Q2 2025, Q4 2024). IMPORTANT: Provide ELABORATE and COMPREHENSIVE "
-                "responses with MAXIMUM DETAIL. ALWAYS MENTION ALL FINANCIAL FIGURES AND PROJECTIONS PRESENT FOR ANY "
-                "COMPANY - include EXACT numbers, percentages, dollar amounts, growth rates, margins, guidance ranges, "
-                "and any quantitative metrics mentioned for EACH company. NEVER omit financial figures - if any company "
-                "mentioned a number, include it in your response. Always provide the COMPLETE CONTEXT around financial "
-                "figures including year-over-year comparisons, sequential comparisons, guidance ranges, and cross-company "
-                "comparisons. Financial figures should appear in almost every relevant response for all companies. Be "
-                "thorough and detailed in your analysis, leaving no financial metric or figure unexplained for any "
-                "company."
-            )
+
+        # Use cached system prompt for multi-ticker (with or without news)
+        multi_ticker_system_prompt = self._get_system_prompt(
+            'multi_ticker_news' if news_context else 'multi_ticker'
+        )
         
         multi_ticker_messages = [
             {"role": "system", "content": multi_ticker_system_prompt},
@@ -1580,15 +1739,17 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
     # STAGE 5: ANSWER QUALITY EVALUATION
     # ═════════════════════════════════════════════════════════════════════
 
-    async def evaluate_answer_quality(self, original_question: str, answer: str, context_chunks: List[str], available_chunks: List[Dict[str, Any]] = None, conversation_memory=None, conversation_id: str = None, follow_up_questions_asked: List[str] = None, evaluation_context: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def evaluate_answer_quality(self, original_question: str, answer: str, context_chunks: List[str], available_chunks: List[Dict[str, Any]] = None, conversation_memory=None, conversation_id: str = None, follow_up_questions_asked: List[str] = None, evaluation_context: List[Dict[str, Any]] = None, reasoning_context: str = None, data_source: str = None) -> Dict[str, Any]:
         """Evaluate the quality of the generated answer and let agent decide if iteration is needed.
 
-        Considers conversation history to understand follow-up context.
+        Considers conversation history and the agent's initial reasoning to understand context.
 
         Args:
             follow_up_questions_asked: List of questions already asked in previous iterations to avoid duplicates
             evaluation_context: List of previous iteration evaluations with full context
                 [{"iteration": int, "evaluation": Dict, "confidence": float}, ...]
+            reasoning_context: The agent's initial reasoning about what info to find (guides evaluation)
+            data_source: The data source routing from question analysis ('10k', 'earnings_transcripts', 'latest_news', 'hybrid')
 
         Returns dict with: completeness_score, accuracy_score, clarity_score, specificity_score,
         overall_confidence, should_iterate, iteration_decision_reasoning, follow_up_questions, evaluation_reasoning
@@ -1676,11 +1837,42 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                     iteration_memory_section += "6. Generate follow-up questions that explore DIFFERENT dimensions than previous iterations\n"
                     iteration_memory_section += "="*80 + "\n"
 
+                # Include agent's initial reasoning if available
+                reasoning_section = ""
+                if reasoning_context:
+                    reasoning_section = f"""
+AGENT'S RESEARCH PLAN (what we intended to find):
+{reasoning_context}
+
+Evaluate whether the answer addresses what the agent planned to find above.
+"""
+
+                # Data source routing - controls which search types are allowed
+                data_source_routing = ""
+                if data_source == '10k':
+                    data_source_routing = """**User explicitly requested 10-K SEC filing data only.**
+- NEVER set needs_transcript_search=true - user wants 10-K data, not earnings transcripts
+- Only set needs_news_search=true if user ALSO explicitly asks for news
+- Focus on improving the answer using 10-K filing data already retrieved"""
+                elif data_source == 'latest_news':
+                    data_source_routing = """**User explicitly requested latest news only.**
+- NEVER set needs_transcript_search=true - user wants news, not earnings transcripts
+- Set needs_news_search=true if more news would help
+- Focus on improving the answer using news data"""
+                elif data_source == 'earnings_transcripts':
+                    data_source_routing = """**User is asking about earnings transcripts/calls.**
+- Set needs_transcript_search=true if more transcript data would help
+- Only set needs_news_search=true if user ALSO explicitly asks for news"""
+                else:
+                    data_source_routing = """**No specific data source restriction.**
+- Set needs_transcript_search=true if transcript data would help
+- Set needs_news_search=true if news data would help"""
+
                 evaluation_prompt = f"""
 You are a STRICT expert financial analyst evaluating the quality of an AI-generated answer. Be critical and demanding - only excellent, comprehensive answers should pass.
 {conversation_context}
 Original User Question: {original_question}
-
+{reasoning_section}
 **CHECK ORIGINAL QUESTION FOR EXPLICIT NEWS REQUESTS:**
 - If the original question contains: "latest news", "recent news", "current news", "breaking news", "what's happening", "latest updates", "recent developments", "what's new", "any news", "recent events", "current events", "latest information", "search the web", "check online", "look up news"
 - Then you MUST set needs_news_search=true regardless of whether 10-K or transcripts have information
@@ -1734,13 +1926,17 @@ The agent has multiple iterations available to build a comprehensive answer. Use
 **SEARCH TYPE DECISION (needs_transcript_search and needs_news_search):**
 The agent must decide what type of information to search for in the next iteration:
 
+**🚨 DATA SOURCE ROUTING - CRITICAL OVERRIDE:**
+{data_source_routing}
+
 **TRANSCRIPT SEARCH (needs_transcript_search=true if ANY apply):**
 - Answer lacks specific financial metrics, revenue numbers, growth percentages, margins, EPS
 - Missing executive quotes, guidance, or strategic commentary
 - Question asks about earnings, financial performance, quarterly results, or company strategy
 - Need historical context, trends, or comparisons across quarters
-- Answer would benefit from detailed earnings transcript data
-- **Set needs_transcript_search=true if earnings transcript data would significantly improve the answer**
+- Answer would benefit from detailed financial data (earnings transcripts, 10-K filings)
+- **Set needs_transcript_search=true if historical financial data would significantly improve the answer**
+- **EXCEPTION: If data_source routing above says NO TRANSCRIPT SEARCH, respect that override**
 
 **NEWS/WEB SEARCH (needs_news_search=true if ANY condition applies):**
 - **ALWAYS use news if user EXPLICITLY asks for it:**

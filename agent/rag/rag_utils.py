@@ -43,12 +43,32 @@ def extract_keywords(query: str) -> List[str]:
     return unique_keywords[:10]  # Limit to 10 keywords
 
 
+# Common ticker aliases: maps company name variants to actual stock tickers
+TICKER_ALIASES = {
+    'TSMC': 'TSM',
+    'GOOGLE': 'GOOGL',
+    'FACEBOOK': 'META',
+    'FB': 'META',
+    'BERKSHIRE': 'BRK.B',
+    'BRKA': 'BRK.A',
+    'BRKB': 'BRK.B',
+}
+
+
+def normalize_ticker(ticker: str) -> str:
+    """Normalize a ticker symbol using the alias map."""
+    if not ticker:
+        return ticker
+    upper = ticker.upper()
+    return TICKER_ALIASES.get(upper, upper)
+
+
 def extract_ticker_simple(query: str) -> Optional[str]:
     """Simple synchronous ticker extraction using regex patterns."""
     # Look for $TICKER format (most common in financial queries)
     ticker_match = re.search(r'\$([A-Z]{1,5})\b', query.upper())
     if ticker_match:
-        return ticker_match.group(1)
+        return normalize_ticker(ticker_match.group(1))
 
     # Look for standalone uppercase words that might be tickers (2-5 chars)
     words = query.upper().split()
@@ -59,7 +79,7 @@ def extract_ticker_simple(query: str) -> Optional[str]:
             # This is a potential ticker, but we should be conservative
             # Only return if it's a common ticker pattern
             if clean_word in ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX', 'NVDA']:
-                return clean_word
+                return normalize_ticker(clean_word)
 
     return None
 

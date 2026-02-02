@@ -779,17 +779,70 @@ $(document).ready(function() {
 
                 // Mobile devices are now supported
 
-                showAuthLoading();
                 Chart.register(ChartDataLabels);
 
-                
                 // Check if user came from landing page
                 const urlParams = new URLSearchParams(window.location.search);
                 const fromLanding = urlParams.get('from') === 'landing';
-                
+                const initialQuery = urlParams.get('query');
+
+                // For landing page users, show app IMMEDIATELY - no auth loading screen
+                // Auth will happen in the background
+                if (fromLanding) {
+                    // Store landing state BEFORE showing app
+                    if (initialQuery) {
+                        window.LANDING_STATE = {
+                            fromLanding: true,
+                            initialQuery: decodeURIComponent(initialQuery),
+                            hasUsedFreeMessage: false
+                        };
+                    }
+
+                    // IMPORTANT: Hide auth loading screen first!
+                    hideAuthLoading();
+
+                    // Show app immediately - no waiting for auth
+                    showMainApp();
+                    forceActivateSearchSection();
+
+                    // Clean up URL to remove the landing params
+                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // Check auth in background (non-blocking) - don't await
+                    checkAuthenticationStatus().then(isValid => {
+                        if (isValid) {
+                            validateTokenWithBackend();
+                            initializeWebSocket();
+                            loadUsageData();
+                        }
+                        // Update navbar UI based on auth state
+                        if (typeof updateNavbarAuthUI === 'function') {
+                            updateNavbarAuthUI();
+                        }
+                    }).catch(() => {
+                        // Auth failed silently - user can still use app without auth
+                    });
+
+                    return; // Exit early - don't show auth loading
+                }
+
+                // For non-landing users, check localStorage first (fast check)
+                const hasAuthToken = localStorage.getItem('authToken');
+                const hasUserData = localStorage.getItem('currentUser');
+
+                // If no auth data at all, show app immediately - no need to wait
+                if (!hasAuthToken && !hasUserData) {
+                    showMainApp();
+                    forceActivateSearchSection();
+                    return; // Done - no auth check needed
+                }
+
+                // User might be authenticated - show loading and verify
+                showAuthLoading();
+
                 checkAuthenticationStatus().then(isValid => {
                     hideAuthLoading();
-                    
+
                     if (isValid) {
                         showMainApp();
                         // Force chat section as default with explicit activation
@@ -801,47 +854,21 @@ $(document).ready(function() {
 
                         // Load usage data to show indicator
                         loadUsageData();
-                        
+
                         // Start with fresh conversation
                         setTimeout(() => {
                             if (typeof startNewChat === 'function') {
                                 startNewChat();
                             }
                         }, 1000);
-                    } else if (fromLanding) {
-                        
-                        // Store landing state BEFORE cleaning URL
-                        const initialQuery = urlParams.get('query');
-                        if (initialQuery) {
-                            window.LANDING_STATE = {
-                                fromLanding: true,
-                                initialQuery: decodeURIComponent(initialQuery),
-                                hasUsedFreeMessage: false
-                            };
-                        }
-                        
-                        showMainApp();
-                        forceActivateSearchSection();
-                        // Landing integration will handle the banner and query transfer
-                        
-                        // Clean up URL to remove the landing params
-                        window.history.replaceState({}, document.title, window.location.pathname);
                     } else {
                         showMainApp();
                         forceActivateSearchSection();
                     }
                 }).catch(error => {
                     hideAuthLoading();
-                    
-                    if (fromLanding) {
-                        showMainApp();
-                        forceActivateSearchSection();
-                        // Clean up URL to remove the landing params
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    } else {
-                        showMainApp();
-                        forceActivateSearchSection();
-                    }
+                    showMainApp();
+                    forceActivateSearchSection();
                 });
             }
 
@@ -872,9 +899,80 @@ $(document).ready(function() {
             }
 
             async function checkAuthenticationStatus() {
+                // FAST PATH: Check localStorage first - if no auth data, skip slow Clerk init
+                const cachedToken = localStorage.getItem('authToken');
+                const cachedUser = localStorage.getItem('currentUser');
+
+                // If no cached auth data AND Clerk isn't already loaded with a session, return false fast
+                if (!cachedToken && !cachedUser && !window.Clerk?.session) {
+                    return false;
+                }
+
+                // Try to initialize Clerk auth (only if we might have a session)
+                if (window.strataAuth && !window.strataAuth.initialized) {
+                    try {
+                        // Use a timeout to prevent hanging
+                        const initPromise = window.strataAuth.init();
+                        const timeoutPromise = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Clerk init timeout')), 3000)
+                        );
+                        await Promise.race([initPromise, timeoutPromise]);
+                    } catch (e) {
+                        console.warn('Clerk initialization failed or timed out, falling back to legacy auth:', e);
+                    }
+                }
+
+                // Check Clerk authentication first
+                if (window.strataAuth?.isAuthenticated()) {
+                    const clerkUser = window.strataAuth.getUser();
+                    if (clerkUser) {
+                        currentUser = {
+                            id: clerkUser.id,
+                            email: clerkUser.email,
+                            full_name: clerkUser.fullName,
+                            username: clerkUser.username,
+                            is_admin: false // Will be updated from backend
+                        };
+
+                        // Validate with backend and get full user data
+                        try {
+                            const token = await window.strataAuth.getToken();
+                            if (token) {
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                                const response = await fetch(`${CONFIG.apiBaseUrl}/auth/validate`, {
+                                    headers: { 'Authorization': `Bearer ${token}` },
+                                    signal: controller.signal
+                                });
+
+                                clearTimeout(timeoutId);
+
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    currentUser = {
+                                        id: data.user?.id || clerkUser.id,
+                                        email: data.user?.email || clerkUser.email,
+                                        full_name: data.user?.full_name || clerkUser.fullName,
+                                        username: data.user?.username || clerkUser.username,
+                                        is_admin: data.user?.is_admin || false
+                                    };
+                                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                                    fetchOnboardingStatusWithTimeout(token, currentUser);
+                                    return true;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Backend validation failed:', e);
+                        }
+
+                        return true;
+                    }
+                }
+
+                // Fallback to legacy localStorage token
                 const token = localStorage.getItem('authToken');
                 const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-
 
                 if (!token || !user) {
                     clearAuthData();
@@ -1000,7 +1098,8 @@ $(document).ready(function() {
 
             async function validateTokenWithBackend() {
                 try {
-                    const token = localStorage.getItem('authToken');
+                    const token = await getAuthToken();
+                    if (!token) return; // No token available
 
                     // Add timeout to prevent hanging
                     const controller = new AbortController();
@@ -1033,13 +1132,65 @@ $(document).ready(function() {
             }
 
             function showAuthModal(defaultTab = 'register') {
+                // Try to use Clerk sign-in if available
+                if (window.strataAuth?.clerk) {
+                    window.strataAuth.openSignIn();
+                    return;
+                }
+
+                // Fallback to modal
                 $('#authModal').removeClass('hidden').addClass('flex');
                 $('#mainApp').addClass('hidden');
+
+                // Try to mount Clerk sign-in in the modal
+                initClerkSignInModal();
             }
 
             function hideAuthModal() {
                 $('#authModal').addClass('hidden').removeClass('flex');
                 $('#mainApp').removeClass('hidden');
+            }
+
+            async function initClerkSignInModal() {
+                // Initialize Clerk if not already done
+                if (window.strataAuth && !window.strataAuth.initialized) {
+                    try {
+                        await window.strataAuth.init();
+                    } catch (e) {
+                        console.warn('Clerk init failed:', e);
+                    }
+                }
+
+                // Mount Clerk sign-in component
+                if (window.strataAuth?.clerk) {
+                    const container = document.getElementById('clerk-sign-in-container');
+                    const loading = document.getElementById('clerk-sign-in-loading');
+                    const fallback = document.getElementById('auth-fallback');
+
+                    if (loading) loading.style.display = 'none';
+
+                    try {
+                        window.strataAuth.mountSignIn(container);
+                    } catch (e) {
+                        console.warn('Could not mount Clerk sign-in:', e);
+                        if (fallback) fallback.classList.remove('hidden');
+                    }
+                } else {
+                    // Show fallback if Clerk not available
+                    const loading = document.getElementById('clerk-sign-in-loading');
+                    const fallback = document.getElementById('auth-fallback');
+                    if (loading) loading.style.display = 'none';
+                    if (fallback) fallback.classList.remove('hidden');
+                }
+            }
+
+            async function handleLogout() {
+                if (window.strataAuth?.clerk) {
+                    await window.strataAuth.signOut();
+                } else {
+                    clearAuthData();
+                    window.location.reload();
+                }
             }
 
             function showAboutModal() {
@@ -1055,6 +1206,41 @@ $(document).ready(function() {
                 $('#aboutModal').addClass('hidden').removeClass('flex');
             }
 
+            // Sign In Required Modal functions
+            function showSignInRequiredModal(featureName) {
+                const modal = document.getElementById('signInRequiredModal');
+                const featureNameSpan = document.getElementById('signInRequiredFeatureName');
+
+                if (featureNameSpan) {
+                    featureNameSpan.textContent = featureName || 'this feature';
+                }
+
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+
+                // Track modal open
+                if (window.posthog) {
+                    posthog.capture('sign_in_required_modal_shown', {
+                        feature: featureName,
+                        page: 'app'
+                    });
+                }
+            }
+
+            function hideSignInRequiredModal() {
+                const modal = document.getElementById('signInRequiredModal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+
+            // Make modal functions globally accessible
+            window.showSignInRequiredModal = showSignInRequiredModal;
+            window.hideSignInRequiredModal = hideSignInRequiredModal;
+
             function showMagicLinkModal() {
                 $('#authModal').addClass('hidden').removeClass('flex');
                 $('#magicLinkModal').removeClass('hidden').addClass('flex');
@@ -1069,43 +1255,77 @@ $(document).ready(function() {
                 $('#authModal').addClass('hidden').removeClass('flex');
                 $('#magicLinkModal').addClass('hidden').removeClass('flex');
                 $('#mainApp').removeClass('hidden');
-                
-                // Only show authenticated controls if user is actually authenticated
-                const token = localStorage.getItem('authToken');
-                const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                
-                if (token && user && currentUser) {
-                    // User is authenticated - show all controls
+
+                // Check authentication status (Clerk or legacy)
+                const isAuth = (window.strataAuth?.isAuthenticated()) ||
+                    (localStorage.getItem('authToken') && localStorage.getItem('currentUser'));
+
+                if (isAuth && currentUser) {
+                    // User is authenticated - show authenticated controls, hide sign-in button
                     $('#authenticatedControls').removeClass('hidden');
+                    $('#navSignInBtn').addClass('hidden');
                     $('#userName').text(currentUser?.full_name || currentUser?.email || 'User');
+
+                    // Hide lock icons on sidebar - user is authenticated
+                    $('.auth-lock-icon').addClass('hidden');
+                    $('.sidebar-menu-item.auth-required').removeClass('auth-required');
                 } else {
-                    // User is anonymous - hide controls
+                    // User is anonymous - show sign-in button, hide authenticated controls
                     $('#authenticatedControls').addClass('hidden');
+                    $('#navSignInBtn').removeClass('hidden');
+
+                    // Show lock icons on sidebar - user needs to sign in
+                    $('.auth-lock-icon').removeClass('hidden');
                 }
 
-                // Hide chat section for non-admin users
-                // Chat is now available to all users - make sure it's visible
+                // Chat is always available to all users
                 const chatMenuItem = $('.sidebar-menu-item[data-section="chat"]');
                 if (chatMenuItem.length > 0) {
                     chatMenuItem.show();
-                } else {
                 }
-
-                // Onboarding modal is now only shown when user clicks the onboarding button
-
             }
+
+            // Function to update sidebar auth state (can be called after login/logout)
+            function updateSidebarAuthState() {
+                const isAuth = localStorage.getItem('authToken') && localStorage.getItem('currentUser');
+
+                if (isAuth) {
+                    // Hide lock icons - user is authenticated
+                    $('.auth-lock-icon').addClass('hidden');
+                } else {
+                    // Show lock icons - user needs to sign in
+                    $('.auth-lock-icon').removeClass('hidden');
+                }
+            }
+
+            // Make it globally accessible
+            window.updateSidebarAuthState = updateSidebarAuthState;
 
             function logout() {
                 // Track logout
                 trackEvent('user_logout');
-                
-                // Hide authenticated controls
+
+                // Hide authenticated controls, show sign-in button
                 $('#authenticatedControls').addClass('hidden');
-                
+                $('#navSignInBtn').removeClass('hidden');
+
+                // Show lock icons on sidebar again
+                $('.auth-lock-icon').removeClass('hidden');
+
+                // Switch to chat section (always available)
+                if (typeof switchToSection === 'function') {
+                    switchToSection('chat');
+                }
+
                 resetUser();
 
-                clearAuthData();
-                showAuthModal('register');
+                // Use Clerk logout if available
+                if (window.strataAuth?.clerk) {
+                    handleLogout();
+                } else {
+                    clearAuthData();
+                    showAuthModal('register');
+                }
                 showToast('Logged out successfully', 'info');
             }
 
@@ -1124,7 +1344,7 @@ $(document).ready(function() {
 
             async function completeOnboarding() {
                 try {
-                    const token = localStorage.getItem('authToken');
+                    const token = await getAuthToken();
                     if (!token) {
                         logout();
                         return;
@@ -1282,7 +1502,7 @@ $(document).ready(function() {
 
             async function sortSingleSheetData(columnName, direction) {
                 try {
-                    const token = localStorage.getItem('authToken');
+                    const token = await getAuthToken();
                     if (!token) {
                         logout();
                         return;
@@ -1474,7 +1694,13 @@ $(document).ready(function() {
                 // Handle empty data case
                 if (!dataRows || dataRows.length === 0) {
                     const colspan = columns.length + (hasActualLinks ? 1 : 0);
-                    $('#singleSheetTableBody').html(`<tr><td colspan="${colspan}" class="text-center py-8">No data.</td></tr>`);
+                    $('#singleSheetTableBody').html(`<tr><td colspan="${colspan}" class="text-center py-12">
+                        <div class="flex flex-col items-center gap-3">
+                            <i class="fas fa-table text-3xl text-slate-300"></i>
+                            <p class="text-sm font-medium text-slate-500">No results found</p>
+                            <p class="text-xs text-slate-400">Try adjusting your query or filters to see data</p>
+                        </div>
+                    </td></tr>`);
                     return;
                 }
 
@@ -2018,19 +2244,29 @@ function setupEventListeners() {
     // Desktop sidebar functionality
     $(document).on('click', '.sidebar-menu-item', function(e) {
         e.preventDefault();
-    const $item = $(this);
-    const section = $item.data('section');
+        const $item = $(this);
+        const section = $item.data('section');
 
-    // Intercept clicks on disabled (non-chat) items and show Coming Soon modal
-    if ($item.hasClass('disabled') || $item.attr('aria-disabled') === 'true') {
-        if (section !== 'chat') {
-            const modal = document.getElementById('comingSoonModal');
-            if (modal) {
-                modal.classList.add('open');
+        // Check if this section requires authentication
+        const requiresAuth = $item.data('auth-required') === true || $item.attr('data-auth-required') === 'true';
+
+        if (requiresAuth) {
+            // Check if user is authenticated
+            const isAuth = localStorage.getItem('authToken') && localStorage.getItem('currentUser');
+
+            if (!isAuth) {
+                // Show Sign In Required modal with feature name
+                const featureNames = {
+                    'companies': 'Companies',
+                    'search': 'Screener',
+                    'screens': 'Collections',
+                    'charting': 'Charting'
+                };
+                showSignInRequiredModal(featureNames[section] || 'this feature');
+                return;
             }
-            return;
         }
-    }
+
         handleSidebarNavigation(section);
     });
 
@@ -2465,7 +2701,7 @@ function handleCompanySearchInput() {
 // Fetch company suggestions for autocomplete
 async function fetchCompanySuggestions(query) {
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -2621,19 +2857,9 @@ function setupUniformTabEvents() {
 // NEW: Uniform tab switching logic
 function switchUniformTab(tabName) {
 
-    // Update tab button states
+    // Update tab button states - only toggle active class, keep all tabs clickable
     $('.uniform-tab-btn').removeClass('active');
     $(`.uniform-tab-btn[data-uniform-tab="${tabName}"]`).addClass('active');
-
-    // Disable other tabs visually and functionally
-    $('.uniform-tab-btn').each(function() {
-        const isActive = $(this).data('uniform-tab') === tabName;
-        if (isActive) {
-            $(this).removeClass('disabled').attr('aria-disabled', 'false');
-        } else {
-            $(this).addClass('disabled').attr('aria-disabled', 'true');
-        }
-    });
 
     // Update tab content visibility
     $('.uniform-tab-content').removeClass('active');
@@ -2671,7 +2897,7 @@ function switchUniformTab(tabName) {
 async function loadUniformFinancialData(symbol) {
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -2719,7 +2945,7 @@ async function loadUniformFinancialData(symbol) {
 async function loadUniformTTMData(symbol) {
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -2744,7 +2970,7 @@ async function loadUniformTTMData(symbol) {
 async function loadUniformTTMHistory(symbol, quarters = 5) {
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -2769,7 +2995,7 @@ async function loadUniformTTMHistory(symbol, quarters = 5) {
 async function loadUniformProductSegments(symbol) {
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -2799,7 +3025,7 @@ async function loadUniformProductSegments(symbol) {
 async function loadUniformGeographicSegments(symbol) {
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -3172,7 +3398,7 @@ async function loadCompanyProfile(symbol, companyName = null) {
         $('#companyProfileSection').removeClass('hidden');
         showCompanyProfileLoading();
 
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -4055,10 +4281,10 @@ function clearPreviousQueryData() {
 
 // --- STOP SEARCH FUNCTIONALITY ---
 async function stopSearch() {
-    
+
     try {
         // Call backend cancellation endpoint
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         const response = await fetch(`${CONFIG.apiBaseUrl}/screener/cancel`, {
             method: 'POST',
             headers: {
@@ -4194,13 +4420,13 @@ async function performSearchWithStreaming() {
 
     // Fallback to EventSource (existing implementation)
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         const params = new URLSearchParams({
             question: query,
             page: currentPage,
             page_size: CONFIG.pageSize,
         });
-        params.append('token', token);
+        if (token) params.append('token', token);
 
         eventSource = new EventSource(`${CONFIG.apiBaseUrl}/screener/query/stream?${params.toString()}`);
 
@@ -4931,7 +5157,7 @@ async function fetchPage(page) {
     $('#singleSheetTableBody').html(`<tr><td colspan="99" class="text-center p-8"><i class="fas fa-spinner fa-spin text-2xl text-text-tertiary"></i></td></tr>`);
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) { logout(); return null; }
 
         // Use the dedicated pagination endpoint instead of the full query endpoint
@@ -5359,7 +5585,7 @@ function navigateLoadedScreenPage(page) {
 // Single sheet export
 function exportSingleSheetData() {
     if (!lastApiResponse || !lastApiResponse.data_rows || lastApiResponse.data_rows.length === 0) {
-        showToast('No data to export.', 'warning');
+        showToast('No data available to export. Run a query first.', 'warning');
         return;
     }
 
@@ -5487,7 +5713,7 @@ function updateChart() {
 
 function openChartModal() {
     if (!currentData || currentData.length === 0) {
-        showToast("No data available", "warning");
+        showToast("No data available. Please run a search first.", "warning");
         return;
     }
 
@@ -5600,13 +5826,31 @@ function closeChartModal() {
 // Use getSectorClass from ChartUtils
 // Note: getSectorClass is available as ChartUtils.getSectorClass
 
-// Toast functions
+// Toast queue system
+let toastQueue = [];
+let isToastShowing = false;
+
 window.showToast = function(message, type = 'info', duration = CONFIG.toastDuration) {
     // Track toast notifications
     trackEvent('show_toast', {
         message_type: type,
         duration: duration
     });
+
+    toastQueue.push({ message, type, duration });
+    if (!isToastShowing) {
+        _showNextToast();
+    }
+}
+
+function _showNextToast() {
+    if (toastQueue.length === 0) {
+        isToastShowing = false;
+        return;
+    }
+
+    isToastShowing = true;
+    const { message, type, duration } = toastQueue.shift();
 
     clearTimeout(toastTimeout);
     const icons = {
@@ -5625,6 +5869,8 @@ window.showToast = function(message, type = 'info', duration = CONFIG.toastDurat
 
 window.hideToast = function() {
     $('#toast').removeClass('translate-x-0').addClass('translate-x-[120%]');
+    // Process next toast after hide animation completes
+    setTimeout(() => _showNextToast(), 500);
 }
 
 // Global export functions for window
@@ -5662,8 +5908,33 @@ let navigationState = {
 // Collections state
 let activeCollectionType = 'screens';
 
+// Sections that require authentication
+const AUTH_REQUIRED_SECTIONS = ['companies', 'search', 'screens', 'charting'];
+
 // Main section switching function
 function switchToSection(sectionName) {
+    // Auth guard: Check if section requires authentication
+    if (AUTH_REQUIRED_SECTIONS.includes(sectionName)) {
+        const isAuth = localStorage.getItem('authToken') && localStorage.getItem('currentUser');
+
+        if (!isAuth) {
+            // Show Sign In Required modal
+            const featureNames = {
+                'companies': 'Companies',
+                'search': 'Screener',
+                'screens': 'Collections',
+                'charting': 'Charting'
+            };
+
+            if (typeof showSignInRequiredModal === 'function') {
+                showSignInRequiredModal(featureNames[sectionName] || 'this feature');
+            } else if (typeof window.showSignInRequiredModal === 'function') {
+                window.showSignInRequiredModal(featureNames[sectionName] || 'this feature');
+            }
+            return; // Don't switch to section
+        }
+    }
+
     // Track section change
     trackEvent('section_change', {
         from_section: currentSection,
@@ -5821,7 +6092,7 @@ async function handleSaveScreen(e) {
     $('#saveScreenSubmitBtn').prop('disabled', true);
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -5964,7 +6235,7 @@ async function loadUserScreens() {
     $('#screensPaginationContainer').addClass('hidden');
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -6161,7 +6432,7 @@ async function loadScreen(screenId) {
             screen_id: screenId
         });
 
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -6266,7 +6537,7 @@ async function deleteScreen(screenId) {
     }
 
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -6315,7 +6586,7 @@ async function openPlotScreenStocksModal(screenId) {
             screen_id: screenId
         });
 
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -6854,7 +7125,7 @@ function handleMetricTypeChange(metricType) {
 // Search for stocks
 async function searchChartingStocks(query) {
     try {
-        const token = localStorage.getItem('authToken');
+        const token = await getAuthToken();
         if (!token) {
             logout();
             return;
@@ -6966,7 +7237,11 @@ function updateSelectedStocksDisplay() {
     if (chartingSelectedStocks.length === 0) {
         container.html(`
             <div class="text-text-tertiary text-sm italic flex items-center">
-                No companies selected. Search and add companies above.
+                <div class="flex flex-col items-center gap-3 py-4">
+                    <i class="fas fa-building text-3xl text-slate-300"></i>
+                    <p class="text-sm font-medium text-slate-500">No companies selected</p>
+                    <p class="text-xs text-slate-400">Search and add companies above to get started</p>
+                </div>
             </div>
         `);
         return;
@@ -7063,7 +7338,7 @@ async function fetchChartingData(stocks, metric, metricType, timePeriod) {
         // This is handled by fetchSegmentChartingData in generateFinancialChart
         return [];
     }
-    const token = localStorage.getItem('authToken');
+    const token = await getAuthToken();
     if (!token) {
         logout();
         return [];
@@ -7268,7 +7543,7 @@ async function fetchChartingData(stocks, metric, metricType, timePeriod) {
 
 // Fetch segment data for charting
 async function fetchSegmentChartingData(stocks, segmentType, timePeriod, metricType = 'absolute') {
-    const token = localStorage.getItem('authToken');
+    const token = await getAuthToken();
     if (!token) {
         logout();
         return [];
@@ -8422,7 +8697,7 @@ async function expandTruncatedValue(columnName, rowIndex, sheetIndex) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 },
                 body: JSON.stringify(requestBody)
             });
@@ -8446,7 +8721,7 @@ async function expandTruncatedValue(columnName, rowIndex, sheetIndex) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 },
                 body: JSON.stringify(requestBody)
             });
@@ -8541,7 +8816,7 @@ async function loadUsageData() {
         // Fetch usage data
         const response = await fetch(`${CONFIG.apiBaseUrl}/user/usage`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${await getAuthToken()}`
             }
         });
 
@@ -8605,7 +8880,7 @@ async function loadProfileUsageData() {
         // Fetch usage data
         const response = await fetch(`${CONFIG.apiBaseUrl}/user/usage`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${await getAuthToken()}`
             }
         });
 
@@ -8759,7 +9034,7 @@ async function loadUserProfile() {
         const response = await fetch(`${CONFIG.apiBaseUrl}/user/profile`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Authorization': `Bearer ${await getAuthToken()}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -8812,7 +9087,7 @@ async function saveProfile() {
         const response = await fetch(`${CONFIG.apiBaseUrl}/user/profile`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Authorization': `Bearer ${await getAuthToken()}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(formData)
@@ -8872,7 +9147,7 @@ async function changePassword() {
         const response = await fetch(`${CONFIG.apiBaseUrl}/auth/change-password`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                'Authorization': `Bearer ${await getAuthToken()}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -9084,7 +9359,7 @@ async function loadChatHistory(loadMore = false) {
         
         const response = await fetch(`${CONFIG.apiBaseUrl}/chat/conversations?limit=${limit}&offset=${offset}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${await getAuthToken()}`
             }
         });
 
@@ -9300,7 +9575,7 @@ async function loadConversation(conversationId, conversationTitle) {
         // Fetch full conversation from API
         const response = await fetch(`${CONFIG.apiBaseUrl}/chat/conversations/${conversationId}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${await getAuthToken()}`
             }
         });
         
@@ -9414,25 +9689,42 @@ async function loadConversation(conversationId, conversationTitle) {
 
 // Start a new chat
 function startNewChat() {
-    
+
     // Clear current conversation ID
     window.currentConversationId = null;
-    
+
     // Clear chat messages
     $('#chatMessages').empty();
-    
-    // Add fresh welcome message
+
+    // Add fresh welcome message - clean version with Quick Suggestions
     const welcomeMessage = `
         <div class="chat-message assistant">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
+            <div class="chat-content">
+                <div class="chat-avatar assistant">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="message-text-wrapper">
+                    <div class="chat-bubble">
+                        <div class="welcome-content">
+                            <h2>Welcome to StrataLens</h2>
+                            <p>Your AI analyst for public equity markets.</p>
+
+                            <h3 class="quick-suggestions-heading">Quick Suggestions</h3>
+                            <div class="quick-examples">
+                                <button class="example-btn" onclick="document.getElementById('chatInput').value = 'Compile $INTC management commentary on foundry business in last 3 quarters'; document.getElementById('chatInput').focus();">
+                                    $INTC foundry business commentary
+                                </button>
+                                <button class="example-btn" onclick="document.getElementById('chatInput').value = 'Compare $MSFT and $GOOGL cloud segment'; document.getElementById('chatInput').focus();">
+                                    Compare $MSFT and $GOOGL cloud segment
+                                </button>
+                                <button class="example-btn" onclick="document.getElementById('chatInput').value = 'Compile $META AI capex commentary in last 3 quarters'; document.getElementById('chatInput').focus();">
+                                    $META AI capex commentary
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="chat-bubble">
-                <div class="message-content">
-                    <p>👋 Hello! I'm your AI financial assistant. I can help you analyze financial data and earnings transcripts.</p>
-                    <p class="text-sm opacity-75 mt-2">Ask me anything about companies, financial metrics, or market trends!</p>
-            </div>
-        </div>
         </div>
     `;
     $('#chatMessages').append(welcomeMessage);
@@ -9628,8 +9920,8 @@ function highlightRelevantChunks(formattedText, relevantChunks) {
 }
 
 // Function to view full transcript from citation
-function viewTranscript(company, quarter, citationIndex) {
-    
+async function viewTranscript(company, quarter, citationIndex) {
+
     try {
         // Parse quarter to extract year and quarter number
         const quarterMatch = quarter.match(/(\d{4})_Q(\d)/);
@@ -9637,23 +9929,23 @@ function viewTranscript(company, quarter, citationIndex) {
             showToast('Invalid quarter format', 'error');
             return;
         }
-        
+
         const year = parseInt(quarterMatch[1]);
         const quarterNum = parseInt(quarterMatch[2]);
-        
+
         // Show loading toast
         showToast(`Loading ${company} ${quarter} transcript...`, 'info');
-        
+
         // Use unified transcript endpoint (works for both authenticated and demo users)
         const endpoint = `${CONFIG.apiBaseUrl}/transcript/${company}/${year}/${quarterNum}`;
-        
+
         // Prepare headers - include auth token if available
         const headers = {};
-        const authToken = localStorage.getItem('authToken');
+        const authToken = await getAuthToken();
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
-        
+
         // Fetch transcript from API
         fetch(endpoint, { headers })
         .then(response => {

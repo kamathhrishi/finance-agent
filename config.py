@@ -23,17 +23,42 @@ load_dotenv()
 
 
 @dataclass
+class ClerkConfig:
+    """Clerk authentication configuration."""
+
+    # Clerk API keys (loaded from environment)
+    SECRET_KEY: Optional[str] = field(default_factory=lambda: os.getenv("CLERK_SECRET_KEY"))
+    PUBLISHABLE_KEY: Optional[str] = field(default_factory=lambda: os.getenv("CLERK_PUBLISHABLE_KEY"))
+    WEBHOOK_SECRET: Optional[str] = field(default_factory=lambda: os.getenv("CLERK_WEBHOOK_SECRET"))
+
+    # Clerk JWKS configuration
+    JWKS_CACHE_TTL_SECONDS: int = 3600  # Cache JWKS for 1 hour
+
+    @property
+    def is_configured(self) -> bool:
+        """Check if Clerk is properly configured."""
+        return bool(self.SECRET_KEY and self.PUBLISHABLE_KEY)
+
+    @property
+    def jwks_url(self) -> Optional[str]:
+        """Get the JWKS URL from the publishable key."""
+        if not self.PUBLISHABLE_KEY:
+            return None
+        # Extract the Clerk frontend API from publishable key
+        # Format: pk_test_xxx or pk_live_xxx
+        # The JWKS URL is at the Clerk frontend API
+        return None  # Will be set dynamically based on issuer from token
+
+
+@dataclass
 class SecurityConfig:
     """Security and authentication configuration."""
-    
-    # JWT Configuration
+
+    # JWT Configuration (legacy - kept for backwards compatibility during migration)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     DEFAULT_TOKEN_EXPIRE_MINUTES: int = 15  # Default for create_access_token
-    
-    # Password hashing
-    PASSWORD_SCHEME: str = "bcrypt"
-    
+
     # Admin account defaults
     ADMIN_USERNAME: str = "admin"
     ADMIN_EMAIL: str = "admin@stratalens.ai"
@@ -231,6 +256,10 @@ class ApplicationConfig:
     # When disabled, server will reject the corresponding endpoint and UI should hide it
     ENABLE_LOGIN: bool = field(default_factory=lambda: os.getenv('ENABLE_LOGIN', 'false').lower() == 'true')
     ENABLE_SELF_SERVE_REGISTRATION: bool = field(default_factory=lambda: os.getenv('ENABLE_SELF_SERVE_REGISTRATION', 'false').lower() == 'true')
+
+    # Auth bypass - currently disabled for all environments
+    # Set AUTH_DISABLED=false to re-enable authentication
+    AUTH_DISABLED: bool = field(default_factory=lambda: os.getenv('AUTH_DISABLED', 'true').lower() == 'true')
     
     # Query features
     ENABLE_STREAMING: bool = True
@@ -251,6 +280,7 @@ class Settings:
     """
     
     def __init__(self):
+        self.CLERK = ClerkConfig()
         self.SECURITY = SecurityConfig()
         self.RATE_LIMITING = RateLimitingConfig()
         self.DATABASE = DatabaseConfig()
@@ -404,8 +434,9 @@ def get_optional_env_var(var_name: str, default: str = None) -> str:
 __all__ = [
     'settings',
     'Settings',
+    'ClerkConfig',
     'SecurityConfig',
-    'RateLimitingConfig', 
+    'RateLimitingConfig',
     'DatabaseConfig',
     'RedisConfig',
     'FilePathsConfig',

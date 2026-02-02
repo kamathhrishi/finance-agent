@@ -19,6 +19,30 @@ class ChatInterface {
         this.init();
     }
 
+    /**
+     * Get auth token - supports both Clerk and legacy localStorage tokens
+     * @returns {Promise<string|null>}
+     */
+    async getAuthToken() {
+        if (typeof getAuthToken === 'function') {
+            return await getAuthToken();
+        }
+        return localStorage.getItem('authToken');
+    }
+
+    /**
+     * Check if user is authenticated
+     * @returns {boolean}
+     */
+    isUserAuthenticated() {
+        if (typeof isAuthenticated === 'function') {
+            return isAuthenticated();
+        }
+        const token = localStorage.getItem('authToken');
+        const user = localStorage.getItem('currentUser');
+        return !!(token && user);
+    }
+
     init() {
         this.setupEventListeners();
         this.loadChatHistory();
@@ -39,10 +63,14 @@ class ChatInterface {
             return;
         }
 
-        // Set up initial send button event listener
-        sendButton.onclick = () => {
-            this.sendMessage();
-        };
+        // Single persistent click handler that checks loading state
+        sendButton.addEventListener('click', () => {
+            if (this.isLoading) {
+                this.stopCurrentQuery();
+            } else {
+                this.sendMessage();
+            }
+        });
 
         // Send message on Enter key and handle ticker autocomplete navigation
         chatInput.addEventListener('keydown', (e) => {
@@ -59,9 +87,11 @@ class ChatInterface {
 
         // Auto-resize textarea and handle ticker autocomplete
         chatInput.addEventListener('input', () => {
-            chatInput.style.height = 'auto';
-            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-            
+            requestAnimationFrame(() => {
+                chatInput.style.height = 'auto';
+                chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+            });
+
             // Handle ticker autocomplete
             this.handleTickerAutocomplete();
         });
@@ -318,7 +348,7 @@ class ChatInterface {
         try {
             const response = await fetch(`${CONFIG.apiBaseUrl}/chat/stats`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 }
             });
 
@@ -427,7 +457,7 @@ class ChatInterface {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 },
                 body: JSON.stringify(requestBody)
             });
@@ -624,7 +654,7 @@ class ChatInterface {
             const response = await fetch(`${CONFIG.apiBaseUrl}/chat/cancel`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 }
             });
 
@@ -656,11 +686,6 @@ class ChatInterface {
                 sendButton.classList.add('stop-button');
                 sendButton.innerHTML = '<i class="fas fa-stop"></i>';
                 sendButton.title = 'Stop current query';
-                // Update the onclick handler
-                sendButton.onclick = () => {
-                    this.stopCurrentQuery();
-                };
-            } else {
             }
             if (chatInput) {
                 chatInput.disabled = true;
@@ -672,12 +697,7 @@ class ChatInterface {
                 sendButton.classList.add('send-button');
                 sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
                 sendButton.title = 'Send message';
-                sendButton.disabled = false; // Re-enable the button
-                // Update the onclick handler
-                sendButton.onclick = () => {
-                    this.sendMessage();
-                };
-            } else {
+                sendButton.disabled = false;
             }
             if (chatInput) {
                 chatInput.disabled = false;
@@ -749,10 +769,17 @@ class ChatInterface {
     }
 
     async sendToBackend(message) {
-        // Check if user is authenticated
-        const token = localStorage.getItem('authToken');
-        const isAuthenticated = token && localStorage.getItem('currentUser');
-        
+        // Check if user is authenticated - use getAuthToken helper for Clerk/legacy support
+        let token = null;
+        if (typeof getAuthToken === 'function') {
+            token = await getAuthToken();
+        } else {
+            token = localStorage.getItem('authToken');
+        }
+        const isAuthenticated = token && (
+            window.strataAuth?.isAuthenticated() || localStorage.getItem('currentUser')
+        );
+
         // Use streaming endpoints for both authenticated and demo users
         return await this.sendToBackendWithStreaming(message, isAuthenticated);
     }
@@ -778,8 +805,16 @@ class ChatInterface {
                 };
                 
                 if (isAuthenticated) {
-                    const token = localStorage.getItem('authToken');
-                    headers['Authorization'] = `Bearer ${token}`;
+                    // Get token using helper for Clerk/legacy support
+                    let token = null;
+                    if (typeof getAuthToken === 'function') {
+                        token = await getAuthToken();
+                    } else {
+                        token = localStorage.getItem('authToken');
+                    }
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
                     streamUrl = `${CONFIG.apiBaseUrl}/chat/message/stream-v2`;
                     requestBody = {
                         message: message,
@@ -1035,31 +1070,46 @@ class ChatInterface {
                                 analysis: resultData.analysis,
                                 conversation_id: data.conversation_id
                             });
+                        } else if (data.type === 'rejected') {
+                            // Handle rejected questions - display the rejection message to user
+                            this._cleanupStreamingUI();
+
+                            // Build rejection message with suggestions if available
+                            let rejectionMessage = data.message || 'I can only answer questions about company earnings and financial information from earnings call transcripts.';
+
+                            // Add suggestions if available
+                            const suggestions = data.data?.suggestions || [];
+                            if (suggestions.length > 0) {
+                                rejectionMessage += '\n\n**Try asking something like:**\n';
+                                suggestions.forEach(suggestion => {
+                                    rejectionMessage += `- ${suggestion}\n`;
+                                });
+                            }
+
+                            this.addMessage('assistant', rejectionMessage, [], 'info');
+
+                            this.isStreaming = false;
+                            await reader.cancel();
+
+                            resolve({
+                                success: true,
+                                answer: rejectionMessage,
+                                citations: [],
+                                conversation_id: data.conversation_id
+                            });
+                            return;
                         } else if (data.type === 'error') {
                             // Handle errors
-                            
-                            // Clean up streaming message if exists
-                            if (this.streamingMessageId) {
-                                const streamingMsg = document.getElementById(this.streamingMessageId);
-                                if (streamingMsg && streamingMsg.parentNode) {
-                                    streamingMsg.parentNode.removeChild(streamingMsg);
-                                }
-                                this.streamingMessageId = null;
-                            }
-                            
-                            // Remove panel immediately on error
-                            const panel = document.getElementById('chat-inline-reasoning-panel');
-                            if (panel && panel.parentNode) {
-                                panel.parentNode.removeChild(panel);
-                            }
-                            
+
+                            this._cleanupStreamingUI();
+
                             // Reset streaming flag on error
                             this.isStreaming = false;
-                            
+
                             // Check for rate limit errors
                             if (data.error === 'RATE_LIMIT_EXCEEDED' || data.error === 'DEMO_LIMIT_EXCEEDED') {
                                 await reader.cancel();
-                                
+
                                 if (!isAuthenticated) {
                                     reject(new Error(`DEMO_LIMIT: ${data.message}`));
                                 } else {
@@ -1081,20 +1131,7 @@ class ChatInterface {
                     // Reset streaming flag on error
                     this.isStreaming = false;
                     
-                    // Clean up streaming message if exists
-                    if (this.streamingMessageId) {
-                        const streamingMsg = document.getElementById(this.streamingMessageId);
-                        if (streamingMsg && streamingMsg.parentNode) {
-                            streamingMsg.parentNode.removeChild(streamingMsg);
-                        }
-                        this.streamingMessageId = null;
-                    }
-                    
-                    // Remove panel immediately on connection error
-                    const panel = document.getElementById('chat-inline-reasoning-panel');
-                    if (panel && panel.parentNode) {
-                        panel.parentNode.removeChild(panel);
-                    }
+                    this._cleanupStreamingUI();
                     
                     await reader.cancel();
                     reject(new Error('Stream error. Please try again.'));
@@ -1218,7 +1255,10 @@ class ChatInterface {
     }
 
     addChatReasoningStep(stepId, message, status = 'active') {
-        const container = document.getElementById('chat-inline-reasoning-steps');
+        if (!this._reasoningContainer || !this._reasoningContainer.isConnected) {
+            this._reasoningContainer = document.getElementById('chat-inline-reasoning-steps');
+        }
+        const container = this._reasoningContainer;
         if (!container) return;
         
         // Hide initial progress bar when first step appears
@@ -1755,38 +1795,29 @@ class ChatInterface {
             bubble.appendChild(cursor);
         }
         
-        // Throttle markdown rendering - only re-render every 100ms or every 20 tokens
+        // Throttle markdown rendering - only re-render every 150ms or every 30 tokens
         const now = Date.now();
         if (!this.lastMarkdownRenderTime) {
             this.lastMarkdownRenderTime = 0;
             this.tokensSinceLastRender = 0;
         }
-        
+
         this.tokensSinceLastRender++;
-        const shouldRender = (now - this.lastMarkdownRenderTime > 100) || (this.tokensSinceLastRender >= 20);
-        
-        if (shouldRender) {
-            // Render markdown
-            try {
-                contentDiv.innerHTML = marked.parse(currentText);
-                this.lastMarkdownRenderTime = now;
-                this.tokensSinceLastRender = 0;
-                
-                // Force scroll after markdown render since content height changed
-                requestAnimationFrame(() => {
-                    this.scrollToBottom();
-                });
-            } catch (e) {
-                // Fallback to plain text if markdown parsing fails
-                contentDiv.textContent = currentText;
-            }
-        }
-        
-        
-        // Also do regular throttled autoscroll between markdown renders
-        if (!this.lastScrollTime || now - this.lastScrollTime > 100) {
-            this.lastScrollTime = now;
+        const shouldRender = (now - this.lastMarkdownRenderTime > 150) || (this.tokensSinceLastRender >= 30);
+
+        if (shouldRender && !this._renderQueued) {
+            this._renderQueued = true;
             requestAnimationFrame(() => {
+                this._renderQueued = false;
+                // Render markdown
+                try {
+                    contentDiv.innerHTML = marked.parse(currentText);
+                    this.lastMarkdownRenderTime = Date.now();
+                    this.tokensSinceLastRender = 0;
+                } catch (e) {
+                    // Fallback to plain text if markdown parsing fails
+                    contentDiv.textContent = currentText;
+                }
                 this.scrollToBottom();
             });
         }
@@ -1903,37 +1934,44 @@ class ChatInterface {
             const transcriptCitations = citations.filter(c => !c.type || c.type === 'transcript');
             const tenKCitations = citations.filter(c => c.type === '10-K');
             const newsCitations = citations.filter(c => c.type === 'news');
-            
+
             const totalCount = citations.length;
-            
+
+            // Build type breakdown for the header
+            const parts = [];
+            if (transcriptCitations.length > 0) parts.push(`${transcriptCitations.length} transcript${transcriptCitations.length > 1 ? 's' : ''}`);
+            if (tenKCitations.length > 0) parts.push(`${tenKCitations.length} 10-K`);
+            if (newsCitations.length > 0) parts.push(`${newsCitations.length} news`);
+            const breakdownText = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+
+            // Auto-expand citations so the user always sees them
             const citationsDiv = document.createElement('div');
-            citationsDiv.className = 'citations collapsed';
-            
+            citationsDiv.className = 'citations';
+
             const citationsHeader = document.createElement('div');
             citationsHeader.className = 'citations-header';
             citationsHeader.innerHTML = `
-                <i class="fas fa-link"></i> 
-                <span class="sources-count">${totalCount} source${totalCount > 1 ? 's' : ''}</span>
+                <i class="fas fa-link"></i>
+                <span class="sources-count">${totalCount} source${totalCount > 1 ? 's' : ''}${breakdownText}</span>
                 <button class="toggle-sources-btn" onclick="toggleSources(this)">
-                    <i class="fas fa-chevron-down"></i>
+                    <i class="fas fa-chevron-up"></i>
                 </button>
             `;
             citationsDiv.appendChild(citationsHeader);
             
             const citationsContent = document.createElement('div');
             citationsContent.className = 'citations-content';
-            citationsContent.style.display = 'none';
-            
+
             // Add transcript citations section
             if (transcriptCitations.length > 0) {
                 const transcriptSection = document.createElement('div');
                 transcriptSection.className = 'citations-section';
                 transcriptSection.innerHTML = `<div class="citations-section-header">📄 Document Sources (${transcriptCitations.length})</div>`;
-                
+
                 transcriptCitations.forEach((citation, index) => {
                     const citationDiv = document.createElement('div');
                     citationDiv.className = 'citation';
-                    
+
                     const company = citation.company || citation.ticker || 'Unknown Company';
                     const quarter = citation.quarter || 'Unknown Quarter';
                     const chunkText = citation.chunk_text || 'No preview available';
@@ -2287,16 +2325,46 @@ class ChatInterface {
                                     
                                     resolve(data);
                                     return;
+                                } else if (data.type === 'rejected') {
+                                    // Rejected question - display the rejection message to user
+                                    if (progressIndicator && progressIndicator.parentNode) {
+                                        progressIndicator.parentNode.removeChild(progressIndicator);
+                                    }
+
+                                    if (streamingMessage && streamingMessage.parentNode) {
+                                        streamingMessage.parentNode.removeChild(streamingMessage);
+                                    }
+
+                                    // Build rejection message with suggestions if available
+                                    let rejectionMessage = data.message || 'I can only answer questions about company earnings and financial information from earnings call transcripts.';
+
+                                    // Add suggestions if available
+                                    const suggestions = data.data?.suggestions || [];
+                                    if (suggestions.length > 0) {
+                                        rejectionMessage += '\n\n**Try asking something like:**\n';
+                                        suggestions.forEach(suggestion => {
+                                            rejectionMessage += `- ${suggestion}\n`;
+                                        });
+                                    }
+
+                                    this.addMessage('assistant', rejectionMessage, [], 'info');
+
+                                    resolve({
+                                        success: true,
+                                        answer: rejectionMessage,
+                                        citations: []
+                                    });
+                                    return;
                                 } else if (data.type === 'error') {
                                     // Error received
                                     if (progressIndicator && progressIndicator.parentNode) {
                                         progressIndicator.parentNode.removeChild(progressIndicator);
                                     }
-                                    
+
                                     if (streamingMessage && streamingMessage.parentNode) {
                                         streamingMessage.parentNode.removeChild(streamingMessage);
                                     }
-                                    
+
                                     reject(new Error(data.message || 'Streaming error'));
                                     return;
                                 }
@@ -2336,18 +2404,25 @@ class ChatInterface {
     }
     
     async sendToLegacyBackend(message) {
-        // Check if user is authenticated
-        const token = localStorage.getItem('authToken');
-        const isAuthenticated = token && localStorage.getItem('currentUser');
-        
+        // Check if user is authenticated - use getAuthToken helper for Clerk/legacy support
+        let token = null;
+        if (typeof getAuthToken === 'function') {
+            token = await getAuthToken();
+        } else {
+            token = localStorage.getItem('authToken');
+        }
+        const isAuthenticated = token && (
+            window.strataAuth?.isAuthenticated() || localStorage.getItem('currentUser')
+        );
+
         // Use appropriate endpoint based on authentication status
         const endpoint = isAuthenticated ? '/chat/message' : '/chat/landing/demo';
         const headers = {
             'Content-Type': 'application/json'
         };
-        
+
         // Only add Authorization header for authenticated requests
-        if (isAuthenticated) {
+        if (isAuthenticated && token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
         
@@ -2467,26 +2542,32 @@ class ChatInterface {
             const transcriptCitations = citations.filter(c => !c.type || c.type === 'transcript');
             const tenKCitations = citations.filter(c => c.type === '10-K');
             const newsCitations = citations.filter(c => c.type === 'news');
-            
+
             const totalCount = citations.length;
-            
+
+            // Build type breakdown for the header
+            const parts = [];
+            if (transcriptCitations.length > 0) parts.push(`${transcriptCitations.length} transcript${transcriptCitations.length > 1 ? 's' : ''}`);
+            if (tenKCitations.length > 0) parts.push(`${tenKCitations.length} 10-K`);
+            if (newsCitations.length > 0) parts.push(`${newsCitations.length} news`);
+            const breakdownText = parts.length > 0 ? ` (${parts.join(', ')})` : '';
+
             const citationsDiv = document.createElement('div');
-            citationsDiv.className = 'citations collapsed';
-            
+            citationsDiv.className = 'citations';
+
             const citationsHeader = document.createElement('div');
             citationsHeader.className = 'citations-header';
             citationsHeader.innerHTML = `
-                <i class="fas fa-link"></i> 
-                <span class="sources-count">${totalCount} source${totalCount > 1 ? 's' : ''}</span>
+                <i class="fas fa-link"></i>
+                <span class="sources-count">${totalCount} source${totalCount > 1 ? 's' : ''}${breakdownText}</span>
                 <button class="toggle-sources-btn" onclick="toggleSources(this)">
-                    <i class="fas fa-chevron-down"></i>
+                    <i class="fas fa-chevron-up"></i>
                 </button>
             `;
             citationsDiv.appendChild(citationsHeader);
-            
+
             const citationsContent = document.createElement('div');
             citationsContent.className = 'citations-content';
-            citationsContent.style.display = 'none'; // Hide sources by default
             
             // Add transcript citations section
             if (transcriptCitations.length > 0) {
@@ -2630,17 +2711,9 @@ class ChatInterface {
         messageDiv.appendChild(messageContent);
         messagesContainer.appendChild(messageDiv);
 
-        // Scroll to bottom after message is added - use multiple strategies for reliability
-        // Immediate scroll
-        this.scrollToBottom(true);
-        
-        // Smooth scroll after render
+        // Scroll to bottom after message is added
         requestAnimationFrame(() => {
-            this.scrollToBottom();
-            // Additional scroll after a short delay for any lazy-loaded content
-            setTimeout(() => {
-                this.scrollToBottom();
-            }, 100);
+            this.scrollToBottom(true);
         });
 
         // Store message
@@ -2664,12 +2737,17 @@ class ChatInterface {
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="message-text-wrapper">
-                    <div class="chat-bubble">
+                    <div class="chat-bubble" style="min-width: 280px;">
                         <div class="chat-typing-indicator">
                             <div class="typing-spinner">
                                 <div class="spinner-ring"></div>
                             </div>
                             <span class="typing-text">${processingMessage}</span>
+                        </div>
+                        <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div class="skeleton skeleton-text" style="width: 90%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 75%;"></div>
+                            <div class="skeleton skeleton-text" style="width: 60%;"></div>
                         </div>
                     </div>
                 </div>
@@ -2788,9 +2866,23 @@ class ChatInterface {
         });
     }
 
-    scrollToBottom(instant = false) {
-        // Only autoscroll during streaming to show the streaming effect
-        if (!this.isStreaming) {
+    _cleanupStreamingUI() {
+        if (this.streamingMessageId) {
+            const streamingMsg = document.getElementById(this.streamingMessageId);
+            if (streamingMsg && streamingMsg.parentNode) {
+                streamingMsg.parentNode.removeChild(streamingMsg);
+            }
+            this.streamingMessageId = null;
+        }
+        const panel = document.getElementById('chat-inline-reasoning-panel');
+        if (panel && panel.parentNode) {
+            panel.parentNode.removeChild(panel);
+        }
+    }
+
+    scrollToBottom(force = false) {
+        // Only autoscroll during streaming unless force is set
+        if (!this.isStreaming && !force) {
             return;
         }
         
@@ -2823,7 +2915,7 @@ class ChatInterface {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        'Authorization': `Bearer ${await getAuthToken()}`
                     },
                     body: JSON.stringify({ confirm: true })
                 });
@@ -2903,11 +2995,17 @@ class ChatInterface {
         if (tickerMatch) {
             const tickerPrefix = tickerMatch[1].toUpperCase();
             if (tickerPrefix.length >= 1) {
-                this.fetchTickerSuggestions(tickerPrefix);
+                // Debounce ticker fetch to avoid firing per keystroke
+                clearTimeout(this._tickerDebounceTimer);
+                this._tickerDebounceTimer = setTimeout(() => {
+                    this.fetchTickerSuggestions(tickerPrefix);
+                }, 250);
             } else {
+                clearTimeout(this._tickerDebounceTimer);
                 this.hideTickerSuggestions();
             }
         } else {
+            clearTimeout(this._tickerDebounceTimer);
             this.hideTickerSuggestions();
         }
     }
@@ -3171,7 +3269,7 @@ class ChatHistoryManager {
 
             const response = await fetch(`${CONFIG.apiBaseUrl}/chat/history?${params}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 }
             });
 
@@ -3301,7 +3399,7 @@ class ChatHistoryManager {
         try {
             const response = await fetch(`${CONFIG.apiBaseUrl}/chat/history/${chatId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    'Authorization': `Bearer ${await getAuthToken()}`
                 }
             });
 
@@ -3520,8 +3618,8 @@ function getRelevantChunksForCompany(company, quarter) {
 }
 
 // Simple function to view transcript - calls the direct API endpoint
-function viewTranscript(company, quarter, citationIndex) {
-    
+async function viewTranscript(company, quarter, citationIndex) {
+
     // Check if company is valid
     if (!company || company === 'Unknown') {
         if (typeof showToast === 'function') {
@@ -3529,7 +3627,7 @@ function viewTranscript(company, quarter, citationIndex) {
         }
         return;
     }
-    
+
     try {
         // Parse quarter to extract year and quarter number
         // Try multiple formats
@@ -3555,27 +3653,32 @@ function viewTranscript(company, quarter, citationIndex) {
                 return;
             }
         }
-        
+
         const year = parseInt(quarterMatch[1]);
         const quarterNum = parseInt(quarterMatch[2]);
-        
+
         // Show loading message
-        
-        // Determine if user is authenticated or in demo mode
-        const authToken = localStorage.getItem('authToken');
+
+        // Determine if user is authenticated or in demo mode - use getAuthToken for Clerk/legacy support
+        let authToken = null;
+        if (typeof getAuthToken === 'function') {
+            authToken = await getAuthToken();
+        } else {
+            authToken = localStorage.getItem('authToken');
+        }
         const isDemoMode = !authToken || window.location.pathname.includes('landing');
-        
+
         // Use appropriate endpoint based on authentication status
-        const endpoint = isDemoMode 
+        const endpoint = isDemoMode
             ? `${CONFIG.apiBaseUrl}/demo/transcript/${company}/${year}/${quarterNum}`
             : `${CONFIG.apiBaseUrl}/transcript/${company}/${year}/${quarterNum}`;
-        
+
         // Prepare headers
         const headers = {};
         if (!isDemoMode && authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
-        
+
         // Fetch transcript from API
         fetch(endpoint, { headers })
         .then(response => {
@@ -3798,7 +3901,7 @@ async function viewCompleteTranscript(company, quarter, citationIndex) {
                 const response = await fetch(`${baseUrl}/transcript/with-highlights`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Authorization': `Bearer ${await getAuthToken()}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestBody)
@@ -3909,7 +4012,7 @@ async function viewCompleteTranscript(company, quarter, citationIndex) {
                 const response = await fetch(`${baseUrl}/transcript/with-highlights`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Authorization': `Bearer ${await getAuthToken()}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestBody)

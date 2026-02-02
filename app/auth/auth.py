@@ -1,148 +1,54 @@
-from fastapi.responses import StreamingResponse, JSONResponse
-from fastapi import FastAPI, HTTPException, Query, Request as FastAPIRequest, Depends, status, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse, JSONResponse
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Dict, Optional, Any, Union
+"""
+Authentication routes for StrataLens API.
+
+This module now uses Clerk for authentication:
+- User login/signup is handled by Clerk frontend components
+- JWT tokens are verified using Clerk's JWKS
+- Webhooks sync user data from Clerk to local database
+
+Legacy password hashing is kept for backward compatibility (admin account creation).
+"""
+from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request, Depends, status, Header
+from pydantic import BaseModel, Field
+from typing import Optional, Any, Dict
 import asyncpg
 import uuid
 import logging
-from datetime import datetime, timedelta
-from passlib.context import CryptContext
-import os
-import secrets
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from google.auth.transport.requests import Request
-from google.oauth2 import id_token
-from authlib.integrations.starlette_client import OAuth
-from fastapi.responses import RedirectResponse
-
+import hmac
+import hashlib
 import json
 
-# Import the shared JWT configuration
-from .jwt_config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, decode_access_token, verify_token
+from passlib.context import CryptContext
+
+from config import settings
+from .auth_utils import get_current_user, get_or_create_user_from_clerk
+from .jwt_config import verify_clerk_token
+
+# Password hashing context (kept for legacy/admin account support)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt (legacy - kept for admin account creation)"""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash (legacy - kept for backward compatibility)"""
+    return pwd_context.verify(plain_password, hashed_password)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Helper function to validate required environment variables
-# Environment variable helpers imported from config
-from config import get_required_env_var, get_optional_env_var, settings
-
-from fastapi import APIRouter
 # Import comprehensive logging
-from app.utils.logging_utils import log_message, log_error, log_warning, log_info, log_debug, log_milestone
-
+from app.utils.logging_utils import log_info, log_error, log_warning
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
-
-# Environment variable printing will be moved to startup phase
-
-# Security setup
-security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# OAuth setup
-oauth = OAuth()
-
-# Magic link serializer
-magic_link_serializer = URLSafeTimedSerializer(SECRET_KEY)
-
-# Email configuration
-SMTP_SERVER = get_optional_env_var("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(get_optional_env_var("SMTP_PORT", "587"))
-SMTP_USERNAME = get_optional_env_var("SMTP_USERNAME")
-SMTP_PASSWORD = get_optional_env_var("SMTP_PASSWORD")
-
-# Google OAuth configuration
-GOOGLE_CLIENT_ID = get_optional_env_var("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = get_optional_env_var("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = get_optional_env_var("GOOGLE_REDIRECT_URI")
-
-# Configure Google OAuth client
-if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
-    oauth.register(
-        name='google',
-        client_id=GOOGLE_CLIENT_ID,
-        client_secret=GOOGLE_CLIENT_SECRET,
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid email profile'}
-    )
-
-# Import schemas from centralized location
-from app.schemas.auth import (
-    UserLogin, UserRegistration, MagicLinkRequest, MagicLinkVerify,
-    PasswordReset, PasswordChange, OnboardingCompletion
-)
-
-
-def generate_invitation_code() -> str:
-    """Generate a unique invitation code"""
-    return secrets.token_urlsafe(16)
-
-def generate_invitation_url(invitation_code: str) -> str:
-    """Generate the invitation URL"""
-    base_url = get_required_env_var("BASE_URL", "Base URL for invitation links")
-    return f"{base_url}/onboard/{invitation_code}"
-
-# Security functions
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-# Email sending utility
-async def send_email(to_email: str, subject: str, html_content: str, text_content: str = None):
-    """Send email via SMTP"""
-    if not SMTP_USERNAME or not SMTP_PASSWORD:
-        logger.warning("SMTP credentials not configured, cannot send email")
-        return False
-    
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = SMTP_USERNAME
-        msg['To'] = to_email
-        
-        if text_content:
-            text_part = MIMEText(text_content, 'plain')
-            msg.attach(text_part)
-        
-        html_part = MIMEText(html_content, 'html')
-        msg.attach(html_part)
-        
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        
-        logger.info(f"Email sent successfully to {to_email}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {e}")
-        return False
-
-def generate_magic_link_token(email: str) -> str:
-    """Generate a secure magic link token"""
-    return magic_link_serializer.dumps(email, salt='magic-link')
-
-def verify_magic_link_token(token: str, max_age: int = 900) -> Optional[str]:  # 15 minutes
-    """Verify magic link token and return email if valid"""
-    try:
-        email = magic_link_serializer.loads(token, salt='magic-link', max_age=max_age)
-        return email
-    except (BadSignature, SignatureExpired):
-        return None
 
 # Database dependency - will be set by main app
 def get_db_dependency():
@@ -160,498 +66,364 @@ def set_db_dependency(db_func):
     global get_db
     get_db = db_func
 
-# Authentication functions
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get current authenticated user"""
-    try:
-        token = credentials.credentials
-        logger.info(f"🔐 AUTH: Verifying token: {token[:20]}...")
-        
-        # Use the shared JWT decode function
-        payload = decode_access_token(token)
-        user_id: str = payload.get("sub")
-        
-        if user_id is None:
-            logger.error("🔐 AUTH: Token payload missing 'sub' field")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials"
-            )
-        
-        logger.info(f"🔐 AUTH: Token valid for user_id: {user_id}")
-        
-    except Exception as e:
-        logger.error(f"🔐 AUTH: JWT validation failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
-        )
-    
-    # Get the database connection and verify user
-    async for connection in get_db():
-        user = await connection.fetchrow(
-            "SELECT id, email, full_name, is_active, is_approved, is_admin FROM users WHERE id = $1",
-            uuid.UUID(user_id)
-        )
-        
-        if not user:
-            logger.error(f"🔐 AUTH: User not found in database: {user_id}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
-            )
-        
-        if not user['is_active'] or not user['is_approved']:
-            logger.error(f"🔐 AUTH: User not active or approved: {user_id}")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Account not active or not approved"
-            )
-        
-        logger.info(f"🔐 AUTH: User authenticated successfully: {user['email']}")
-        return {
-            "id": str(user['id']),
-            "email": user['email'],
-            "full_name": user['full_name'],
-            "is_active": user['is_active'],
-            "is_approved": user['is_approved'],
-            "is_admin": user['is_admin']
-        }
 
-async def get_current_user_for_stream(request: FastAPIRequest):
-    """Authenticates user for streaming endpoints using token from header or query."""
-    # Get token from header or query
-    token = None
+# =============================================================================
+# CLERK WEBHOOK MODELS
+# =============================================================================
+
+class ClerkWebhookData(BaseModel):
+    """Model for Clerk webhook event data."""
+    id: str
+    email_addresses: Optional[list] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    primary_email_address_id: Optional[str] = None
+    username: Optional[str] = None
+    image_url: Optional[str] = None
+    created_at: Optional[int] = None
+    updated_at: Optional[int] = None
+
+
+class ClerkWebhookEvent(BaseModel):
+    """Model for Clerk webhook events."""
+    type: str
+    data: Dict[str, Any]
+
+
+# =============================================================================
+# WEBHOOK VERIFICATION
+# =============================================================================
+
+def verify_clerk_webhook_signature(
+    payload: bytes,
+    svix_id: str,
+    svix_timestamp: str,
+    svix_signature: str,
+    webhook_secret: str
+) -> bool:
+    """
+    Verify the Clerk webhook signature using Svix.
+
+    Clerk uses Svix for webhook delivery, which signs payloads with HMAC-SHA256.
+    """
+    if not webhook_secret:
+        logger.error("❌ CLERK_WEBHOOK_SECRET not configured")
+        return False
+
     try:
-        # Try to get from Authorization header first
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
+        # Remove 'whsec_' prefix if present
+        if webhook_secret.startswith("whsec_"):
+            secret = webhook_secret[6:]
         else:
-            # Try to get from query parameter
-            token = request.query_params.get("token")
-            if not token:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication token required. Provide token in Authorization header or as query parameter.",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+            secret = webhook_secret
+
+        # Decode the base64 secret
+        import base64
+        secret_bytes = base64.b64decode(secret)
+
+        # Create the signed content
+        signed_content = f"{svix_id}.{svix_timestamp}.{payload.decode('utf-8')}"
+
+        # Compute the expected signature
+        expected_signature = hmac.new(
+            secret_bytes,
+            signed_content.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+        expected_signature_b64 = base64.b64encode(expected_signature).decode('utf-8')
+
+        # The signature header may contain multiple signatures
+        signatures = svix_signature.split(" ")
+        for sig in signatures:
+            if sig.startswith("v1,"):
+                sig_value = sig[3:]
+                if hmac.compare_digest(sig_value, expected_signature_b64):
+                    return True
+
+        logger.warning("⚠️ Webhook signature verification failed")
+        return False
+
     except Exception as e:
-        logger.error(f"Token extraction error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication format",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token missing",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
+        logger.error(f"❌ Error verifying webhook signature: {e}")
+        return False
+
+
+# =============================================================================
+# CLERK WEBHOOK ENDPOINT
+# =============================================================================
+
+@router.post("/clerk/webhook")
+async def clerk_webhook(
+    request: Request,
+    svix_id: Optional[str] = Header(None, alias="svix-id"),
+    svix_timestamp: Optional[str] = Header(None, alias="svix-timestamp"),
+    svix_signature: Optional[str] = Header(None, alias="svix-signature")
+):
+    """
+    Handle Clerk webhook events.
+
+    Events handled:
+    - user.created: Create local user record
+    - user.updated: Update local user record
+    - user.deleted: Deactivate local user
+    """
+    # Get raw body for signature verification
+    body = await request.body()
+
+    # Verify webhook signature in production
+    if settings.ENVIRONMENT.is_production:
+        if not all([svix_id, svix_timestamp, svix_signature]):
+            logger.warning("⚠️ Missing Svix headers in webhook request")
+            raise HTTPException(status_code=400, detail="Missing webhook headers")
+
+        if not verify_clerk_webhook_signature(
+            body, svix_id, svix_timestamp, svix_signature,
+            settings.CLERK.WEBHOOK_SECRET
+        ):
+            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    # Parse the event
     try:
-        logger.info(f"🔐 STREAM AUTH: Verifying token: {token[:20]}...")
-        
-        # Use the shared JWT decode function  
-        payload = decode_access_token(token)
-        user_id: str = payload.get("sub")
-        
-        if user_id is None:
-            logger.error("Token payload missing 'sub' field")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, 
-                detail="Invalid token payload"
-            )
-        
-        logger.info(f"🔐 STREAM AUTH: Token valid for user_id: {user_id}")
-        
-    except Exception as e:
-        logger.error(f"🔐 STREAM AUTH: JWT validation failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Invalid token"
+        event_data = json.loads(body)
+        event_type = event_data.get("type")
+        data = event_data.get("data", {})
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    logger.info(f"📨 Received Clerk webhook: {event_type}")
+
+    # Handle different event types
+    async for db in get_db():
+        try:
+            if event_type == "user.created":
+                await handle_user_created(data, db)
+            elif event_type == "user.updated":
+                await handle_user_updated(data, db)
+            elif event_type == "user.deleted":
+                await handle_user_deleted(data, db)
+            else:
+                logger.info(f"ℹ️ Unhandled webhook event type: {event_type}")
+
+            return {"status": "ok", "event": event_type}
+
+        except Exception as e:
+            logger.error(f"❌ Error processing webhook: {e}")
+            raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+
+async def handle_user_created(data: Dict[str, Any], db: asyncpg.Connection):
+    """Handle user.created webhook event."""
+    clerk_user_id = data.get("id")
+    if not clerk_user_id:
+        logger.error("❌ user.created webhook missing user ID")
+        return
+
+    # Extract email from email_addresses array
+    email = None
+    email_addresses = data.get("email_addresses", [])
+    primary_email_id = data.get("primary_email_address_id")
+
+    for email_addr in email_addresses:
+        if email_addr.get("id") == primary_email_id:
+            email = email_addr.get("email_address")
+            break
+
+    if not email and email_addresses:
+        email = email_addresses[0].get("email_address")
+
+    # Fallback to placeholder if no email found
+    if not email:
+        email = f"{clerk_user_id}@clerk.user"
+        logger.info(f"🔐 No email in Clerk webhook, using placeholder: {email}")
+
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    full_name = f"{first_name} {last_name}".strip() if (first_name or last_name) else email
+
+    # Check if user already exists
+    existing = await db.fetchrow(
+        "SELECT id FROM users WHERE clerk_user_id = $1 OR email = $2",
+        clerk_user_id, email
+    )
+
+    if existing:
+        # Update existing user with clerk_user_id
+        await db.execute(
+            "UPDATE users SET clerk_user_id = $1 WHERE id = $2",
+            clerk_user_id, existing['id']
         )
+        log_info(f"🔗 Linked existing user to Clerk: {email}")
+        return
 
-    try:
-        # Get database connection and fetch user
-        async for db in get_db():
-            user = await db.fetchrow(
-                "SELECT id, email, full_name, is_active, is_approved, is_admin FROM users WHERE id = $1", 
-                uuid.UUID(user_id)
-            )
-            
-            if not user:
-                logger.error(f"User not found in database: {user_id}")
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, 
-                    detail="User not found"
-                )
-            
-            if not user['is_active'] or not user['is_approved']:
-                logger.error(f"User account not active or approved: {user_id}")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, 
-                    detail="Account not active or not approved"
-                )
+    # Create username from email
+    username = email.split("@")[0] if email else f"user_{clerk_user_id[:8]}"
 
-            logger.info(f"🔐 STREAM AUTH: User authenticated successfully: {user['email']}")
-            return {
-                "id": str(user['id']), 
-                "email": user['email'], 
-                "full_name": user['full_name'], 
-                "is_admin": user['is_admin']
-            }
-        
-    except ValueError as e:
-        logger.error(f"Invalid UUID format: {user_id}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Invalid user ID format"
-        )
-    except Exception as e:
-        logger.error(f"Database error during user lookup: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Internal server error during authentication"
-        )
+    # Ensure unique username
+    base_username = username
+    counter = 1
+    while await db.fetchrow("SELECT id FROM users WHERE username = $1", username):
+        username = f"{base_username}{counter}"
+        counter += 1
 
-# Explicit OPTIONS handlers to fix CORS preflight issues
-@router.options("/login")
-async def options_login():
-    return JSONResponse(content={"message": "OK"})
+    # Create new user
+    user_id = await db.fetchval(
+        """INSERT INTO users (
+            clerk_user_id, username, email, full_name, first_name, last_name,
+            is_active, is_approved, onboarded_via_invitation
+        ) VALUES ($1, $2, $3, $4, $5, $6, TRUE, TRUE, FALSE)
+        RETURNING id""",
+        clerk_user_id, username, email, full_name, first_name, last_name
+    )
 
-@router.options("/register")
-async def options_register():
-    return JSONResponse(content={"message": "OK"})
+    # Create default preferences
+    await db.execute("INSERT INTO user_preferences (user_id) VALUES ($1)", user_id)
+
+    log_info(f"👤 Created user from Clerk webhook: {username} ({email})")
+
+
+async def handle_user_updated(data: Dict[str, Any], db: asyncpg.Connection):
+    """Handle user.updated webhook event."""
+    clerk_user_id = data.get("id")
+    if not clerk_user_id:
+        logger.error("❌ user.updated webhook missing user ID")
+        return
+
+    # Find user by clerk_user_id
+    user = await db.fetchrow(
+        "SELECT id FROM users WHERE clerk_user_id = $1",
+        clerk_user_id
+    )
+
+    if not user:
+        logger.warning(f"⚠️ User not found for update: {clerk_user_id}")
+        # Try to create the user instead
+        await handle_user_created(data, db)
+        return
+
+    # Extract updated fields
+    email = None
+    email_addresses = data.get("email_addresses", [])
+    primary_email_id = data.get("primary_email_address_id")
+
+    for email_addr in email_addresses:
+        if email_addr.get("id") == primary_email_id:
+            email = email_addr.get("email_address")
+            break
+
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    full_name = f"{first_name} {last_name}".strip()
+
+    # Update user
+    await db.execute(
+        """UPDATE users SET
+            email = COALESCE($1, email),
+            full_name = CASE WHEN $2 != '' THEN $2 ELSE full_name END,
+            first_name = COALESCE($3, first_name),
+            last_name = COALESCE($4, last_name)
+        WHERE clerk_user_id = $5""",
+        email, full_name, first_name, last_name, clerk_user_id
+    )
+
+    log_info(f"✏️ Updated user from Clerk webhook: {clerk_user_id}")
+
+
+async def handle_user_deleted(data: Dict[str, Any], db: asyncpg.Connection):
+    """Handle user.deleted webhook event."""
+    clerk_user_id = data.get("id")
+    if not clerk_user_id:
+        logger.error("❌ user.deleted webhook missing user ID")
+        return
+
+    # Deactivate user (soft delete)
+    result = await db.execute(
+        "UPDATE users SET is_active = FALSE WHERE clerk_user_id = $1",
+        clerk_user_id
+    )
+
+    log_info(f"🗑️ Deactivated user from Clerk webhook: {clerk_user_id}")
+
+
+# =============================================================================
+# TOKEN VALIDATION ENDPOINT
+# =============================================================================
+
+@router.get("/validate")
+async def validate_token(current_user: dict = Depends(get_current_user)):
+    """
+    Validates the user's token (works with both Clerk and legacy tokens).
+    If the token is valid, returns success with user info.
+    """
+    return {
+        "status": "ok",
+        "message": "Token is valid",
+        "user_id": current_user["id"],
+        "user": {
+            "id": current_user["id"],
+            "username": current_user.get("username"),
+            "email": current_user.get("email"),
+            "full_name": current_user.get("full_name"),
+            "is_admin": current_user.get("is_admin", False)
+        }
+    }
+
+
+# =============================================================================
+# USER INFO ENDPOINT
+# =============================================================================
+
+@router.get("/me")
+async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    """Get current authenticated user's information."""
+    return {
+        "id": current_user["id"],
+        "username": current_user.get("username"),
+        "email": current_user.get("email"),
+        "full_name": current_user.get("full_name"),
+        "is_admin": current_user.get("is_admin", False)
+    }
+
+
+# =============================================================================
+# CORS OPTIONS HANDLERS
+# =============================================================================
 
 @router.options("/validate")
 async def options_validate():
     return JSONResponse(content={"message": "OK"})
 
-@router.options("/query")
-async def options_query():
+
+@router.options("/me")
+async def options_me():
     return JSONResponse(content={"message": "OK"})
 
-@router.options("/query/stream")
-async def options_stream():
+
+@router.options("/clerk/webhook")
+async def options_clerk_webhook():
     return JSONResponse(content={"message": "OK"})
 
-@router.post("/register")
-async def register_user(registration: UserRegistration):
-    """Register a new user with password - SELF-SERVE FLOW (auto-approved)"""
-    if not settings.APPLICATION.ENABLE_SELF_SERVE_REGISTRATION:
-        raise HTTPException(status_code=403, detail="Self-serve registration is disabled by admin")
-    async for db in get_db():
-        # Check if user already exists
-        existing_user = await db.fetchrow("SELECT id FROM users WHERE username = $1 OR email = $2", registration.username, registration.email)
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Username or email already registered")
-        
-        # Hash password
-        hashed_password = hash_password(registration.password)
-        
-        # Insert new user (self-serve registration - auto-approved)
-        user_id = await db.fetchval('''
-            INSERT INTO users (username, email, full_name, company, role, hashed_password, is_active, is_approved, onboarded_via_invitation)
-            VALUES ($1, $2, $3, $4, $5, $6, TRUE, TRUE, FALSE)
-            RETURNING id
-        ''', registration.username, registration.email, registration.full_name, registration.company, 
-            registration.role, hashed_password)
-        
-        # Create default preferences
-        await db.execute('INSERT INTO user_preferences (user_id) VALUES ($1)', user_id)
-        
-        log_info(f"👤 New user registered (self-serve): {registration.full_name} ({registration.username})")
-        
-        return {
-            "message": "Registration successful! You can now login with your credentials.",
-            "status": "approved",
-            "registration_type": "self_serve",
-            "user_id": str(user_id)
-        }
 
-@router.post("/login")
-async def login_user(login_request: UserLogin):
-    """Login with username and password - PRIMARY LOGIN METHOD"""
-    if not settings.APPLICATION.ENABLE_LOGIN:
-        raise HTTPException(status_code=403, detail="Password login is disabled by admin")
-    async for db in get_db():
-        user = await db.fetchrow('''
-            SELECT id, username, email, full_name, hashed_password, is_active, is_approved, is_admin, has_completed_onboarding
-            FROM users WHERE username = $1
-        ''', login_request.username)
-        
-        if not user:
-            raise HTTPException(status_code=400, detail="Invalid username or password")
-        
-        # Verify password
-        if not user['hashed_password'] or not verify_password(login_request.password, user['hashed_password']):
-            raise HTTPException(status_code=400, detail="Invalid username or password")
-        
-        if not user['is_approved']:
-            raise HTTPException(status_code=403, detail="Account pending admin approval")
-        
-        if not user['is_active']:
-            raise HTTPException(status_code=403, detail="Account is disabled")
-        
-        # Update last login and set first_login_at if it's the first time
-        await db.execute('''
-            UPDATE users SET 
-                is_active = TRUE, 
-                last_login = CURRENT_TIMESTAMP,
-                first_login_at = COALESCE(first_login_at, CURRENT_TIMESTAMP)
-            WHERE id = $1
-        ''', user['id'])
-        
-        # Create access token using shared function
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user['id'])}, expires_delta=access_token_expires
-        )
-        
-        logger.info(f"🔐 LOGIN: Generated token for {user['username']}: {access_token[:20]}...")
-        
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            "user": {
-                "id": str(user['id']),
-                "username": user['username'],
-                "email": user['email'],
-                "full_name": user['full_name'],
-                "is_admin": user['is_admin'],
-                "has_completed_onboarding": user.get('has_completed_onboarding', False)
-            }
-        }
+# =============================================================================
+# CLERK CONFIGURATION ENDPOINT (for frontend)
+# =============================================================================
 
-@router.get("/validate")
-async def validate_token(current_user: dict = Depends(get_current_user)):
+@router.get("/clerk/config")
+async def get_clerk_config():
     """
-    Validates the user's token. If the token is valid, returns success.
-    The get_current_user dependency handles all validation.
+    Get Clerk configuration for frontend initialization.
+
+    Returns the publishable key (safe to expose) for Clerk.js initialization.
     """
-    return {"status": "ok", "message": "Token is valid", "user_id": current_user["id"]}
-
-
-@router.post("/forgot-password")
-async def forgot_password(reset_request: PasswordReset):
-    """Request password reset - DISABLED (magic token functionality removed)"""
-    return {"message": "Password reset functionality is currently disabled. Please contact an administrator for assistance."}
-
-@router.post("/change-password")
-async def change_password(
-    password_change: PasswordChange,
-    current_user: dict = Depends(get_current_user)
-):
-    """Change password for authenticated user"""
-    async for db in get_db():
-        user = await db.fetchrow(
-            "SELECT id, hashed_password FROM users WHERE id = $1",
-            uuid.UUID(current_user["id"])
+    if not settings.CLERK.is_configured:
+        raise HTTPException(
+            status_code=503,
+            detail="Clerk authentication is not configured"
         )
-        
-        if not user or not user['hashed_password']:
-            raise HTTPException(status_code=400, detail="Current password not set")
-        
-        # Verify current password
-        if not verify_password(password_change.current_password, user['hashed_password']):
-            raise HTTPException(status_code=400, detail="Invalid current password")
-        
-        # Update password
-        new_hashed_password = hash_password(password_change.new_password)
-        await db.execute('''
-            UPDATE users SET hashed_password = $1 WHERE id = $2
-        ''', new_hashed_password, user['id'])
-        
-        return {"message": "Password changed successfully"}
 
-@router.post("/magic-link")
-async def send_magic_link(request: MagicLinkRequest):
-    """Send a magic link to the user's email for passwordless authentication"""
-    async for db in get_db():
-        # Check if user exists
-        user = await db.fetchrow("SELECT id, email, full_name, is_active, is_approved FROM users WHERE email = $1", request.email)
-        
-        if not user:
-            # For security, don't reveal whether email exists or not
-            return {"message": "If this email is registered, you will receive a magic link shortly."}
-        
-        if not user['is_active'] or not user['is_approved']:
-            raise HTTPException(status_code=403, detail="Account not active or not approved")
-        
-        # Generate magic link token
-        token = generate_magic_link_token(request.email)
-        base_url = get_required_env_var("BASE_URL", "Base URL for magic links")
-        magic_link = f"{base_url}/auth/magic-link/verify?token={token}"
-        
-        # Send email
-        html_content = f"""
-        <html>
-        <body>
-            <h2>Sign in to StrataLens</h2>
-            <p>Hello {user['full_name']},</p>
-            <p>Click the link below to sign in to your StrataLens account:</p>
-            <p><a href="{magic_link}" style="background-color: #329ef6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Sign In to StrataLens</a></p>
-            <p>This link will expire in 15 minutes for security purposes.</p>
-            <p>If you didn't request this, you can safely ignore this email.</p>
-            <br>
-            <p>Best regards,<br>The StrataLens Team</p>
-        </body>
-        </html>
-        """
-        
-        text_content = f"""
-        Sign in to StrataLens
-        
-        Hello {user['full_name']},
-        
-        Click the link below to sign in to your StrataLens account:
-        {magic_link}
-        
-        This link will expire in 15 minutes for security purposes.
-        If you didn't request this, you can safely ignore this email.
-        
-        Best regards,
-        The StrataLens Team
-        """
-        
-        email_sent = await send_email(
-            request.email,
-            "Sign in to StrataLens - Magic Link",
-            html_content,
-            text_content
-        )
-        
-        if email_sent:
-            log_info(f"🔗 Magic link sent to {request.email}")
-            return {"message": "Magic link sent! Check your email and click the link to sign in."}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send magic link. Please try again later.")
-
-@router.get("/magic-link/verify")
-async def verify_magic_link(token: str):
-    """Verify magic link token and authenticate user"""
-    # Verify token
-    email = verify_magic_link_token(token)
-    if not email:
-        raise HTTPException(status_code=400, detail="Invalid or expired magic link")
-    
-    async for db in get_db():
-        # Get user
-        user = await db.fetchrow('''
-            SELECT id, username, email, full_name, is_active, is_approved, is_admin, has_completed_onboarding
-            FROM users WHERE email = $1
-        ''', email)
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        if not user['is_active'] or not user['is_approved']:
-            raise HTTPException(status_code=403, detail="Account not active or not approved")
-        
-        # Update last login
-        await db.execute('''
-            UPDATE users SET 
-                last_login = CURRENT_TIMESTAMP,
-                first_login_at = COALESCE(first_login_at, CURRENT_TIMESTAMP)
-            WHERE id = $1
-        ''', user['id'])
-        
-        # Create access token
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user['id'])}, expires_delta=access_token_expires
-        )
-        
-        log_info(f"🔗 Magic link authentication successful for {user['email']}")
-        
-        # Redirect to frontend with token
-        frontend_url = get_required_env_var("FRONTEND_URL", "Frontend URL for redirects")
-        return RedirectResponse(url=f"{frontend_url}?token={access_token}")
-
-@router.get("/google")
-async def google_login(request: FastAPIRequest):
-    """Initiate Google OAuth flow"""
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        raise HTTPException(status_code=501, detail="Google authentication not configured")
-    
-    redirect_uri = GOOGLE_REDIRECT_URI or f"{get_required_env_var('BASE_URL')}/auth/google/callback"
-    return await oauth.google.authorize_redirect(request, redirect_uri)
-
-@router.get("/google/callback")
-async def google_callback(request: FastAPIRequest):
-    """Handle Google OAuth callback"""
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        raise HTTPException(status_code=501, detail="Google authentication not configured")
-    
-    try:
-        token = await oauth.google.authorize_access_token(request)
-        user_info = token.get('userinfo')
-        
-        if not user_info:
-            raise HTTPException(status_code=400, detail="Failed to get user information from Google")
-        
-        email = user_info.get('email')
-        name = user_info.get('name')
-        
-        if not email:
-            raise HTTPException(status_code=400, detail="Email not provided by Google")
-        
-        async for db in get_db():
-            # Check if user exists
-            user = await db.fetchrow("SELECT id, username, email, full_name, is_active, is_approved, is_admin, has_completed_onboarding FROM users WHERE email = $1", email)
-            
-            if user:
-                # Existing user - log them in
-                if not user['is_active'] or not user['is_approved']:
-                    raise HTTPException(status_code=403, detail="Account not active or not approved")
-                
-                # Update last login
-                await db.execute('''
-                    UPDATE users SET 
-                        last_login = CURRENT_TIMESTAMP,
-                        first_login_at = COALESCE(first_login_at, CURRENT_TIMESTAMP)
-                    WHERE id = $1
-                ''', user['id'])
-                
-                user_id = user['id']
-                log_info(f"🔍 Google OAuth login for existing user: {email}")
-            
-            else:
-                # New user - create account
-                username = email.split('@')[0]  # Use email prefix as username
-                counter = 1
-                original_username = username
-                
-                # Ensure username is unique
-                while await db.fetchrow("SELECT id FROM users WHERE username = $1", username):
-                    username = f"{original_username}{counter}"
-                    counter += 1
-                
-                user_id = await db.fetchval('''
-                    INSERT INTO users (username, email, full_name, is_active, is_approved, onboarded_via_invitation)
-                    VALUES ($1, $2, $3, TRUE, TRUE, FALSE)
-                    RETURNING id
-                ''', username, email, name or email)
-                
-                # Create default preferences
-                await db.execute('INSERT INTO user_preferences (user_id) VALUES ($1)', user_id)
-                
-                log_info(f"👤 New user created via Google OAuth: {name} ({email})")
-            
-            # Create access token
-            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(
-                data={"sub": str(user_id)}, expires_delta=access_token_expires
-            )
-            
-            # Redirect to frontend with token
-            frontend_url = get_required_env_var("FRONTEND_URL", "Frontend URL for redirects")
-            return RedirectResponse(url=f"{frontend_url}?token={access_token}")
-            
-    except Exception as e:
-        logger.error(f"Google OAuth error: {e}")
-        raise HTTPException(status_code=400, detail="Google authentication failed")
+    return {
+        "publishableKey": settings.CLERK.PUBLISHABLE_KEY,
+        "signInUrl": "/sign-in",
+        "signUpUrl": "/sign-up",
+        "afterSignInUrl": "/",
+        "afterSignUpUrl": "/"
+    }

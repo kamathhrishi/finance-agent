@@ -8,7 +8,7 @@
 //
 // =============================================================================
 
-const ENVIRONMENT = 'production'; // Change this to 'local' or 'production'
+const ENVIRONMENT = 'local'; // Change this to 'local' or 'production'
 
 const ENVIRONMENTS = {
     local: {
@@ -23,6 +23,20 @@ const ENVIRONMENTS = {
     }
 };
 
+// Clerk configuration - publishable key will be fetched from backend
+// or can be set directly here for faster initialization
+const CLERK_CONFIG = {
+    // Clerk publishable key for authentication
+    publishableKey: 'pk_test_aW1wcm92ZWQtYmFib29uLTk2LmNsZXJrLmFjY291bnRzLmRldiQ',
+    signInUrl: '/sign-in',
+    signUpUrl: '/sign-up',
+    afterSignInUrl: '/',
+    afterSignUpUrl: '/'
+};
+
+// Auth configuration - set to true to hide all auth UI
+const AUTH_DISABLED = true;
+
 // Export the configuration
 window.STRATALENS_CONFIG = {
     environment: ENVIRONMENT,
@@ -31,6 +45,8 @@ window.STRATALENS_CONFIG = {
     description: ENVIRONMENTS[ENVIRONMENT].description,
     pageSize: 20,
     toastDuration: 4000,
-    chartDataLimit: 50
+    chartDataLimit: 50,
+    clerk: CLERK_CONFIG,
+    authDisabled: AUTH_DISABLED
 };
 

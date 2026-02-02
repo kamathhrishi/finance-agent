@@ -77,10 +77,9 @@ class QuestionAnalyzer:
     # ═════════════════════════════════════════════════════════════════════
 
     async def analyze_question(self, question: str, conversation_id: str = None, db_connection = None) -> Dict[str, Any]:
-        """Analyze a question and determine if it's appropriate for earnings transcripts."""
+        """Analyze a question and determine the appropriate data source (earnings transcripts, 10-K filings, or news)."""
         rag_logger.info(f"🔍 Starting question analysis for: '{question}'")
-        
-        
+
         # Retry configuration - increased for better JSON parsing reliability
         max_retries = 8
         base_delay = 0.5  # seconds
@@ -106,16 +105,17 @@ class QuestionAnalyzer:
                 quarter_context = self.config.get_quarter_context_for_llm()
                 
                 # Build context-aware instructions for ticker extraction
+                # Note: Semantic grounding rule is defined once in the CRITICAL RULE section below
                 if has_conversation_context:
                     ticker_instructions = """1. Extract company tickers from $TICKER format (e.g., $AAPL -> AAPL)
    - **CRITICAL**: The question uses references to previous conversation. YOU MUST extract ALL relevant company tickers from the conversation context above
    - Look through the ENTIRE conversation context to find ALL ticker symbols that were mentioned in previous User or Assistant messages
    - If the question says "all companies mentioned above", "those companies", "these companies" OR uses pronouns like "their", "they", "it", extract ALL tickers found in the conversation, not just one
    - For contextual references, the conversation history is your primary source of company information
-   - **IMPORTANT**: The rephrased_question MUST be SEMANTICALLY GROUNDED - remove company names AND time periods (transcripts filtered separately)"""
+   - Apply SEMANTIC GROUNDING rule (see below) to rephrased_question"""
                 else:
                     ticker_instructions = """1. Extract company tickers from $TICKER format (e.g., $AAPL -> AAPL)
-   - **IMPORTANT**: The rephrased_question should be SEMANTICALLY GROUNDED - remove company names AND time periods (transcripts filtered separately)"""
+   - Apply SEMANTIC GROUNDING rule (see below) to rephrased_question"""
                 
                 # Create analysis prompt following JSON output best practices
                 analysis_prompt = f"""Analyze this financial/business question and determine the appropriate data source. Respond with valid JSON only.
@@ -128,32 +128,45 @@ QUESTION: "{question}"
 
 INSTRUCTIONS:
 {ticker_instructions}
-2. Detect if question needs latest news (set needs_latest_news=true if question asks about):
-   - "latest news", "recent news", "current news", "today's news", "breaking news"
-   - "what's happening", "what happened recently", "latest updates"
-   - "current events", "recent developments", "latest information"
-   - Questions about very recent events (within days/weeks) that may not be in earnings transcripts
-   - Questions explicitly asking for news or current information
-3. **CRITICAL: Detect if question needs 10-K SEC filings** (set needs_10k=true AND data_source="10k" if question asks about):
-   - **MANDATORY**: If question contains "10k", "10-k", "10-K", "from 10k", "in 10k", "10k filing", "10-k filing" → ALWAYS set needs_10k=true AND data_source="10k"
-   - **CRITICAL**: Executive compensation questions → ALWAYS set needs_10k=true AND data_source="10k"
-     * "executive compensation", "ceo compensation", "ceo pay", "executive pay", "compensation package", "salary", "stock awards", "bonus", "tim cook compensation", "ceo salary"
-     * Executive compensation is ONLY found in 10-K filings, NOT in earnings transcripts
-     * If question asks about any executive's pay, compensation, salary, or stock awards → MUST use data_source="10k"
-   - "annual report", "annual filing", "sec filing"
-   - "balance sheet", "financial statements", "cash flow statement", "income statement"
-   - "assets", "liabilities", "stockholders equity", "comprehensive income"
-   - "risk factors", "legal proceedings", "md&a", "management's discussion"
-   - "business overview", "item 1", "item 7", "item 8", "item 11" (SEC 10-K sections)
-   - Questions asking for comprehensive/detailed annual financial information
-   - Questions about full year data from annual reports
-   - **ANY question that explicitly mentions "10k" or "10-k" in the question text MUST have needs_10k=true AND data_source="10k"**
-4. **Determine primary data source** (data_source field - MOST IMPORTANT):
-   - "10k": Question asks about executive compensation/CEO pay OR asks for 10-K data OR asks about topics found in 10-K (compensation, balance sheet, annual financials, risk factors) OR contains "10k"/"10-k" in text
-   - "latest_news": Question explicitly asks for latest/recent news OR current events
-   - "earnings_transcripts": Question asks about quarterly earnings, guidance, analyst Q&A, management commentary
-   - "hybrid": Question needs both earnings transcripts AND another source (e.g., "compare earnings with news")
-   **DEFAULT to "earnings_transcripts" if unsure, UNLESS question explicitly mentions 10k/news**
+2. **SEMANTIC DATA SOURCE ROUTING** - Analyze the INTENT of the question to determine the best data source:
+
+   **Think about WHAT TYPE OF INFORMATION would best answer this question:**
+
+   A) **10-K SEC Filings** (data_source="10k", needs_10k=true) - Best for:
+      - Annual/full-year financial data, comprehensive financial statements
+      - Balance sheets, income statements, cash flow statements, stockholders equity
+      - Executive compensation, CEO pay, salary, stock awards, bonuses
+      - Risk factors, legal proceedings, regulatory matters
+      - Detailed business descriptions, segment breakdowns
+      - Audited financial figures, official SEC disclosures
+      - Historical trends spanning multiple years
+      - Total assets, liabilities, debt levels, capital structure
+
+   B) **Earnings Transcripts** (data_source="earnings_transcripts") - Best for:
+      - Quarterly performance discussions, recent quarter results
+      - Management commentary, executive statements, tone/sentiment
+      - Forward guidance, outlook, projections for upcoming quarters
+      - Analyst Q&A, investor concerns, management responses
+      - Product launches, strategic initiatives discussed in calls
+      - Quarter-over-quarter comparisons, sequential trends
+
+   C) **Latest News** (data_source="latest_news", needs_latest_news=true) - Best for:
+      - Very recent events (last few days/weeks)
+      - Breaking developments, announcements, market reactions
+      - Current market sentiment, stock movements
+      - Recent partnerships, acquisitions, leadership changes
+      - Events that may not yet be in financial filings
+
+   D) **Hybrid** (data_source="hybrid") - Best for:
+      - Questions explicitly requesting multiple perspectives
+      - Comparing official filings with recent developments
+      - Comprehensive analysis needing both historical and current data
+
+   **ROUTING DECISION PROCESS:**
+   1. What is the user trying to learn? (Intent)
+   2. What time period is relevant? (Annual=10K, Quarterly=Transcripts, Recent=News)
+   3. What level of detail/formality? (Official/Audited=10K, Commentary=Transcripts, Current=News)
+   4. Would combining sources provide a better answer? (Consider hybrid)
 5. Detect quarter references:
    - YEAR ONLY (e.g., "2024", "2025"): quarter_context: "multiple", quarter_count: 4, quarter_reference: "YYYY_all" (ALL quarters of that year)
    - "last X quarters" or "past X quarters" → quarter_context: "multiple", quarter_count: X
@@ -182,11 +195,28 @@ REQUIRED JSON STRUCTURE:
 
 **CRITICAL RULE FOR rephrased_question - SEMANTIC GROUNDING**:
 - REMOVE company names: Transcripts already filtered by ticker
-- REMOVE time periods: Transcripts already filtered by quarter/year  
+- REMOVE time periods: Transcripts already filtered by quarter/year
 - FOCUS on concepts, metrics, and topics
 - Example: "What was Apple's Q4 2024 revenue?" → "revenue and sales performance"
 - Example: "Compare Microsoft and Google cloud revenue" → "cloud services revenue and growth"
 - Example: "Did Amazon discuss AWS in Q3?" → "cloud computing services discussion and performance"
+
+**CRITICAL: DETECTING INVALID QUESTIONS**
+
+**What we CAN answer (mark is_valid=true):**
+We have data from PUBLIC COMPANY earnings call transcripts, 10-K SEC filings, and company news.
+Valid questions are about:
+- Public company financial performance, revenue, earnings, margins, growth
+- What management said in earnings calls (guidance, strategy, commentary)
+- 10-K filing data (balance sheets, risk factors, executive compensation)
+- Company news and recent developments
+- Industry trends discussed by public companies
+- Comparing public companies
+
+**If the question is NOT about the above, mark is_valid=false.**
+This includes: gibberish, greetings, non-finance topics, things we don't have data for, or questions too vague to answer.
+
+When marking as invalid, provide a helpful reason explaining what we CAN help with and suggest example questions.
 
 EXAMPLES:
 
@@ -244,26 +274,50 @@ OUTPUT: {{"is_valid": true, "reason": "Hybrid question asking for both earnings 
 QUESTION: "Compare Microsoft's Q4 2024 revenue with recent news about their products"
 OUTPUT: {{"is_valid": true, "reason": "Hybrid question combining specific quarter analysis with recent news", "question_type": "specific_company", "extracted_ticker": "MSFT", "extracted_tickers": ["MSFT"], "rephrased_question": "revenue performance and product developments", "suggested_improvements": [], "confidence": 0.9, "quarter_reference": "2024_q4", "quarter_context": "specific", "quarter_count": null, "data_source": "hybrid", "needs_latest_news": true}}
 
-**CRITICAL DISTINCTION - 10K vs EARNINGS TRANSCRIPTS:**
+QUESTION: "wrekashfkjbhkl;ahsnhbnsjg"
+OUTPUT: {{"is_valid": false, "reason": "I couldn't understand your question. I can help you analyze public company earnings calls, 10-K filings, and news.", "question_type": "invalid", "extracted_ticker": null, "extracted_tickers": [], "rephrased_question": "", "suggested_improvements": ["What did $AAPL say about revenue in Q4?", "Compare $MSFT and $GOOGL cloud revenue", "What's the latest news on $NVDA?"], "confidence": 0.0, "quarter_reference": null, "quarter_context": null, "quarter_count": null, "data_source": null, "needs_latest_news": false, "needs_10k": false}}
 
-10K QUESTIONS (data_source="10k", needs_10k=true):
-- Questions that mention "10k", "10-k", "10-K", "annual report", "annual filing", "SEC filing"
-- **EXECUTIVE COMPENSATION**: ANY question about executive pay, CEO compensation, CEO salary, compensation package, stock awards, bonus → ALWAYS use 10k (this data is ONLY in 10-K filings, NEVER in earnings transcripts)
-- Questions about financial statements: "balance sheet", "income statement", "cash flow statement"
-- Questions about risk factors, legal proceedings, MD&A
-- Questions about annual/full-year financial data
-- Questions explicitly asking for data "from 10k" or "in the 10k"
+QUESTION: "hello hi"
+OUTPUT: {{"is_valid": false, "reason": "Hi! I'm a financial research assistant. I can help you analyze public company earnings calls, 10-K SEC filings, and company news.", "question_type": "invalid", "extracted_ticker": null, "extracted_tickers": [], "rephrased_question": "", "suggested_improvements": ["What guidance did $TSLA provide for next quarter?", "Show me $AAPL's executive compensation from 10-K", "What are tech companies saying about AI?"], "confidence": 0.0, "quarter_reference": null, "quarter_context": null, "quarter_count": null, "data_source": null, "needs_latest_news": false, "needs_10k": false}}
 
-EARNINGS TRANSCRIPT QUESTIONS (data_source="earnings_transcripts", needs_10k=false):
-- Questions about quarterly earnings, revenue, guidance
-- Questions about what management "said" or "discussed" in earnings calls
-- Questions about analyst Q&A, management commentary
-- Questions about quarterly performance, trends, outlook
-- Questions that don't mention 10k, annual reports, financial statements, or executive compensation
+QUESTION: "What's a good recipe for pasta?"
+OUTPUT: {{"is_valid": false, "reason": "I can only help with public company financial data. I have access to earnings call transcripts, 10-K filings, and company news.", "question_type": "invalid", "extracted_ticker": null, "extracted_tickers": [], "rephrased_question": "", "suggested_improvements": ["What did $AAPL report in their latest earnings?", "Compare profit margins across tech companies", "What risks did $META disclose in their 10-K?"], "confidence": 0.0, "quarter_reference": null, "quarter_context": null, "quarter_count": null, "data_source": null, "needs_latest_news": false, "needs_10k": false}}
 
-**REMEMBER**: 
-1. If question contains "10k", "10-k", "from 10k", "in 10k" → ALWAYS set data_source="10k" and needs_10k=true
-2. If question asks about executive compensation, CEO pay, CEO salary, or any executive's compensation → ALWAYS set data_source="10k" and needs_10k=true (executive compensation is ONLY in 10-K, NOT in earnings transcripts)"""
+QUESTION: "How do I get a home loan?"
+OUTPUT: {{"is_valid": false, "reason": "I don't have data on personal finance or loans. I specialize in public company financial analysis using earnings calls, 10-K filings, and news.", "question_type": "invalid", "extracted_ticker": null, "extracted_tickers": [], "rephrased_question": "", "suggested_improvements": ["What did banks like $JPM say about lending in earnings?", "Compare $BAC and $WFC financial performance", "What's in $GS latest 10-K filing?"], "confidence": 0.0, "quarter_reference": null, "quarter_context": null, "quarter_count": null, "data_source": null, "needs_latest_news": false, "needs_10k": false}}
+
+**DATA SOURCE SELECTION GUIDE:**
+
+Use semantic understanding to pick the BEST source for the question's intent:
+
+**10-K Filings** - Choose when question is about:
+- Comprehensive annual data, full-year figures, audited financials
+- Balance sheets, assets, liabilities, equity, debt structure
+- Executive/CEO compensation, salaries, stock awards (ONLY in 10-K)
+- Risk factors, legal matters, regulatory disclosures
+- Detailed segment breakdowns, business descriptions
+- Multi-year historical comparisons
+
+**Earnings Transcripts** - Choose when question is about:
+- Quarterly results, recent quarter performance
+- Management commentary, what executives said/discussed
+- Forward guidance, next quarter/year outlook
+- Analyst questions and management responses
+- Strategic initiatives mentioned in earnings calls
+- Quarter-over-quarter trends, sequential changes
+
+**Latest News** - Choose when question is about:
+- Very recent events (days/weeks old)
+- Breaking news, current developments
+- Market reactions, stock movements
+- Recent announcements not yet in filings
+
+**Hybrid** - Choose when:
+- Question needs comprehensive view from multiple sources
+- Comparing different time periods or data types
+- User explicitly wants multiple perspectives
+
+**KEY PRINCIPLE**: Route based on what information type would BEST answer the question, not based on specific keywords. Consider the user's underlying intent."""
                 
                 # Add conversation context example only when context is present
                 if has_conversation_context:
@@ -293,10 +347,10 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                 # Build context-aware system message
                 if has_conversation_context:
                     rag_logger.info(f"🧠 Using CONVERSATION CONTEXT MODE - will emphasize ticker extraction from conversation history")
-                    system_message = "You are a JSON-only response assistant. Respond with valid JSON only. Extract tickers from $TICKER format. CRITICAL: Conversation context is provided - YOU MUST extract ALL relevant tickers from the conversation history when the question references previous companies. Look through the ENTIRE conversation context and find ALL company tickers mentioned. For references like 'all companies mentioned above' or 'those companies', extract EVERY ticker found, not just one. IMPORTANT: For multiple companies, rephrased_question must be GENERIC without specific company names (we search each company separately). YEAR ONLY questions (e.g., '2024', '2025') = quarter_context: 'multiple', quarter_count: 4. For 'last X quarters', set quarter_context: 'multiple' and quarter_count: X. CRITICAL 10K DETECTION: (1) If question contains '10k', '10-k', '10-K', 'from 10k', 'in 10k' → ALWAYS set needs_10k=true AND data_source='10k'. (2) If question asks about executive compensation, CEO pay, CEO salary, compensation package, stock awards, bonus, or any executive's pay → ALWAYS set needs_10k=true AND data_source='10k' (executive compensation is ONLY in 10-K filings, NOT in earnings transcripts). Set needs_latest_news=true if question asks for latest news, recent news, current events, or breaking news. No explanations or additional text."
+                    system_message = "You are a JSON-only response assistant for financial data routing. Respond with valid JSON only. Extract tickers from $TICKER format. CRITICAL: Conversation context is provided - extract ALL relevant tickers from the conversation history when the question references previous companies. For multiple companies, rephrased_question must be GENERIC without specific company names. YEAR ONLY questions = quarter_context: 'multiple', quarter_count: 4. SEMANTIC ROUTING: Choose data_source based on what information type BEST answers the question's intent: '10k' for annual data, financial statements, compensation, risk factors, audited figures; 'earnings_transcripts' for quarterly results, management commentary, guidance, analyst Q&A; 'latest_news' for recent events, breaking news, current developments; 'hybrid' when multiple perspectives needed. Executive compensation is ONLY in 10-K filings. No explanations or additional text."
                 else:
                     rag_logger.info(f"🎯 Using STANDARD MODE - no conversation context available")
-                    system_message = "You are a JSON-only response assistant. Respond with valid JSON only. Extract tickers from $TICKER format. IMPORTANT: For multiple companies, rephrased_question must be GENERIC without specific company names (we search each company separately). YEAR ONLY questions (e.g., '2024', '2025') = quarter_context: 'multiple', quarter_count: 4. For 'last X quarters', set quarter_context: 'multiple' and quarter_count: X. CRITICAL 10K DETECTION: (1) If question contains '10k', '10-k', '10-K', 'from 10k', 'in 10k' → ALWAYS set needs_10k=true AND data_source='10k'. (2) If question asks about executive compensation, CEO pay, CEO salary, compensation package, stock awards, bonus, or any executive's pay → ALWAYS set needs_10k=true AND data_source='10k' (executive compensation is ONLY in 10-K filings, NOT in earnings transcripts). Set needs_latest_news=true if question asks for latest news, recent news, current events, or breaking news. No explanations or additional text."
+                    system_message = "You are a JSON-only response assistant for financial data routing. Respond with valid JSON only. Extract tickers from $TICKER format. For multiple companies, rephrased_question must be GENERIC without specific company names. YEAR ONLY questions = quarter_context: 'multiple', quarter_count: 4. SEMANTIC ROUTING: Choose data_source based on what information type BEST answers the question's intent: '10k' for annual data, financial statements, compensation, risk factors, audited figures; 'earnings_transcripts' for quarterly results, management commentary, guidance, analyst Q&A; 'latest_news' for recent events, breaking news, current developments; 'hybrid' when multiple perspectives needed. Executive compensation is ONLY in 10-K filings. No explanations or additional text."
                 
                 start_time = time.time()
                 cerebras_model = self.config.get("cerebras_model", "qwen-3-235b-a22b-instruct-2507")
@@ -443,52 +497,69 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                     rag_logger.error(f"💥 All {max_retries} attempts failed. Last error: {e}")
                     rag_logger.error(f"📝 Last response text: {analysis_text[:500]}...")
                     
-                    # Create a fallback response instead of throwing an error
-                    rag_logger.warning("🔄 Creating fallback response due to repeated JSON parsing failures")
-                    
-                    # Try to extract needs_latest_news from the raw response before creating fallback
-                    needs_news_fallback = False
+                    # Try to extract fields from the raw response - PRESERVE is_valid from LLM!
+                    rag_logger.warning("🔄 Attempting to extract response from raw JSON despite validation errors")
+
                     try:
                         import json as json_lib
                         raw_json = json_lib.loads(analysis_text)
-                        needs_news_fallback = raw_json.get('needs_latest_news', False)
-                        rag_logger.info(f"📰 Extracted needs_latest_news={needs_news_fallback} from raw response for fallback")
-                    except:
-                        # Check if question explicitly asks for news
-                        news_keywords = ["latest news", "recent news", "current news", "breaking news", "what's happening", "latest updates"]
-                        if any(keyword in question.lower() for keyword in news_keywords):
-                            needs_news_fallback = True
-                            rag_logger.info(f"📰 Detected news keywords in question, setting needs_latest_news=True")
-                    
-                    fallback_response = {
-                        "is_valid": True,
-                        "reason": "Question appears valid for earnings transcript analysis",
-                        "question_type": "latest_news" if needs_news_fallback else "multiple_companies",
-                        "extracted_ticker": None,
-                        "extracted_tickers": [],
-                        "rephrased_question": question,
-                        "suggested_improvements": ["Try to be more specific about time periods"],
-                        "confidence": 0.5,
-                        "quarter_reference": None,
-                        "quarter_context": "latest",
-                        "quarter_count": None,
-                        "needs_latest_news": needs_news_fallback,
-                        "original_question": question
-                    }
-                    
-                    # Try to extract tickers manually as a fallback
-                    import re
-                    tickers = re.findall(r'\$([A-Z]{1,5})', question.upper())
-                    if tickers:
-                        fallback_response["extracted_tickers"] = tickers
-                        fallback_response["extracted_ticker"] = tickers[0]
-                        if len(tickers) > 1:
-                            fallback_response["question_type"] = "latest_news" if needs_news_fallback else "multiple_companies"
-                        else:
-                            fallback_response["question_type"] = "latest_news" if needs_news_fallback else "specific_company"
-                    
-                    rag_logger.info(f"✅ Fallback response created with tickers: {fallback_response['extracted_tickers']}, needs_latest_news: {needs_news_fallback}")
-                    return fallback_response
+
+                        # CRITICAL: Preserve is_valid from LLM response - don't override!
+                        fallback_is_valid = raw_json.get('is_valid', True)
+                        fallback_reason = raw_json.get('reason', 'Question analysis completed')
+                        fallback_question_type = raw_json.get('question_type', 'multiple_companies')
+                        fallback_needs_news = raw_json.get('needs_latest_news', False)
+                        fallback_needs_10k = raw_json.get('needs_10k', False)
+                        fallback_data_source = raw_json.get('data_source')
+                        fallback_rephrased = raw_json.get('rephrased_question', question)
+                        fallback_suggestions = raw_json.get('suggested_improvements', [])
+                        fallback_confidence = raw_json.get('confidence', 0.5)
+                        fallback_tickers = raw_json.get('extracted_tickers', [])
+                        fallback_ticker = raw_json.get('extracted_ticker')
+
+                        rag_logger.info(f"📋 Extracted from raw response: is_valid={fallback_is_valid}, question_type={fallback_question_type}, data_source={fallback_data_source}")
+
+                        fallback_response = {
+                            "is_valid": fallback_is_valid,
+                            "reason": fallback_reason,
+                            "question_type": fallback_question_type,
+                            "extracted_ticker": fallback_ticker,
+                            "extracted_tickers": fallback_tickers,
+                            "rephrased_question": fallback_rephrased,
+                            "suggested_improvements": fallback_suggestions,
+                            "confidence": fallback_confidence,
+                            "quarter_reference": raw_json.get('quarter_reference'),
+                            "quarter_context": raw_json.get('quarter_context'),
+                            "quarter_count": raw_json.get('quarter_count'),
+                            "data_source": fallback_data_source,
+                            "needs_latest_news": fallback_needs_news,
+                            "needs_10k": fallback_needs_10k,
+                            "original_question": question
+                        }
+
+                        rag_logger.info(f"✅ Fallback response created from raw JSON: is_valid={fallback_is_valid}, question_type={fallback_question_type}")
+                        return fallback_response
+
+                    except Exception as parse_err:
+                        rag_logger.error(f"❌ Could not parse raw JSON: {parse_err}")
+                        # Only if we truly can't parse anything, return a generic error
+                        return {
+                            "is_valid": False,
+                            "reason": "Unable to analyze your question. Please try rephrasing it.",
+                            "question_type": "invalid",
+                            "extracted_ticker": None,
+                            "extracted_tickers": [],
+                            "rephrased_question": "",
+                            "suggested_improvements": ["Try asking about a specific company like $AAPL or $MSFT"],
+                            "confidence": 0.0,
+                            "quarter_reference": None,
+                            "quarter_context": None,
+                            "quarter_count": None,
+                            "data_source": None,
+                            "needs_latest_news": False,
+                            "needs_10k": False,
+                            "original_question": question
+                        }
             except Exception as e:
                 rag_logger.error(f"❌ Question analysis failed on attempt {attempt + 1}: {e}")
                 if attempt < max_retries - 1:
@@ -499,52 +570,69 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                 else:
                     rag_logger.error(f"💥 All {max_retries} attempts failed. Last error: {e}")
                     
-                    # Create a fallback response instead of throwing an error
-                    rag_logger.warning("🔄 Creating fallback response due to general analysis failures")
-                    
-                    # Try to extract needs_latest_news from the raw response before creating fallback
-                    needs_news_fallback = False
+                    # Try to extract fields from the raw response - PRESERVE is_valid from LLM!
+                    rag_logger.warning("🔄 Attempting to extract response from raw JSON despite general errors")
+
                     try:
                         import json as json_lib
                         raw_json = json_lib.loads(analysis_text)
-                        needs_news_fallback = raw_json.get('needs_latest_news', False)
-                        rag_logger.info(f"📰 Extracted needs_latest_news={needs_news_fallback} from raw response for fallback")
-                    except:
-                        # Check if question explicitly asks for news
-                        news_keywords = ["latest news", "recent news", "current news", "breaking news", "what's happening", "latest updates"]
-                        if any(keyword in question.lower() for keyword in news_keywords):
-                            needs_news_fallback = True
-                            rag_logger.info(f"📰 Detected news keywords in question, setting needs_latest_news=True")
-                    
-                    fallback_response = {
-                        "is_valid": True,
-                        "reason": "Question appears valid for earnings transcript analysis",
-                        "question_type": "latest_news" if needs_news_fallback else "multiple_companies",
-                        "extracted_ticker": None,
-                        "extracted_tickers": [],
-                        "rephrased_question": question,
-                        "suggested_improvements": ["Try to be more specific about time periods"],
-                        "confidence": 0.5,
-                        "quarter_reference": None,
-                        "quarter_context": "latest",
-                        "quarter_count": None,
-                        "needs_latest_news": needs_news_fallback,
-                        "original_question": question
-                    }
-                    
-                    # Try to extract tickers manually as a fallback
-                    import re
-                    tickers = re.findall(r'\$([A-Z]{1,5})', question.upper())
-                    if tickers:
-                        fallback_response["extracted_tickers"] = tickers
-                        fallback_response["extracted_ticker"] = tickers[0]
-                        if len(tickers) > 1:
-                            fallback_response["question_type"] = "latest_news" if needs_news_fallback else "multiple_companies"
-                        else:
-                            fallback_response["question_type"] = "latest_news" if needs_news_fallback else "specific_company"
-                    
-                    rag_logger.info(f"✅ Fallback response created with tickers: {fallback_response['extracted_tickers']}, needs_latest_news: {needs_news_fallback}")
-                    return fallback_response
+
+                        # CRITICAL: Preserve is_valid from LLM response - don't override!
+                        fallback_is_valid = raw_json.get('is_valid', True)
+                        fallback_reason = raw_json.get('reason', 'Question analysis completed')
+                        fallback_question_type = raw_json.get('question_type', 'multiple_companies')
+                        fallback_needs_news = raw_json.get('needs_latest_news', False)
+                        fallback_needs_10k = raw_json.get('needs_10k', False)
+                        fallback_data_source = raw_json.get('data_source')
+                        fallback_rephrased = raw_json.get('rephrased_question', question)
+                        fallback_suggestions = raw_json.get('suggested_improvements', [])
+                        fallback_confidence = raw_json.get('confidence', 0.5)
+                        fallback_tickers = raw_json.get('extracted_tickers', [])
+                        fallback_ticker = raw_json.get('extracted_ticker')
+
+                        rag_logger.info(f"📋 Extracted from raw response: is_valid={fallback_is_valid}, question_type={fallback_question_type}, data_source={fallback_data_source}")
+
+                        fallback_response = {
+                            "is_valid": fallback_is_valid,
+                            "reason": fallback_reason,
+                            "question_type": fallback_question_type,
+                            "extracted_ticker": fallback_ticker,
+                            "extracted_tickers": fallback_tickers,
+                            "rephrased_question": fallback_rephrased,
+                            "suggested_improvements": fallback_suggestions,
+                            "confidence": fallback_confidence,
+                            "quarter_reference": raw_json.get('quarter_reference'),
+                            "quarter_context": raw_json.get('quarter_context'),
+                            "quarter_count": raw_json.get('quarter_count'),
+                            "data_source": fallback_data_source,
+                            "needs_latest_news": fallback_needs_news,
+                            "needs_10k": fallback_needs_10k,
+                            "original_question": question
+                        }
+
+                        rag_logger.info(f"✅ Fallback response created from raw JSON: is_valid={fallback_is_valid}, question_type={fallback_question_type}")
+                        return fallback_response
+
+                    except Exception as parse_err:
+                        rag_logger.error(f"❌ Could not parse raw JSON: {parse_err}")
+                        # Only if we truly can't parse anything, return a generic error
+                        return {
+                            "is_valid": False,
+                            "reason": "Unable to analyze your question. Please try rephrasing it.",
+                            "question_type": "invalid",
+                            "extracted_ticker": None,
+                            "extracted_tickers": [],
+                            "rephrased_question": "",
+                            "suggested_improvements": ["Try asking about a specific company like $AAPL or $MSFT"],
+                            "confidence": 0.0,
+                            "quarter_reference": None,
+                            "quarter_context": None,
+                            "quarter_count": None,
+                            "data_source": None,
+                            "needs_latest_news": False,
+                            "needs_10k": False,
+                            "original_question": question
+                        }
         
         # This should never be reached, but just in case
         raise Exception("Unexpected error in analyze_question retry loop")
@@ -758,17 +846,14 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
         
         # If the AI marked it as invalid, reject it
         if not is_valid:
-            # Create appropriate rejection message
-            message = f"Hi! I'd be happy to help, but your question doesn't seem to be about business topics or earnings transcripts. {analysis.get('reason', 'Please ask about business performance, earnings calls, company leadership, or market trends.')}"
-            suggestions = [
-                "Ask about specific companies (e.g., 'What did $AAPL say about revenue?')",
-                "Ask about executives (e.g., 'Who is Marc Benioff among public companies?')",
-                "Ask about market trends (e.g., 'What are the latest AI trends in tech earnings?')",
-                "Ask about financial metrics (e.g., 'What were the key revenue highlights this quarter?')",
-                "Ask about company guidance (e.g., 'What guidance did companies provide for next quarter?')",
-                "Ask about industry analysis (e.g., 'How are tech companies performing this quarter?')"
-            ]
-            
+            # Use the reason directly from analysis - it already explains what we can help with
+            message = analysis.get('reason', 'I can help you analyze public company earnings calls, 10-K SEC filings, and company news.')
+            suggestions = analysis.get('suggested_improvements', [
+                "What did $AAPL say about revenue in Q4?",
+                "Compare $MSFT and $GOOGL cloud revenue",
+                "What's the latest news on $NVDA?"
+            ])
+
             return {
                 "status": "rejected",
                 "message": message,

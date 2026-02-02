@@ -40,12 +40,16 @@ from .database_manager import DatabaseManager
 from .search_engine import SearchEngine
 from .response_generator import ResponseGenerator
 from .tavily_service import TavilyService
-from .sec_filings_service import SECFilingsService
+# SEC 10-K Filing Service (planning + parallel retrieval)
+# To switch to iterative: from .sec_filings_service_iterative import IterativeSECFilingsService as SECFilingsService
+# To switch to one-pass: from .sec_filings_service import SECFilingsService
+from .sec_filings_service_smart_parallel import SmartParallelSECFilingsService as SECFilingsService
 
 # Import RAG utilities
 from .rag_utils import (
     generate_user_friendly_limit_message,
-    assess_answer_quality
+    assess_answer_quality,
+    normalize_ticker
 )
 
 # Import centralized prompts
@@ -597,11 +601,22 @@ class RAGAgent:
             response_time_ms=int(analysis_time * 1000)
         )
         
+        # Normalize tickers in question_analysis BEFORE quarter lookup
+        # This ensures company-specific quarter resolution works for aliases (e.g., TSMC → TSM)
+        raw_tickers = question_analysis.get('extracted_tickers', [])
+        if raw_tickers:
+            question_analysis['extracted_tickers'] = [normalize_ticker(t) for t in raw_tickers if t]
+        raw_ticker = question_analysis.get('extracted_ticker')
+        if raw_ticker:
+            question_analysis['extracted_ticker'] = normalize_ticker(raw_ticker)
+
         # Debug output
         rag_logger.info(f"🔍 Question analysis debug:")
         rag_logger.info(f"   quarter_context: {question_analysis.get('quarter_context')}")
         rag_logger.info(f"   quarter_reference: {question_analysis.get('quarter_reference')}")
-        
+        rag_logger.info(f"   extracted_ticker: {question_analysis.get('extracted_ticker')}")
+        rag_logger.info(f"   extracted_tickers: {question_analysis.get('extracted_tickers')}")
+
         # Determine target quarters
         target_quarters = self.question_analyzer.get_quarters_to_search(question_analysis)
         
@@ -719,10 +734,12 @@ class RAGAgent:
         rag_logger.info(f"🔍 Step 2: Starting vector search...")
 
         processed_question = question_analysis.get('processed_question', question)
-        extracted_tickers = question_analysis.get('extracted_tickers', [])
-        extracted_ticker = question_analysis.get('extracted_ticker')
+        extracted_tickers = [normalize_ticker(t) for t in question_analysis.get('extracted_tickers', []) if t]
+        extracted_ticker = normalize_ticker(question_analysis.get('extracted_ticker') or '')
+        if not extracted_ticker:
+            extracted_ticker = None
         target_quarter = target_quarters[0] if len(target_quarters) == 1 else 'multiple'
-        
+
         print(f"🔍 Search Strategy Analysis:")
         print(f"   📝 Processed question: '{processed_question}'")
         print(f"   🎯 Extracted ticker: {extracted_ticker}")
@@ -1264,7 +1281,7 @@ class RAGAgent:
                 )
             
             # Stream iteration start event - SEND IMMEDIATELY IN REAL-TIME
-            if event_yielder and max_iterations > 1:
+            if event_yielder:
                 await event_yielder({
                     'type': 'iteration_start',
                     'message': 'Refining answer with additional context',
@@ -1288,21 +1305,29 @@ class RAGAgent:
             # Pass conversation memory and ID for context-aware evaluation
             conversation_memory = self.question_analyzer.conversation_memory if hasattr(self, 'question_analyzer') else None
             conversation_id_for_eval = question_analysis.get('conversation_id') if question_analysis else None
+            reasoning_context = question_analysis.get('reasoning_statement')  # Get the agent's initial reasoning
 
-            # Use standard evaluation (works for both chat and agentic modes)
+            # Evaluate answer quality with full context (including reasoning)
+            # Pass data_source to respect routing (don't search transcripts if user asked for 10k only)
+            current_data_source = question_analysis.get('data_source', 'earnings_transcripts') if question_analysis else 'earnings_transcripts'
+
             if answer_quality['is_insufficient']:
                 evaluation = await self.response_generator.evaluate_answer_quality(
                     question, best_answer, [chunk['chunk_text'] for chunk in accumulated_chunks], accumulated_chunks,
                     conversation_memory=conversation_memory, conversation_id=conversation_id_for_eval,
                     follow_up_questions_asked=follow_up_questions_asked,
-                    evaluation_context=evaluation_context
+                    evaluation_context=evaluation_context,
+                    reasoning_context=reasoning_context,
+                    data_source=current_data_source
                 )
             else:
                 evaluation = await self.response_generator.evaluate_answer_quality(
                     question, best_answer, [chunk['chunk_text'] for chunk in accumulated_chunks],
                     conversation_memory=conversation_memory, conversation_id=conversation_id_for_eval,
                     follow_up_questions_asked=follow_up_questions_asked,
-                    evaluation_context=evaluation_context
+                    evaluation_context=evaluation_context,
+                    reasoning_context=reasoning_context,
+                    data_source=current_data_source
                 )
             
             evaluation_confidence = evaluation.get('overall_confidence', 0.5)
@@ -1327,14 +1352,8 @@ class RAGAgent:
                 'confidence': evaluation_confidence
             })
             
-            # Don't stream evaluation details to frontend - evaluation happens internally
-            # Frontend only needs to know actions, not evaluation reasoning
-            # Skip sending iteration_eval events to avoid showing evaluation text to users
-            if event_yielder and max_iterations > 1:
-                # Evaluation happens internally but we don't send the details to frontend
-                # Frontend will only see action traces like "Gathering additional information"
-                pass
-            
+            # Note: Evaluation happens internally - frontend only sees action traces
+
             if evaluation_confidence > best_confidence:
                 best_confidence = evaluation_confidence
             
@@ -1357,32 +1376,25 @@ class RAGAgent:
             else:
                 rag_logger.info(f"🤖 Agent iteration decision: {should_iterate} (no explicit reasoning)")
             
-            # Stream the agent's decision to frontend (without evaluation reasoning text)
-            # Only send action-oriented events, not evaluation details
-            if event_yielder and max_iterations > 1:
-                # Don't send evaluation reasoning to frontend - only send action decisions
-                # The frontend will show action traces, not evaluation details
-                if should_iterate:
-                    # Only send a brief action message, not the full evaluation reasoning
-                    await event_yielder({
-                        'type': 'agent_decision',
-                        'message': 'Analyzing answer quality',  # Brief action message, not evaluation reasoning
-                        'step': 'iteration',
-                        'data': {
-                            'iteration': iteration + 1,
-                            'should_iterate': should_iterate,
-                            'reasoning': '',  # Don't send evaluation reasoning
-                            'confidence': evaluation_confidence,
-                            'completeness_score': completeness_score,
-                            'specificity_score': specificity_score,
-                            'accuracy_score': evaluation.get('accuracy_score', 0),
-                            'clarity_score': evaluation.get('clarity_score', 0),
-                            'has_follow_up_questions': len(follow_up_questions) > 0,
-                            'follow_up_count': len(follow_up_questions)
-                        }
-                    })
-                    # Yield control to allow the event to be sent immediately before next step
-                    await asyncio.sleep(0.01)
+            # Stream the agent's decision to frontend
+            if event_yielder and should_iterate:
+                await event_yielder({
+                    'type': 'agent_decision',
+                    'message': 'Analyzing answer quality',
+                    'step': 'iteration',
+                    'data': {
+                        'iteration': iteration + 1,
+                        'should_iterate': should_iterate,
+                        'confidence': evaluation_confidence,
+                        'completeness_score': completeness_score,
+                        'specificity_score': specificity_score,
+                        'accuracy_score': evaluation.get('accuracy_score', 0),
+                        'clarity_score': evaluation.get('clarity_score', 0),
+                        'has_follow_up_questions': len(follow_up_questions) > 0,
+                        'follow_up_count': len(follow_up_questions)
+                    }
+                })
+                await asyncio.sleep(0.01)
             
             # Respect the agent's decision, but cap at max iterations
             should_stop = False
@@ -1410,8 +1422,8 @@ class RAGAgent:
                 should_stop = False
             
             if should_stop:
-                # Stream final status - SEND IMMEDIATELY IN REAL-TIME
-                if event_yielder and max_iterations > 1 and iteration < max_iterations - 1:
+                # Stream final status
+                if event_yielder and iteration < max_iterations - 1:
                     await event_yielder({
                         'type': 'iteration_complete',
                         'message': 'Research complete',
@@ -1425,17 +1437,21 @@ class RAGAgent:
                             'reason': stop_reason or 'Answer quality sufficient'
                         }
                     })
-                    # Yield control to allow the completion event to be sent before final answer generation
                     await asyncio.sleep(0.01)
                 break
             
             # Check if agent decided to search for transcripts
+            # SAFETY CHECK: Respect data_source routing - don't search transcripts if user asked for 10k/news only
+            if needs_transcript_search and current_data_source in ['10k', 'latest_news']:
+                rag_logger.info(f"🚫 Skipping transcript search - data_source='{current_data_source}' (user explicitly asked for {current_data_source} only)")
+                needs_transcript_search = False  # Override the evaluation's decision
+
             if needs_transcript_search and transcript_search_query:
                 rag_logger.info(f"📄 Agent decided to search transcripts: '{transcript_search_query}'")
                 print(f"📄 Agent decided to search earnings transcripts...")
                 
                 # Stream transcript search event
-                if event_yielder and max_iterations > 1:
+                if event_yielder:
                     await event_yielder({
                         'type': 'iteration_transcript_search',
                         'message': 'Searching earnings transcripts to enhance answer',
@@ -1483,7 +1499,7 @@ class RAGAgent:
                 print(f"📰 Agent decided to search for latest news...")
                 
                 # Stream news search event
-                if event_yielder and max_iterations > 1:
+                if event_yielder:
                     await event_yielder({
                         'type': 'iteration_news_search',
                         'message': 'Searching for latest news to enhance answer',
@@ -1544,24 +1560,19 @@ class RAGAgent:
                 for i, q in enumerate(all_follow_up_questions, 1):
                     print(f"   {i}. {q}")
                 
-                # Stream follow-up question event - SEND IMMEDIATELY IN REAL-TIME
-                if event_yielder and max_iterations > 1:
-                    # Create conversational message showing all questions we're searching for (no truncation)
-                    # Format: "Searching: [question]" for each question, one per line
+                # Stream follow-up question event
+                if event_yielder:
                     questions_list = '\n'.join([f'Searching: "{q}"' for q in all_follow_up_questions])
-                    message = questions_list
-                    
                     await event_yielder({
                         'type': 'iteration_followup',
-                        'message': message,
+                        'message': questions_list,
                         'step': 'iteration',
                         'data': {
                             'iteration': iteration + 1,
-                            'followup_question': all_follow_up_questions[0],  # Primary question for display
-                            'all_questions': all_follow_up_questions  # All questions
+                            'followup_question': all_follow_up_questions[0],
+                            'all_questions': all_follow_up_questions
                         }
                     })
-                    # Yield control to allow the follow-up event to be sent before search starts
                     await asyncio.sleep(0.01)
                 
                 # Search for additional chunks using ALL follow-up questions in parallel
@@ -1579,9 +1590,9 @@ class RAGAgent:
                     accumulated_citations.extend([chunk['citation'] for chunk in new_chunks])
                     
                     print(f"   🔍 Added {len(new_chunks)} new chunks")
-                    
-                    # Stream search results event - SEND IMMEDIATELY IN REAL-TIME
-                    if event_yielder and max_iterations > 1:
+
+                    # Stream search results event
+                    if event_yielder:
                         await event_yielder({
                             'type': 'iteration_search',
                             'message': 'Incorporating additional relevant sources',
@@ -1593,7 +1604,6 @@ class RAGAgent:
                                 'sources': list(set([chunk.get('ticker', 'Unknown') for chunk in new_chunks]))
                             }
                         })
-                        # Yield control to allow the search event to be sent before answer regeneration
                         await asyncio.sleep(0.01)
                     
                     # Regenerate answer (NO streaming during iterations - we'll stream the final answer only)
@@ -1801,9 +1811,10 @@ class RAGAgent:
         ────────────────
         1. Setup & Initialization
         2. Question Analysis (ticker extraction, intent detection)
+        2.1. Question Reasoning (planning approach)
         3. Search Execution (vector + keyword search)
         4. Initial Answer Generation
-        5. Iterative Improvement (optional, if max_iterations > 1)
+        5. Iterative Improvement
         6. Final Response Assembly
 
         Args:
@@ -1811,7 +1822,7 @@ class RAGAgent:
             show_details: Print debug information (default: False)
             comprehensive: Use comprehensive mode for multi-ticker (default: True)
             stream_callback: Callback for streaming responses
-            max_iterations: Max improvement iterations (1=chat, 3+=agentic)
+            max_iterations: Max improvement iterations (default: 3)
             conversation_id: Unique conversation ID for memory tracking
             stream: Whether to yield progress events (default: True)
 
@@ -1882,12 +1893,43 @@ class RAGAgent:
         print("\n\n\n")
         analysis_time = time.time() - analysis_start
 
-        # Log question analysis to Logfire
-        if LOGFIRE_AVAILABLE and logfire:
+        # Handle early returns (errors or rejected questions) BEFORE logging
+        # This handles invalid/rejected questions where question_analysis is None
+        if early_return:
+            analysis = early_return.get('analysis', {})
+
+            # Check if this is a rejected question (not an error - just can't help with this topic)
+            if analysis.get('status') == 'rejected':
+                message = analysis.get('message', 'I can only help with public company financial data.')
+                suggestions = analysis.get('suggestions', [])
+
+                # Yield as 'rejected' type - frontend should display this nicely, not as an error
+                yield {
+                    'type': 'rejected',
+                    'message': message,
+                    'step': 'complete',
+                    'data': {
+                        'suggestions': suggestions,
+                        'original_question': early_return.get('original_question', question)
+                    }
+                }
+                return  # Stop generator
+
+            # For actual errors, extract error message
+            error_msg = early_return.get('error')
+            if not error_msg and 'errors' in early_return and early_return['errors']:
+                error_msg = early_return['errors'][0]
+            if not error_msg:
+                error_msg = 'Unknown error'
+
+            yield {'type': 'error', 'message': error_msg, 'step': 'analysis', 'data': early_return}
+            return  # Stop generator
+
+        # Log question analysis to Logfire (only for valid questions)
+        if LOGFIRE_AVAILABLE and logfire and question_analysis:
             logfire.info(
                 "rag.question_analysis",
-                tickers=question_analysis.get('tickers', []),
-                extracted_tickers=question_analysis.get('extracted_tickers', []),
+                tickers=question_analysis.get('extracted_tickers', []),
                 data_source=question_analysis.get('data_source', 'earnings_transcripts'),
                 needs_10k=question_analysis.get('needs_10k', False),
                 needs_latest_news=question_analysis.get('needs_latest_news', False),
@@ -1896,15 +1938,10 @@ class RAGAgent:
                 confidence=question_analysis.get('confidence', 0),
                 analysis_time_ms=int(analysis_time * 1000)
             )
-        
-        # Handle early returns (errors or rejected questions)
-        if early_return:
-            yield {'type': 'error', 'message': early_return.get('error', 'Unknown error'), 'step': 'analysis', 'data': early_return}
-            return  # Stop generator
-        
+
         # Emit analysis complete
         if stream:
-            tickers = question_analysis.get('tickers', [])
+            tickers = question_analysis.get('extracted_tickers', [])
             # Question analyzer returns "reason" field
             reasoning = question_analysis.get('reason', '')
             
@@ -1927,12 +1964,59 @@ class RAGAgent:
                     'confidence': question_analysis.get('confidence', 0)
                 }
             }
-        
+
+
+        # ═════════════════════════════════════════════════════════════════════
+        # STAGE 2.1: QUESTION PLANNING/REASONING
+        # ═════════════════════════════════════════════════════════════════════
+
+        if stream:
+            yield {'type': 'progress', 'message': 'Planning research approach...', 'step': 'planning', 'data': {}}
+
+        rag_logger.info("🧠 Generating research reasoning...")
+        print(f"\n🧠 STAGE 2.1: QUESTION PLANNING/REASONING")
+        print(f"{'─'*60}")
+
+        reasoning_statement = None
+        try:
+            reasoning_statement = await self.response_generator.plan_question_approach(question, question_analysis)
+
+            print(f"📋 Reasoning: {reasoning_statement}")
+            print(f"{'─'*60}")
+
+            # Stream the reasoning to frontend
+            if stream:
+                yield {
+                    'type': 'reasoning',
+                    'message': reasoning_statement,
+                    'step': 'planning',
+                    'data': {
+                        'reasoning': reasoning_statement
+                    }
+                }
+
+            # Log to Logfire
+            if LOGFIRE_AVAILABLE and logfire:
+                logfire.info(
+                    "rag.reasoning.complete",
+                    reasoning=reasoning_statement
+                )
+
+        except Exception as e:
+            rag_logger.error(f"❌ Reasoning failed: {e}")
+            print(f"⚠️ Reasoning failed: {e}, continuing with basic approach")
+            tickers = [normalize_ticker(t) for t in question_analysis.get('extracted_tickers', []) if t]
+            ticker_text = f" for {', '.join(tickers)}" if tickers else ""
+            reasoning_statement = f"The user is asking about{ticker_text}: {question}. I will search the available financial data to answer this."
+
+        # Store reasoning in question_analysis for use in RAG loop
+        question_analysis['reasoning_statement'] = reasoning_statement
+
 
         # ═════════════════════════════════════════════════════════════════════
         # STAGE 2.5: NEWS SEARCH (if needed)
         # ═════════════════════════════════════════════════════════════════════
-        
+
         news_results = None
         needs_latest_news = question_analysis.get('needs_latest_news', False)
         
@@ -1944,7 +2028,7 @@ class RAGAgent:
                 rag_logger.info("📰 Question requires latest news - searching Tavily...")
                 
                 # Build news search query
-                extracted_tickers = question_analysis.get('extracted_tickers', [])
+                extracted_tickers = [normalize_ticker(t) for t in question_analysis.get('extracted_tickers', []) if t]
                 if extracted_tickers:
                     # Include ticker in search query
                     news_query = f"{question} {' '.join(extracted_tickers)}"
@@ -2009,7 +2093,7 @@ class RAGAgent:
             rag_logger.info(f"📄 Question requires 10-K data (needs_10k={needs_10k}, data_source={data_source}) - searching SEC filings...")
 
             # Get tickers from question analysis
-            extracted_tickers = question_analysis.get('extracted_tickers', [])
+            extracted_tickers = [normalize_ticker(t) for t in question_analysis.get('extracted_tickers', []) if t]
 
             # Extract fiscal year from quarter reference for 10-K searches
             # 10-K filings are annual reports, so Q4 of a year corresponds to that year's fiscal year
@@ -2028,31 +2112,84 @@ class RAGAgent:
                 # Generate query embedding for vector search
                 query_embedding = await self.search_engine.encode_query_async(question)
 
-                # Search 10-K for each ticker
+                # Search 10-K for each ticker using planning-driven parallel retrieval
+                # - Smart planning generates sub-questions and search strategy
+                # - Parallel execution for speed
+                # - Dynamic replanning based on evaluation feedback
                 for ticker in extracted_tickers[:3]:  # Limit to 3 tickers to avoid overload
                     try:
-                        # Search 10-K filings with advanced features:
-                        # - Section routing (LLM determines relevant SEC sections)
-                        # - Hybrid search (TF-IDF + semantic)
-                        # - Cross-encoder reranking
-                        # - Table boosting
-                        chunks = await self.sec_service.search_10k_filings_advanced_async(
-                            query=question,  # Pass query string for TF-IDF and cross-encoder
+                        # 10-K search with planning + parallel retrieval:
+                        # - Phase 0: Generate sub-questions and search plan
+                        # - Phase 1: Execute ALL searches in parallel
+                        # - Phase 2: Generate answer with ALL chunks
+                        # - Phase 3: Evaluate and replan if needed
+                        # - Max 5 iterations
+                        async for event in self.sec_service.execute_smart_parallel_search_async(
+                            query=question,
                             query_embedding=query_embedding,
                             ticker=ticker,
-                            fiscal_year=fiscal_year,  # Use extracted fiscal year or None for most recent
-                            max_results=10,
-                            initial_k=100,  # Retrieve 100 candidates for reranking
-                            keyword_weight=0.3,
-                            semantic_weight=0.7,
-                            use_reranking=True,  # Enable cross-encoder reranking
-                            boost_tables=True,  # Enable table boosting
-                            use_section_routing=True  # Enable LLM section routing
-                        )
+                            fiscal_year=fiscal_year,
+                            max_iterations=5,  # Hard limit on iterations
+                            confidence_threshold=0.9,
+                            event_yielder=stream  # Pass stream flag to enable event yielding
+                        ):
+                            # Handle SEC agent events
+                            event_type = event.get('type', '')
+                            event_data = event.get('data', {})
 
-                        if chunks:
-                            ten_k_results.extend(chunks)
-                            rag_logger.info(f"✅ Found {len(chunks)} 10-K chunks for {ticker}")
+                            if event_type == 'search_complete':
+                                # Final result with chunks
+                                chunks = event_data.get('chunks', [])
+                                if chunks:
+                                    ten_k_results.extend(chunks)
+                                    rag_logger.info(f"✅ Found {len(chunks)} 10-K chunks for {ticker} via parallel search")
+
+                            elif stream:
+                                # Forward SEC agent events as user-friendly reasoning traces
+                                if event_type == 'planning_start':
+                                    yield {
+                                        'type': 'reasoning',
+                                        'message': f"Looking at {ticker}'s annual report...",
+                                        'step': '10k_planning',
+                                        'data': {'ticker': ticker, 'phase': 'planning'}
+                                    }
+                                elif event_type == 'planning_complete':
+                                    sub_questions = event_data.get('sub_questions', [])
+                                    if sub_questions:
+                                        # Format sub-questions as a thinking list
+                                        questions_text = "\n".join([f"• {q}" for q in sub_questions[:4]])
+                                        yield {
+                                            'type': 'reasoning',
+                                            'message': f"To answer this, I need to find:\n{questions_text}",
+                                            'step': '10k_planning',
+                                            'data': {'sub_questions': sub_questions}
+                                        }
+                                elif event_type == 'retrieval_complete':
+                                    new_chunks = event_data.get('new_chunks', 0)
+                                    if new_chunks > 0:
+                                        yield {
+                                            'type': 'reasoning',
+                                            'message': f"Found {new_chunks} relevant sections in the filing",
+                                            'step': '10k_retrieval',
+                                            'data': event_data
+                                        }
+                                elif event_type == 'evaluation_complete':
+                                    quality = event_data.get('quality_score', 0)
+                                    missing = event_data.get('missing_info', [])
+                                    if quality >= 0.9:
+                                        yield {
+                                            'type': 'reasoning',
+                                            'message': "I have enough information to answer this question",
+                                            'step': '10k_evaluation',
+                                            'data': event_data
+                                        }
+                                    elif missing:
+                                        yield {
+                                            'type': 'reasoning',
+                                            'message': f"Still looking for: {missing[0] if missing else 'more details'}...",
+                                            'step': '10k_evaluation',
+                                            'data': event_data
+                                        }
                     except Exception as e:
                         rag_logger.warning(f"⚠️ Failed to search 10-K for {ticker}: {e}")
 
@@ -2116,6 +2253,14 @@ class RAGAgent:
         # DEBUG: Log what RAG agent received
         rag_logger.info(f"🔍 DEBUG [RAG AGENT RECEIVED]: data_source={data_source}, needs_10k={question_analysis.get('needs_10k')}")
 
+        # Adjust max_iterations for SEC/10-K queries (use sec_max_iterations config)
+        # Only apply to explicit 10k queries, not hybrid (to avoid wasting tokens)
+        if data_source == '10k' or question_analysis.get('needs_10k', False):
+            sec_max_iterations = self.config.get("sec_max_iterations", 5)
+            if max_iterations < sec_max_iterations:
+                rag_logger.info(f"📈 SEC/10-K query detected - increasing max_iterations from {max_iterations} to {sec_max_iterations}")
+                max_iterations = sec_max_iterations
+
         # Skip earnings transcript search ONLY if data source is exclusively '10k' or 'latest_news'
         # For 'hybrid', we want to search transcripts too
         # Also, even for '10k' queries, we might want to search transcripts if it's a general question
@@ -2130,7 +2275,7 @@ class RAGAgent:
             search_time = 0.0
             is_general_question = False
             is_multi_ticker = False
-            tickers_to_process = question_analysis.get('extracted_tickers', [])
+            tickers_to_process = [normalize_ticker(t) for t in question_analysis.get('extracted_tickers', []) if t]
             target_quarter = None
         else:
             if stream:
@@ -2195,6 +2340,39 @@ class RAGAgent:
                     }
                 }
 
+        # ═════════════════════════════════════════════════════════════════════
+        # STAGE 3.5: AUTO NEWS FALLBACK (when transcript search returns 0 chunks)
+        # ═════════════════════════════════════════════════════════════════════
+        # If transcript search returned 0 chunks and we have tickers but no news/10-K context yet,
+        # automatically trigger a news search so the user gets useful information instead of
+        # "information not available."  This prevents the broken flow where the LLM suggests
+        # "Do you want me to search the news?" but the user's "yes" is treated as a new query.
+        if (not all_chunks and not news_results and not ten_k_results
+                and tickers_to_process and not skip_initial_transcript_search
+                and self.tavily_service.is_available()):
+            ticker_list = ', '.join(tickers_to_process)
+            rag_logger.info(
+                f"📰 AUTO-FALLBACK: Transcript search returned 0 chunks for {tickers_to_process}. "
+                f"Automatically searching news as fallback..."
+            )
+            if stream:
+                yield {'type': 'progress', 'message': f'No earnings transcripts found for {ticker_list} in our database — searching latest news instead...', 'step': 'news_fallback', 'data': {}}
+
+            fallback_news_query = f"{question} {' '.join(tickers_to_process)}"
+            news_results = self.tavily_service.search_news(fallback_news_query, max_results=5, include_answer="advanced")
+
+            if news_results and news_results.get("results"):
+                rag_logger.info(f"✅ Auto-fallback news search found {len(news_results['results'])} articles")
+                if stream:
+                    yield {
+                        'type': 'news_search',
+                        'message': f'Found {len(news_results["results"])} news articles as fallback',
+                        'step': 'news_fallback',
+                        'data': {'articles_found': len(news_results['results'])}
+                    }
+            else:
+                rag_logger.warning("⚠️ Auto-fallback news search also returned no results")
+
         # Step 4: Prepare news context and citations (for both streaming and non-streaming)
         # Format news context if available and get news citations
         news_context_str = None
@@ -2236,7 +2414,7 @@ class RAGAgent:
             # Add 10-K citations
             for ten_k_citation in ten_k_citations:
                 combined_citations.append(ten_k_citation)
-                rag_logger.info(f"📄 Added 10-K citation: {ten_k_citation['ticker']} FY{ten_k_citation['fiscal_year']} - {ten_k_citation['section']}")
+                rag_logger.info(f"📄 Added 10-K citation: {ten_k_citation.get('ticker', 'N/A')} FY{ten_k_citation.get('fiscal_year', 'N/A')} - {ten_k_citation.get('section', 'SEC Filing')}")
             rag_logger.info(f"📎 After adding 10-K: {len(combined_citations)} total citations ({len(all_citations)} transcript + {len(news_citations)} news + {len(ten_k_citations)} 10-K)")
         else:
             rag_logger.info(f"📎 No 10-K citations to add")
@@ -2445,180 +2623,22 @@ class RAGAgent:
         rag_logger.info(f"📎 Deduplicated citations: {len(best_citations)} -> {len(unique_citations)} unique citations from all iterations")
         rag_logger.info(f"📄 Deduplicated chunks: {len(best_chunks)} -> {len(unique_chunks)} unique chunks from all iterations")
 
-        # Extract citation markers from the answer to determine which citations were actually used
-        import re
-        used_citation_markers = set()
-        
-        # Extract 10-K citations: [10K1], [10K2], etc.
-        ten_k_pattern = r'\[10K(\d+)\]'
-        ten_k_matches = re.findall(ten_k_pattern, best_answer)
-        for match in ten_k_matches:
-            used_citation_markers.add(f"[10K{match}]")
-        
-        # Extract news citations: [N1], [N2], etc.
-        news_pattern = r'\[N(\d+)\]'
-        news_matches = re.findall(news_pattern, best_answer)
-        for match in news_matches:
-            used_citation_markers.add(f"[N{match}]")
-        
-        # Extract transcript citations: [1], [2], etc. (numbers in brackets)
-        # Need to be careful not to match [10K1] or [N1] - match standalone [number] patterns
-        # First, remove 10K and N citations from the text temporarily
-        temp_answer = best_answer
-        temp_answer = re.sub(r'\[10K\d+\]', '', temp_answer)
-        temp_answer = re.sub(r'\[N\d+\]', '', temp_answer)
-        # Now extract standalone numeric citations
-        transcript_pattern = r'\[(\d+)\]'
-        transcript_matches = re.findall(transcript_pattern, temp_answer)
-        for match in transcript_matches:
-            used_citation_markers.add(f"[{match}]")
-        
-        rag_logger.info(f"🔍 Extracted {len(used_citation_markers)} citation markers from answer: {sorted(used_citation_markers)}")
-        
-        # Log what sources were available
-        available_10k = len([c for c in unique_citations if isinstance(c, dict) and c.get('type') == '10-K'])
-        available_news = len([c for c in unique_citations if isinstance(c, dict) and c.get('type') == 'news'])
-        available_transcripts = len([c for c in unique_citations if not (isinstance(c, dict) and c.get('type') in ['10-K', 'news'])])
-        rag_logger.info(f"📊 Available sources: {available_10k} 10-K citations, {available_news} news citations, {available_transcripts} transcript citations")
-        
-        # Log what citation markers were found in the answer
-        found_10k_markers = [m for m in used_citation_markers if m.startswith('[10K')]
-        found_news_markers = [m for m in used_citation_markers if m.startswith('[N')]
-        found_transcript_markers = [m for m in used_citation_markers if not m.startswith('[10K') and not m.startswith('[N')]
-        rag_logger.info(f"📊 Citation markers found in answer: {len(found_10k_markers)} 10-K markers, {len(found_news_markers)} news markers, {len(found_transcript_markers)} transcript markers")
-        if found_10k_markers:
-            rag_logger.info(f"   ✅ 10-K markers used: {sorted(found_10k_markers)}")
-        else:
-            rag_logger.warning(f"   ⚠️ No 10-K citation markers found in answer (but {available_10k} 10-K citations were available)")
-        if found_news_markers:
-            rag_logger.info(f"   ✅ News markers used: {sorted(found_news_markers)}")
-        else:
-            rag_logger.warning(f"   ⚠️ No news citation markers found in answer (but {available_news} news citations were available)")
-        if found_transcript_markers:
-            rag_logger.info(f"   ✅ Transcript markers used: {sorted(found_transcript_markers)}")
-        else:
-            rag_logger.warning(f"   ⚠️ No transcript citation markers found in answer (but {available_transcripts} transcript citations were available)")
-        
-        # Filter citations to only include those actually referenced in the answer
-        filtered_citations = []
-        for citation in unique_citations:
-            if isinstance(citation, dict):
-                citation_type = citation.get('type', '')
-                marker = citation.get('marker', '')
-                
-                # For 10-K and news citations, check marker directly
-                if citation_type in ['10-K', 'news']:
-                    if marker and marker in used_citation_markers:
-                        filtered_citations.append(citation)
-                        rag_logger.info(f"✅ {citation_type} citation used: {marker}")
-                    else:
-                        rag_logger.info(f"❌ {citation_type} citation not used (no marker in answer): {marker}")
-                else:
-                    # For transcript citations, check if citation index/number matches
-                    # Transcript citations use [1], [2], etc. based on chunk index in context
-                    # The citation might have a marker, citation ID, or chunk_index
-                    citation_id = citation.get('citation') or citation.get('id') or citation.get('chunk_index')
-                    
-                    # Check if marker exists and was used
-                    if marker and marker in used_citation_markers:
-                        filtered_citations.append(citation)
-                        rag_logger.info(f"✅ Transcript citation used via marker: {marker}")
-                    elif citation_id:
-                        # Try to match the citation ID - could be numeric or string like "TICKER_DATE_chunk_N"
-                        citation_str = str(citation_id)
-                        
-                        # Extract number from citation if it's in format like "TICKER_DATE_chunk_N"
-                        citation_num = None
-                        if '_chunk_' in citation_str:
-                            # Format: TICKER_DATE_chunk_N - extract N
-                            try:
-                                citation_num = citation_str.split('_chunk_')[-1]
-                            except:
-                                pass
-                        elif citation_str.isdigit():
-                            # Already a number
-                            citation_num = citation_str
-                        else:
-                            # Try to extract any trailing number
-                            import re
-                            num_match = re.search(r'(\d+)$', citation_str)
-                            if num_match:
-                                citation_num = num_match.group(1)
-                        
-                        # Check if this number matches a used citation marker
-                        if citation_num:
-                            marker_to_check = f"[{citation_num}]"
-                            if marker_to_check in used_citation_markers:
-                                filtered_citations.append(citation)
-                                rag_logger.info(f"✅ Transcript citation used: {citation_id} (matched {marker_to_check})")
-                            else:
-                                rag_logger.info(f"❌ Transcript citation not used: {citation_id} (no {marker_to_check} in answer)")
-                        else:
-                            rag_logger.info(f"❌ Transcript citation not used: {citation_id} (could not extract number)")
-                    else:
-                        rag_logger.info(f"❌ Citation not used: no marker or ID found")
-            else:
-                # For string citations, check if they match used markers
-                citation_str = str(citation)
-                if citation_str in used_citation_markers:
-                    filtered_citations.append(citation)
-                    rag_logger.info(f"✅ String citation used: {citation_str}")
-                else:
-                    rag_logger.info(f"❌ String citation not used: {citation_str}")
-        
-        rag_logger.info(f"📎 Filtered citations: {len(unique_citations)} available -> {len(filtered_citations)} actually used in answer")
+        # Include ALL citations — the frontend organizes them by type for display.
+        # Previously we filtered to only marker-referenced citations, but this caused citations
+        # to be silently dropped whenever the LLM forgot to include [N1]/[10K1]/[1] markers.
+        filtered_citations = list(unique_citations)
 
-        # Log citation details for debugging
         news_citations_count = len([c for c in filtered_citations if isinstance(c, dict) and c.get('type') == 'news'])
         ten_k_citations_count = len([c for c in filtered_citations if isinstance(c, dict) and c.get('type') == '10-K'])
         transcript_citations_count = len(filtered_citations) - news_citations_count - ten_k_citations_count
-        rag_logger.info(f"📎 Final citation breakdown (used): {transcript_citations_count} transcript, {news_citations_count} news, {ten_k_citations_count} 10-K")
-        
-        # Check if answer mentions source types even without explicit citation markers
-        # This helps catch cases where LLM uses data but forgets to cite
-        answer_lower = best_answer.lower()
-        mentions_10k = any(phrase in answer_lower for phrase in ['10-k', '10k', 'annual report', 'sec filing', 'fiscal year filing', 'proxy statement', 'def 14a'])
-        mentions_news = any(phrase in answer_lower for phrase in ['news', 'recent reports', 'according to reports', 'recent article', 'news source'])
-        mentions_transcripts = any(phrase in answer_lower for phrase in ['earnings call', 'earnings transcript', 'earnings report', 'quarterly call', 'q&a'])
-        
-        # Include citations when sources are mentioned even without explicit markers
-        # This ensures all used sources are shown, not just those with perfect citation markers
-        if available_10k > 0 and ten_k_citations_count == 0:
-            if mentions_10k:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_10k} 10-K citations were available and the answer mentions 10-K/annual report, but NO citation markers were found. Including 10-K citations since answer references them.")
-                # Include ALL 10-K citations if the answer mentions 10-K (they were clearly used)
-                ten_k_cits = [c for c in unique_citations if isinstance(c, dict) and c.get('type') == '10-K']
-                for ten_k_cit in ten_k_cits:
-                    if ten_k_cit not in filtered_citations:
-                        filtered_citations.append(ten_k_cit)
-                        rag_logger.info(f"   ✅ Added 10-K citation because answer mentions 10-K: {ten_k_cit.get('marker', 'no marker')}")
-                ten_k_citations_count = len(ten_k_cits)
-            else:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_10k} 10-K citations were available but NONE were cited and answer doesn't mention 10-K. 10-K data may not have been used.")
-        
-        if available_news > 0 and news_citations_count == 0:
-            if mentions_news:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_news} news citations were available and the answer mentions news/reports, but NO citation markers were found. Including news citations since answer references them.")
-                # Include ALL news citations if the answer mentions news (they were clearly used)
-                news_cits = [c for c in unique_citations if isinstance(c, dict) and c.get('type') == 'news']
-                for news_cit in news_cits:
-                    if news_cit not in filtered_citations:
-                        filtered_citations.append(news_cit)
-                        rag_logger.info(f"   ✅ Added news citation because answer mentions news: {news_cit.get('marker', 'no marker')}")
-                news_citations_count = len(news_cits)
-            else:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_news} news citations were available but NONE were cited and answer doesn't mention news. News data may not have been used.")
-        
-        if available_transcripts > 0 and transcript_citations_count == 0:
-            if mentions_transcripts:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_transcripts} transcript citations were available and the answer mentions earnings calls/transcripts, but NO citation markers were found.")
-            else:
-                rag_logger.warning(f"⚠️ HONESTY CHECK: {available_transcripts} transcript citations were available but NONE were cited and answer doesn't mention transcripts. Transcript data may not have been used.")
+
+        rag_logger.info(f"📎 Including all {len(filtered_citations)} citations: "
+                        f"{transcript_citations_count} transcript, {news_citations_count} news, {ten_k_citations_count} 10-K")
         if news_citations_count > 0:
-            rag_logger.info(f"🌐 News citations used: {[c.get('title', 'No title')[:50] for c in filtered_citations if isinstance(c, dict) and c.get('type') == 'news']}")
+            rag_logger.info(f"🌐 News citations: {[c.get('title', 'No title')[:50] for c in filtered_citations if isinstance(c, dict) and c.get('type') == 'news']}")
         if ten_k_citations_count > 0:
             ten_k_summary = [f"{c.get('ticker')} FY{c.get('fiscal_year')} - {c.get('section', 'Unknown')[:40]}" for c in filtered_citations if isinstance(c, dict) and c.get('type') == '10-K']
-            rag_logger.info(f"📄 10-K citations used: {ten_k_summary}")
+            rag_logger.info(f"📄 10-K citations: {ten_k_summary}")
 
         response_data = {
             'answer': best_answer,

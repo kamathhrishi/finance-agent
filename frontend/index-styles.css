@@ -1604,11 +1604,6 @@ html.dark .ttm-history-table tbody tr:hover {
     animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
 .no-data, .error-message {
     display: flex;
     flex-direction: column;
