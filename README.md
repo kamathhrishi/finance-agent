@@ -70,7 +70,7 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **s
 3. **Multi-Source RAG** - Combines earnings transcripts, SEC 10-K filings, and news
 4. **Self-Reflection** - Evaluates answer quality and iterates until confident (≥90%)
 
-**Benchmark:** 85% accuracy on [FinanceBench](https://github.com/patronus-ai/financebench) (SEC filings only), evaluated using LLM-as-a-judge.
+**Benchmark:** 91% accuracy on [FinanceBench](https://github.com/patronus-ai/financebench) (112 10-K questions), ~10s per question, evaluated using LLM-as-a-judge.
 
 ### Documentation
 
@@ -93,8 +93,9 @@ Unlike generic LLMs that rely on web content, StrataLens uses the same authorita
 ## Tech Stack
 
 - **Backend:** FastAPI, PostgreSQL (pgvector), DuckDB
-- **AI/ML:** OpenAI, Groq, LangChain, RAG (Retrieval-Augmented Generation)
-- **Frontend:** Vanilla JS, Tailwind CSS
+- **AI/ML:** Cerebras (Qwen-3-235B), OpenAI (fallback), RAG with iterative self-improvement
+- **Search:** Hybrid vector (pgvector) + TF-IDF with cross-encoder reranking
+- **Frontend:** React + TypeScript, Tailwind CSS
 
 ## Project Structure
 
@@ -102,17 +103,27 @@ Unlike generic LLMs that rely on web content, StrataLens uses the same authorita
 stratalens_ai/
 ├── agent/                  # AI agent & RAG system         → see agent/README.md
 │   ├── rag/               # RAG implementation
-│   │   └── data_ingestion/# Data pipeline                  → see data_ingestion/README.md
+│   │   ├── rag_agent.py            # Main orchestration (2,700+ lines)
+│   │   ├── sec_filings_service_smart_parallel.py  # 10-K agent (current)
+│   │   ├── sec_filings_service_iterative.py       # 10-K agent (legacy)
+│   │   ├── response_generator.py   # LLM response & evaluation
+│   │   ├── question_analyzer.py    # Semantic routing
+│   │   ├── search_engine.py        # Hybrid transcript search
+│   │   ├── tavily_service.py       # Real-time news
+│   │   └── data_ingestion/         # Data pipeline → see data_ingestion/README.md
 │   └── screener/          # Financial screener
 ├── app/                   # FastAPI application
 │   ├── routers/           # API endpoints
 │   ├── schemas/           # Pydantic models
-│   ├── auth/              # Authentication
-│   └── websocket/         # WebSocket handlers
-├── frontend/              # Web interface
-├── db/                    # Database utilities
+│   └── auth/              # Authentication
+├── frontend-new/          # React + TypeScript frontend
+├── docs/                  # Documentation
+│   └── SEC_AGENT.md       # 10-K agent deep dive
 ├── analytics/             # Usage analytics
 └── experiments/           # Development & benchmarking (gitignored)
+    ├── sec_filings_rag_scratch/   # Agent evolution & benchmark results
+    ├── sec_filings_rag/           # Hierarchical parsing experiments
+    └── llamaindex_agent/          # LlamaIndex alternative approach
 ```
 
 ## Quick Start
@@ -215,10 +226,20 @@ For detailed documentation on the AI agent architecture and RAG system:
 
 | Document | Description |
 |----------|-------------|
-| **[agent/README.md](agent/README.md)** | Complete agent architecture, semantic routing, research planning, iteration loop |
-| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: 4-stage pipeline, section routing, table selection, cross-encoder reranking |
+| **[agent/README.md](agent/README.md)** | Complete agent architecture, 6-stage pipeline, semantic routing, iterative self-improvement |
+| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: SmartParallel architecture, planning-driven retrieval, 91% accuracy |
 | **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** | Data ingestion pipelines for transcripts, embeddings, and SEC filings |
-| **[experiments/sec_filings_rag/README.md](experiments/sec_filings_rag/README.md)** | SEC hierarchical parsing experiments and RAG prototype |
+
+### Experiments & Development History
+
+The agent evolved through extensive experimentation (in `experiments/` folder):
+
+| Experiment | Description |
+|------------|-------------|
+| `sec_filings_rag_scratch/` | Original 10-K agent development, benchmark results, optimization analysis |
+| `sec_filings_rag/` | Hierarchical parsing experiments |
+| `llamaindex_agent/` | Alternative LlamaIndex-based implementation |
+| `benchmarks/` | FinanceBench evaluation framework |
 
 ## Development Status
 

@@ -1,270 +1,330 @@
-# SEC 10-K Filings Agent (Iterative)
+# SEC 10-K Filings Agent
 
-The SEC Agent provides sophisticated access to annual 10-K SEC filings using an **iterative step-by-step approach** where the agent decides at each iteration whether to retrieve **TABLE** or **TEXT** chunks, evaluates the answer quality, and refines until confident.
+The SEC Agent provides sophisticated access to annual 10-K SEC filings using **planning-driven parallel retrieval**. It achieves **91% accuracy** on the [FinanceBench](https://github.com/patronus-ai/financebench) benchmark with an average response time of **~10 seconds per question**.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Iterative Architecture](#iterative-architecture)
+- [Architecture Evolution](#architecture-evolution)
+- [SmartParallel Architecture (Current)](#smartparallel-architecture-current)
 - [Step-by-Step Flow](#step-by-step-flow)
-- [Decision Logic](#decision-logic)
+- [Key Design Decisions](#key-design-decisions)
 - [Configuration](#configuration)
 - [Switching Between Versions](#switching-between-versions)
 - [Database Schema](#database-schema)
 - [Examples](#examples)
+- [Benchmark Results](#benchmark-results)
+- [Legacy: Iterative Architecture](#legacy-iterative-architecture)
 
 ---
 
 ## Overview
 
-The SEC Agent implements an **agentic iterative loop** for 10-K filing search:
+The SEC Agent retrieves data from 10-K filings using a multi-phase approach:
 
 | Feature | Description |
 |---------|-------------|
-| **Iterative Decisions** | At each iteration, LLM decides: retrieve TABLE or TEXT? |
-| **Quality Evaluation** | After each iteration, evaluates answer completeness |
-| **Dynamic Switching** | If tables don't yield results, switches to text (and vice versa) |
-| **Early Termination** | Stops when confidence ≥ 90% or max iterations (5) reached |
-| **Table-First Rule** | For numeric/financial questions, starts with tables |
+| **Planning-Driven** | Generates targeted sub-questions, not just the original question |
+| **Parallel Retrieval** | Executes multiple searches concurrently (6 workers) |
+| **Dynamic Replanning** | Adjusts search strategy based on evaluation feedback |
+| **Early Termination** | Stops when confidence ≥ 90% (typically 1-3 iterations) |
+| **Hybrid Search** | Combines semantic (70%) + TF-IDF (30%) with cross-encoder reranking |
 
-### Why Iterative?
+### Benchmark Performance
 
-Unlike the one-pass approach (fetch everything at once), the iterative approach:
-- **Makes intelligent decisions** about what to retrieve next
-- **Avoids wasting tokens** on irrelevant data
-- **Builds answers step-by-step** with increasing quality
-- **Can course-correct** if initial retrieval doesn't yield good results
+```
+Accuracy:     91% on FinanceBench (112 10-K questions)
+Avg Time:     ~10 seconds per question
+Avg Iters:    2.4 iterations (out of max 5)
+```
 
 ---
 
-## Iterative Architecture
+## Architecture Evolution
+
+The SEC agent evolved through experimentation to achieve optimal accuracy/speed balance:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                    ITERATIVE 10-K SEARCH PIPELINE                         │
-└──────────────────────────────────────────────────────────────────────────┘
+Version 1: One-Pass (sec_filings_service.py)
+├── Simple: Fetch everything at once
+├── Fast but low accuracy
+└── Status: DEPRECATED
+
+Version 2: Iterative (sec_filings_service_iterative.py)
+├── Step-by-step: TABLE or TEXT at each iteration
+├── Good accuracy (~91%) but slow (~170s/question)
+└── Status: LEGACY (available as fallback)
+
+Version 3: SmartParallel (sec_filings_service_smart_parallel.py)  ← CURRENT
+├── Planning-driven: Generate sub-questions first
+├── Parallel: Execute all searches concurrently
+├── 91% accuracy, ~10s/question (16x faster than Iterative)
+└── Status: PRODUCTION
+```
+
+The key insight: The iterative approach was slow because it ran searches sequentially. SmartParallel generates sub-questions upfront and executes them in parallel.
+
+---
+
+## SmartParallel Architecture (Current)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                    SMART PARALLEL SEC AGENT FLOW                              │
+│                    (max 5 iterations, typically 1-3)                          │
+└──────────────────────────────────────────────────────────────────────────────┘
 
                               USER QUESTION
+         "What is AMD's inventory turnover ratio for FY2022?"
                                     │
                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  PHASE 0: DECIDE INITIAL RETRIEVAL TYPE                                   │
-│  ═══════════════════════════════════════                                  │
-│                                                                           │
-│  LLM analyzes question:                                                   │
-│  • Financial keywords (revenue, assets, EPS)? → Start with TABLE          │
-│  • Qualitative (risks, strategy, description)? → Start with TEXT          │
-│                                                                           │
-│  TABLE-FIRST RULE: Numeric queries ALWAYS start with tables               │
-└────────────────────────────────┬─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 0: INTELLIGENT PLANNING                                                │
+│  ═════════════════════════════                                                │
+│                                                                               │
+│  LLM generates targeted sub-questions (NOT just the original question):      │
+│                                                                               │
+│  {                                                                            │
+│    "sub_questions": [                                                         │
+│      "What is the cost of goods sold (COGS)?",                               │
+│      "What is the ending inventory balance?",                                 │
+│      "What is the beginning inventory balance?",                              │
+│      "How is inventory valued and managed?"                                   │
+│    ],                                                                         │
+│    "search_plan": [                                                           │
+│      {"query": "cost of goods sold COGS", "type": "table", "priority": 1},   │
+│      {"query": "inventory balance", "type": "table", "priority": 1},          │
+│      {"query": "inventory valuation method", "type": "text", "priority": 2}   │
+│    ]                                                                          │
+│  }                                                                            │
+└────────────────────────────────┬─────────────────────────────────────────────┘
                                  │
                                  ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  ITERATION LOOP (max 5 iterations)                                        │
-│  ═════════════════════════════════                                        │
-│                                                                           │
-│  FOR EACH ITERATION:                                                      │
-│                                                                           │
-│  ┌─ STEP 1: DECIDE RETRIEVAL TYPE ─────────────────────────────────────┐ │
-│  │  LLM decides based on:                                               │ │
-│  │  • Previous evaluation feedback                                      │ │
-│  │  • What sources have been tried                                      │ │
-│  │  • What's missing from current answer                                │ │
-│  │                                                                      │ │
-│  │  DYNAMIC SWITCHING:                                                  │ │
-│  │  • If only TABLE tried → force TEXT next                             │ │
-│  │  • If only TEXT tried → force TABLE next                             │ │
-│  │  • If low quality after one type → try the other                     │ │
-│  └──────────────────────────────────────────────────────────────────────┘ │
-│                            │                                              │
-│                            ▼                                              │
-│  ┌─ STEP 2: RETRIEVE CHUNKS ───────────────────────────────────────────┐ │
-│  │                                                                      │ │
-│  │  IF TABLE:                                                           │ │
-│  │  ┌────────────────────────────────────────────────────────────────┐ │ │
-│  │  │ • LLM sees ALL available tables for ticker                     │ │ │
-│  │  │ • LLM selects 1-2 most relevant tables                         │ │ │
-│  │  │ • Prioritizes 🌟 CORE financial statements:                    │ │ │
-│  │  │   - Income Statement                                           │ │ │
-│  │  │   - Balance Sheet                                              │ │ │
-│  │  │   - Cash Flow Statement                                        │ │ │
-│  │  │ • Avoids selecting same tables as previous iterations          │ │ │
-│  │  └────────────────────────────────────────────────────────────────┘ │ │
-│  │                                                                      │ │
-│  │  IF TEXT:                                                            │ │
-│  │  ┌────────────────────────────────────────────────────────────────┐ │ │
-│  │  │ • Hybrid search: 70% semantic + 30% TF-IDF                     │ │ │
-│  │  │ • Cross-encoder reranking (ms-marco model)                     │ │ │
-│  │  │ • Returns top 10 text chunks                                   │ │ │
-│  │  └────────────────────────────────────────────────────────────────┘ │ │
-│  │                                                                      │ │
-│  │  Add retrieved chunks to accumulated_chunks (avoid duplicates)       │ │
-│  └──────────────────────────────────────────────────────────────────────┘ │
-│                            │                                              │
-│                            ▼                                              │
-│  ┌─ STEP 3: GENERATE/REFINE ANSWER ────────────────────────────────────┐ │
-│  │  • Uses ALL accumulated chunks (tables + text from all iterations)   │ │
-│  │  • Builds on previous answer with new information                    │ │
-│  │  • Cites sources as [1], [2], etc.                                   │ │
-│  └──────────────────────────────────────────────────────────────────────┘ │
-│                            │                                              │
-│                            ▼                                              │
-│  ┌─ STEP 4: EVALUATE ANSWER QUALITY ───────────────────────────────────┐ │
-│  │  LLM evaluates:                                                      │ │
-│  │  • quality_score (0.0 - 1.0)                                         │ │
-│  │  • issues: ["missing revenue figure", "no context for change"]       │ │
-│  │  • missing_info: ["need specific numbers", "need explanation"]       │ │
-│  │  • suggestions: ["try tables for numbers", "try text for context"]   │ │
-│  │                                                                      │ │
-│  │  EARLY TERMINATION:                                                  │ │
-│  │  If quality_score >= 0.9 (90% confidence) → STOP                     │ │
-│  └──────────────────────────────────────────────────────────────────────┘ │
-│                            │                                              │
-│                            ▼                                              │
-│  ┌─ STEP 5: DECIDE NEXT RETRIEVAL STRATEGY ────────────────────────────┐ │
-│  │  Based on evaluation:                                                │ │
-│  │  • Missing numbers/metrics → next type = TABLE                       │ │
-│  │  • Missing context/explanation → next type = TEXT                    │ │
-│  │  • Low quality after TABLE → switch to TEXT                          │ │
-│  │  • Low quality after TEXT → switch to TABLE                          │ │
-│  └──────────────────────────────────────────────────────────────────────┘ │
-│                                                                           │
-│  REPEAT until: quality >= 0.9 OR iteration == 5                           │
-└────────────────────────────────┬─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 1: PARALLEL MULTI-QUERY RETRIEVAL                                      │
+│  ═══════════════════════════════════════                                      │
+│                                                                               │
+│  ThreadPoolExecutor (6 workers) executes ALL searches concurrently:          │
+│                                                                               │
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐        │
+│  │ SubQ 1: COGS       │ │ SubQ 2: Inventory  │ │ SubQ 3: Valuation  │        │
+│  │ Type: TABLE        │ │ Type: TABLE        │ │ Type: TEXT         │        │
+│  │                    │ │                    │ │                    │        │
+│  │ LLM selects:       │ │ LLM selects:       │ │ Hybrid search:     │        │
+│  │ • Income Statement │ │ • Balance Sheet    │ │ • Semantic 70%     │        │
+│  │                    │ │                    │ │ • TF-IDF 30%       │        │
+│  │                    │ │                    │ │ • Cross-encoder    │        │
+│  └─────────┬──────────┘ └─────────┬──────────┘ └─────────┬──────────┘        │
+│            │                      │                      │                    │
+│            └──────────────────────┼──────────────────────┘                    │
+│                                   │                                           │
+│                                   ▼                                           │
+│                      ┌────────────────────────┐                               │
+│                      │   COMBINE & DEDUPE     │                               │
+│                      │   All retrieved chunks │                               │
+│                      └────────────────────────┘                               │
+└────────────────────────────────┬─────────────────────────────────────────────┘
                                  │
                                  ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  FINAL RESULT                                                             │
-│  ════════════                                                             │
-│                                                                           │
-│  Returns:                                                                 │
-│  • accumulated_chunks: All chunks from all iterations                     │
-│  • session: Full iteration history for debugging                          │
-│  • Citations formatted as [10K1], [10K2], etc.                            │
-└──────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 2: ANSWER GENERATION                                                   │
+│  ══════════════════════════                                                   │
+│                                                                               │
+│  LLM generates answer using ALL accumulated chunks:                           │
+│  • Address each sub-question                                                  │
+│  • Cite sources as [10K1], [10K2], etc.                                       │
+│  • Calculate derived metrics (e.g., turnover ratio)                           │
+└────────────────────────────────┬─────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 3: QUALITY EVALUATION                                                  │
+│  ═══════════════════════════                                                  │
+│                                                                               │
+│  Evaluate answer quality (0-100 scale):                                       │
+│  • completeness_score: Does it fully answer the question?                     │
+│  • specificity_score: Does it include specific numbers?                       │
+│  • accuracy_score: Is it factually correct?                                   │
+│  • clarity_score: Is it well-structured?                                      │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │ IF quality >= 90%  →  EARLY TERMINATION (return answer)                 │ │
+│  │ IF quality < 90%   →  Continue to PHASE 4 (replanning)                  │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────┬─────────────────────────────────────────────┘
+                                 │ (if quality < 90%)
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 4: DYNAMIC REPLANNING                                                  │
+│  ═══════════════════════════                                                  │
+│                                                                               │
+│  Based on evaluation.missing_info, generate NEW search queries:               │
+│                                                                               │
+│  Evaluation says: "Missing prior year inventory for average calculation"      │
+│                   │                                                           │
+│                   ▼                                                           │
+│  New search plan: [{"query": "FY2021 ending inventory", "type": "table"}]    │
+│                                                                               │
+│  Loop back to PHASE 1 with new queries (max 5 total iterations)               │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Step-by-Step Flow
 
-### Phase 0: Initial Decision
+### Phase 0: Intelligent Planning
+
+The agent generates targeted sub-questions instead of repeating the original question:
 
 ```python
-# Decides whether to start with TABLE or TEXT
+def plan_investigation_with_search_strategy(self, question, model):
+    """
+    Input: "What is AMD's inventory turnover ratio?"
 
-Financial keywords detected? → Start with TABLE
-├── revenue, income, profit, assets, liabilities
-├── earnings, sales, expenses, equity, cash flow
-├── ratio, margin, growth rate, million, billion
-└── percent, dollar, amount, total, figure, eps
-
-No financial keywords? → Start with TEXT
-├── risks, strategy, description
-├── management, business, operations
-└── qualitative information
+    Output:
+    {
+        "sub_questions": [
+            "What is COGS?",
+            "What is ending inventory?",
+            "What is beginning inventory?"
+        ],
+        "search_plan": [
+            {"query": "cost of goods sold", "type": "table"},
+            {"query": "inventory balance", "type": "table"}
+        ]
+    }
+    """
 ```
 
-### Iteration Steps
+**Why this matters:** The original iterative approach searched with the SAME original question every iteration, getting identical text search results. SmartParallel uses DIFFERENT targeted queries.
 
-**Step 1: Decide Retrieval Type**
-```
-Input: question, current_answer, iteration, evaluation_history
+### Phase 1: Parallel Retrieval
 
-DYNAMIC SWITCHING RULES:
-├── If table_count=0 and text_count>0 → Force TABLE
-├── If text_count=0 and table_count>0 → Force TEXT
-├── If quality<0.7 after TABLE → Try TEXT
-└── If quality<0.7 after TEXT → Try TABLE
-```
+All search queries execute concurrently using ThreadPoolExecutor:
 
-**Step 2: Retrieve Chunks**
-```
-IF TABLE:
-  1. Get all tables for ticker from database
-  2. LLM selects 1-2 most relevant (avoids duplicates)
-  3. Converts to chunk format with selection_reasoning
+```python
+async def parallel_multi_query_retrieval(self, search_plan, model):
+    """
+    Executes searches in parallel:
+    - TABLE queries: LLM selects relevant tables
+    - TEXT queries: Hybrid search + cross-encoder reranking
 
-IF TEXT:
-  1. Hybrid search (semantic + TF-IDF)
-  2. Cross-encoder reranking
-  3. Returns top 10 text chunks
-```
+    Returns deduplicated combined chunks.
+    """
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = [
+            executor.submit(self._execute_search, item)
+            for item in search_plan
+        ]
+        results = [f.result() for f in futures]
 
-**Step 3: Generate Answer**
-```
-Uses ALL accumulated chunks from ALL iterations
-Builds on previous answer with new information
-Cites sources for traceability
+    return self._dedupe_and_combine(results)
 ```
 
-**Step 4: Evaluate Quality**
-```
-quality_score: 0.0 - 1.0
-├── COMPLETENESS: Does it fully answer the question?
-├── SPECIFICITY: Does it include specific numbers?
-├── ACCURACY: Is it supported by the context?
-└── CLARITY: Is it well-structured?
+### Phase 2: Answer Generation
 
-If quality_score >= 0.9 → EARLY TERMINATION
+Uses ALL accumulated chunks to generate a comprehensive answer:
+
+```python
+def _generate_answer(self, question, sub_questions, chunks, previous_answer):
+    """
+    Generates answer addressing:
+    - Original question
+    - Each sub-question
+    - Calculations where needed
+
+    Citations: [10K1], [10K2], etc.
+    """
 ```
 
-**Step 5: Decide Next Strategy**
+### Phase 3: Quality Evaluation
+
+Strict evaluation on 0-100 scale:
+
+```python
+evaluation = {
+    "quality_score": 0.85,
+    "issues": ["missing YoY comparison"],
+    "missing_info": ["prior year inventory figure"],
+    "suggestions": ["search for FY2021 balance sheet"]
+}
+
+# Early termination if quality >= 0.90
+if evaluation["quality_score"] >= 0.90:
+    return final_answer
 ```
-Based on evaluation feedback:
-├── missing_info contains "number/figure/metric" → TABLE
-├── missing_info contains "context/explanation" → TEXT
-├── Low quality after tables → TEXT
-└── Low quality after text → TABLE
+
+### Phase 4: Dynamic Replanning
+
+Generates new search queries based on evaluation gaps:
+
+```python
+def replan_based_on_evaluation(self, evaluation, current_subquestions):
+    """
+    Input: evaluation.missing_info = ["prior year inventory"]
+
+    Output: [{"query": "FY2021 inventory balance", "type": "table"}]
+    """
 ```
 
 ---
 
-## Decision Logic
+## Key Design Decisions
 
-### Table-First Rule
+### 1. Sub-Questions Over Original Question
 
-For questions with financial keywords, the agent **always starts with tables**:
+**Problem:** Iterative approach used same query repeatedly, getting same results.
+**Solution:** Generate targeted sub-questions for specific information needs.
+
+### 2. Parallel Over Sequential
+
+**Problem:** Sequential iterations were slow (~170s/question).
+**Solution:** Execute all searches concurrently with ThreadPoolExecutor.
+
+### 3. Table-First for Numeric Questions
+
+Financial data questions prioritize table retrieval:
 
 ```python
 FINANCIAL_KEYWORDS = [
-    'revenue', 'income', 'profit', 'loss', 'earnings', 'sales', 'expenses',
-    'assets', 'liabilities', 'equity', 'cash flow', 'ratio', 'margin',
-    'million', 'billion', 'percent', 'dollar', 'amount', 'total', 'eps'
+    'revenue', 'income', 'profit', 'assets', 'liabilities',
+    'earnings', 'sales', 'expenses', 'equity', 'cash flow',
+    'ratio', 'margin', 'million', 'billion', 'percent', 'eps'
 ]
 
 if any(kw in question.lower() for kw in FINANCIAL_KEYWORDS):
-    initial_type = 'table'
+    prioritize_tables = True
 ```
 
-### Dynamic Switching
+### 4. LLM-Based Table Selection
 
-The agent ensures **both sources are explored**:
+Instead of retrieving all tables, LLM selects the most relevant:
 
 ```python
-# If only text tried, force trying tables
-if table_count == 0 and text_count > 0:
-    next_type = 'table'
-    reasoning = 'Dynamic switch: text tried but tables not yet explored'
+def select_tables_by_llm(self, question, available_tables, iteration):
+    """
+    LLM sees all available tables and selects 1-2 most relevant.
 
-# If only tables tried, force trying text
-elif text_count == 0 and table_count > 0:
-    next_type = 'text'
-    reasoning = 'Dynamic switch: tables tried but text not yet explored'
+    Prioritizes core financial statements:
+    - 🌟 Income Statement
+    - 🌟 Balance Sheet
+    - 🌟 Cash Flow Statement
+
+    Avoids selecting same tables as previous iterations.
+    """
 ```
 
-### Quality-Based Switching
+### 5. Cross-Encoder Reranking
 
-If quality is low after one type, switch to the other:
+Text chunks are reranked using ms-marco cross-encoder for better relevance:
 
 ```python
-if quality_score < 0.7:
-    if last_type == 'table':
-        next_type = 'text'
-        reasoning = f'Low quality ({quality_score:.2f}) after tables - trying text'
-    else:
-        next_type = 'table'
-        reasoning = f'Low quality ({quality_score:.2f}) after text - trying tables'
+def rerank_chunks(self, query, chunks, top_k=10):
+    """
+    Uses cross-encoder (ms-marco-MiniLM-L-6-v2) to rerank
+    hybrid search results for better precision.
+    """
 ```
 
 ---
@@ -274,35 +334,44 @@ if quality_score < 0.7:
 ### Environment Variables
 
 ```bash
-CEREBRAS_API_KEY=...         # For LLM decisions (table selection, evaluation)
-OPENAI_API_KEY=...           # Fallback
+CEREBRAS_API_KEY=...         # Primary LLM (Qwen-3-235B)
+OPENAI_API_KEY=...           # Fallback LLM
 DATABASE_URL=postgresql://...# 10-K chunks and tables
 ```
 
-### Iteration Limits
+### Agent Settings
 
 ```python
-# Hard-coded in IterativeSECFilingsService
-self.max_iterations = 5  # Maximum iterations per question
+# In SmartParallelSECFilingsService
+max_iterations = 5           # Maximum iterations per question
+confidence_threshold = 0.90  # Quality score for early termination
+parallel_workers = 6         # ThreadPoolExecutor workers
 
-# In RAG agent call
-max_iterations=5,        # Passed to execute_iterative_search_async
-confidence_threshold=0.9 # 90% confidence for early termination
+# Hybrid search weights
+semantic_weight = 0.70
+tfidf_weight = 0.30
 ```
 
 ---
 
 ## Switching Between Versions
 
-The iterative and one-pass versions can be switched by changing the import in `rag_agent.py`:
+### Use SmartParallel (Current Default)
 
-### Use Iterative (Current Default)
+```python
+# In agent/rag/rag_agent.py
+from .sec_filings_service_smart_parallel import SmartParallelSECFilingsService as SECFilingsService
+```
+
+### Use Iterative (Legacy)
+
 ```python
 # In agent/rag/rag_agent.py
 from .sec_filings_service_iterative import IterativeSECFilingsService as SECFilingsService
 ```
 
-### Use One-Pass (Fallback)
+### Use One-Pass (Deprecated)
+
 ```python
 # In agent/rag/rag_agent.py
 from .sec_filings_service import SECFilingsService
@@ -310,10 +379,11 @@ from .sec_filings_service import SECFilingsService
 
 ### Files
 
-| File | Description |
-|------|-------------|
-| `sec_filings_service_iterative.py` | **Current**: Iterative step-by-step approach |
-| `sec_filings_service.py` | **Fallback**: One-pass approach |
+| File | Version | Status | Description |
+|------|---------|--------|-------------|
+| `sec_filings_service_smart_parallel.py` | SmartParallel | **CURRENT** | Planning + parallel retrieval |
+| `sec_filings_service_iterative.py` | Iterative | Legacy | Sequential table/text decisions |
+| `sec_filings_service.py` | One-Pass | Deprecated | Simple one-pass approach |
 
 ---
 
@@ -326,11 +396,11 @@ CREATE TABLE ten_k_chunks (
     id SERIAL PRIMARY KEY,
     ticker VARCHAR(10) NOT NULL,
     fiscal_year INTEGER NOT NULL,
-    sec_section VARCHAR(20),
-    sec_section_title TEXT,
+    sec_section VARCHAR(20),        -- 'item_1', 'item_7', 'item_8', etc.
+    sec_section_title TEXT,         -- 'Business', 'MD&A', 'Financial Statements'
     chunk_text TEXT NOT NULL,
-    chunk_type VARCHAR(20),  -- 'text' or 'table'
-    embedding VECTOR(384),
+    chunk_type VARCHAR(20),         -- 'text' or 'table'
+    embedding VECTOR(384),          -- all-MiniLM-L6-v2
     is_financial_statement BOOLEAN DEFAULT FALSE,
     statement_type VARCHAR(50),
     path_string TEXT,
@@ -347,8 +417,8 @@ CREATE TABLE ten_k_tables (
     fiscal_year INTEGER NOT NULL,
     sec_section VARCHAR(20),
     sec_section_title TEXT,
-    content TEXT,  -- Table content as text/markdown
-    statement_type VARCHAR(50),  -- income_statement, balance_sheet, cash_flow
+    content TEXT,                   -- Table content as markdown
+    statement_type VARCHAR(50),     -- 'income_statement', 'balance_sheet', 'cash_flow'
     is_financial_statement BOOLEAN DEFAULT FALSE,
     path_string TEXT,
     metadata JSONB
@@ -359,30 +429,36 @@ CREATE TABLE ten_k_tables (
 
 ## Examples
 
-### Example 1: Revenue Question (Numeric)
+### Example 1: Inventory Turnover Ratio (Numeric)
 
 ```
-User: "What was Apple's revenue in FY 2024?"
+User: "What is AMD's inventory turnover ratio for FY2022?"
 
-PHASE 0: Financial keyword "revenue" detected → Start with TABLE
+PHASE 0: PLANNING
+  Sub-questions:
+  - "What is cost of goods sold (COGS)?"
+  - "What is ending inventory balance?"
+  - "What is beginning inventory balance?"
 
-ITERATION 1:
-  Step 1: Retrieve TABLE (initial decision)
-  Step 2: LLM selects "Income Statement" table
-  Step 3: Generate answer with revenue figures
-  Step 4: Evaluate → quality_score = 0.85 (has numbers, missing context)
-  Step 5: Next type = TEXT (to add context)
+  Search plan:
+  - {"query": "cost of goods sold COGS", "type": "table"}
+  - {"query": "inventory balance assets", "type": "table"}
 
-ITERATION 2:
-  Step 1: Retrieve TEXT
-  Step 2: Hybrid search returns MD&A discussion of revenue
-  Step 3: Refine answer with context about growth drivers
-  Step 4: Evaluate → quality_score = 0.92 ≥ 0.9
-  → EARLY TERMINATION
+PHASE 1: PARALLEL RETRIEVAL
+  ├── TABLE: COGS → LLM selects Income Statement
+  ├── TABLE: Inventory → LLM selects Balance Sheet
+  └── Combines both tables
 
-Result: "Apple's revenue in FY 2024 was $XXX billion, representing X% YoY growth..."
-  - 2 iterations
-  - 1 table retrieval, 1 text retrieval
+PHASE 2: ANSWER GENERATION
+  "AMD's inventory turnover ratio for FY2022:
+   - COGS: $13.5B [10K1]
+   - Avg Inventory: ($4.3B + $1.9B) / 2 = $3.1B [10K2]
+   - Turnover: 13.5 / 3.1 = 4.35x"
+
+PHASE 3: EVALUATION
+  quality_score = 0.92 ≥ 0.90 → EARLY TERMINATION
+
+Result: 1 iteration, ~8 seconds
 ```
 
 ### Example 2: Risk Factors (Qualitative)
@@ -390,64 +466,129 @@ Result: "Apple's revenue in FY 2024 was $XXX billion, representing X% YoY growth
 ```
 User: "What are Tesla's main risk factors?"
 
-PHASE 0: No financial keywords → Start with TEXT
+PHASE 0: PLANNING
+  Sub-questions:
+  - "What operational risks does Tesla face?"
+  - "What regulatory/legal risks exist?"
+  - "What financial/market risks are mentioned?"
 
-ITERATION 1:
-  Step 1: Retrieve TEXT (initial decision)
-  Step 2: Hybrid search returns Item 1A risk factor chunks
-  Step 3: Generate answer listing risks
-  Step 4: Evaluate → quality_score = 0.88 (good list, missing specific examples)
-  Step 5: Next type = TEXT (more detail needed)
+  Search plan:
+  - {"query": "operational risks manufacturing", "type": "text"}
+  - {"query": "regulatory legal risks", "type": "text"}
+  - {"query": "market competition risks", "type": "text"}
 
-ITERATION 2:
-  Step 1: Retrieve TEXT
-  Step 2: Returns more specific risk factor details
-  Step 3: Refine answer with examples
-  Step 4: Evaluate → quality_score = 0.93 ≥ 0.9
-  → EARLY TERMINATION
+PHASE 1: PARALLEL RETRIEVAL
+  ├── TEXT: Operational → Item 1A chunks
+  ├── TEXT: Regulatory → Item 1A chunks
+  └── TEXT: Market → Item 1A chunks
 
-Result: "Tesla's main risk factors include: 1) Supply chain dependencies..."
-  - 2 iterations
-  - 2 text retrievals, 0 table retrievals
+PHASE 2: ANSWER GENERATION
+  "Tesla's main risk factors include:
+   1. Supply chain dependencies [10K1]
+   2. Regulatory uncertainty [10K2]
+   3. Competition from legacy automakers [10K3]..."
+
+PHASE 3: EVALUATION
+  quality_score = 0.88 < 0.90 → Continue
+
+PHASE 4: REPLANNING
+  Missing: "Specific examples of each risk"
+  New query: {"query": "risk factor examples incidents", "type": "text"}
+
+ITERATION 2: Retrieves more specific examples
+  quality_score = 0.93 ≥ 0.90 → EARLY TERMINATION
+
+Result: 2 iterations, ~12 seconds
 ```
 
-### Example 3: Complex Question (Needs Both)
+### Example 3: Complex Multi-Part Question
 
 ```
 User: "What was Microsoft's operating margin and why did it change?"
 
-PHASE 0: Financial keywords detected → Start with TABLE
+PHASE 0: PLANNING
+  Sub-questions:
+  - "What was the operating income?"
+  - "What was total revenue?"
+  - "What factors affected operating expenses?"
+  - "How did margin compare to prior year?"
 
-ITERATION 1:
-  Step 1: Retrieve TABLE
-  Step 2: LLM selects "Income Statement" table
-  Step 3: Generate answer with margin calculation
-  Step 4: Evaluate → quality_score = 0.6 (has number, missing explanation)
-  Step 5: Next type = TEXT (need "why")
+  Search plan:
+  - {"query": "operating income revenue", "type": "table"}
+  - {"query": "operating expenses changes", "type": "text"}
+  - {"query": "margin drivers cost efficiency", "type": "text"}
 
-ITERATION 2:
-  Step 1: Retrieve TEXT (dynamic switch - need context)
-  Step 2: Returns MD&A discussion of margin drivers
-  Step 3: Refine with explanation of changes
-  Step 4: Evaluate → quality_score = 0.85 (better, still missing YoY comparison)
-  Step 5: Next type = TABLE
+PHASE 1: PARALLEL RETRIEVAL (all concurrent)
+PHASE 2: ANSWER with numbers + explanation
+PHASE 3: EVALUATION → 0.85 (missing YoY comparison)
+PHASE 4: REPLAN → add prior year search
 
-ITERATION 3:
-  Step 1: Retrieve TABLE
-  Step 2: LLM selects prior year comparison table
-  Step 3: Add YoY comparison
-  Step 4: Evaluate → quality_score = 0.91 ≥ 0.9
-  → EARLY TERMINATION
+ITERATION 2: Add prior year data
+  quality_score = 0.91 → EARLY TERMINATION
 
-Result: "Microsoft's operating margin was X% in FY 2024, up from Y% in FY 2023..."
-  - 3 iterations
-  - 2 table retrievals, 1 text retrieval
+Result: 2 iterations, ~14 seconds
 ```
+
+---
+
+## Benchmark Results
+
+### FinanceBench Evaluation (112 10-K Questions)
+
+| Version | Accuracy | Avg Time | Avg Iterations |
+|---------|----------|----------|----------------|
+| SmartParallel (Current) | **91%** | **10.7s** | 2.4 |
+| Iterative (Legacy) | 91.3% | 169s | 5.8 |
+| Speed-Optimized Iterative | 80.4% | 139s | 4.2 |
+
+**Key Insight:** SmartParallel achieves the same accuracy as Iterative but is **16x faster**.
+
+### Performance Breakdown
+
+```
+SmartParallel timing per question:
+├── Phase 0 (Planning):     ~1.5s
+├── Phase 1 (Retrieval):    ~3.5s (parallel)
+├── Phase 2 (Answer):       ~2.5s
+├── Phase 3 (Evaluation):   ~1.5s
+└── Total (1 iteration):    ~9s
+
+With 2.4 avg iterations: ~10.7s total
+```
+
+### Why SmartParallel is Faster
+
+1. **Parallel execution** - 6 searches run concurrently vs sequentially
+2. **Better planning** - Targeted sub-questions find relevant data faster
+3. **Fewer iterations** - Better initial retrieval means earlier termination
+4. **No wasted searches** - Each query targets specific information
+
+---
+
+## Legacy: Iterative Architecture
+
+The iterative approach (still available as fallback) works differently:
+
+```
+FOR EACH ITERATION (max 5):
+  1. Decide: TABLE or TEXT? (LLM decision)
+  2. Retrieve chunks (one type only)
+  3. Generate/refine answer
+  4. Evaluate quality
+  5. If quality >= 90%: STOP
+  6. Decide next strategy based on evaluation
+```
+
+**Pros:** Fine-grained control, can course-correct
+**Cons:** Sequential = slow, same query repeated = redundant searches
+
+See `experiments/sec_filings_rag_scratch/docs/AGENT_INTERNALS_DEEP_DIVE.md` for detailed technical documentation of the iterative approach.
 
 ---
 
 ## Related Documentation
 
-- **[Agent README](../agent/README.md)** - Full agent documentation
-- **[One-Pass SEC Service](../agent/rag/sec_filings_service.py)** - Fallback version
+- **[Agent README](../agent/README.md)** - Full agent architecture
+- **[Agent Internals Deep Dive](../experiments/sec_filings_rag_scratch/docs/AGENT_INTERNALS_DEEP_DIVE.md)** - Technical internals
+- **[Optimization Findings](../experiments/sec_filings_rag_scratch/docs/OPTIMIZATION_FINDINGS.md)** - Performance analysis
 - **[Data Ingestion](../agent/rag/data_ingestion/README.md)** - 10-K ingestion pipeline

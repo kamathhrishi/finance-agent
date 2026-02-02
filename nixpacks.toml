@@ -2,7 +2,7 @@
 # Includes both Python and Node.js for building the React frontend
 
 [phases.setup]
-nixPkgs = ["python312", "nodejs_20", "npm"]
+nixPkgs = ["python312", "nodejs_20"]
 
 [phases.install]
 dependsOn = ["setup"]

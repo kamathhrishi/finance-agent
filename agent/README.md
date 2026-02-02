@@ -681,9 +681,70 @@ PostgreSQL + pgvector
 
 ---
 
+---
+
+## Evolution & Experiments
+
+The agent architecture evolved through extensive experimentation to achieve the current accuracy/speed balance.
+
+### Development History
+
+```
+Timeline of SEC 10-K Agent Development:
+
+v1: One-Pass Approach
+├── Simple: Fetch everything at once
+├── Fast but low accuracy
+└── Abandoned due to poor results
+
+v2: Iterative Approach (experiments/sec_filings_rag_scratch/)
+├── Step-by-step: LLM decides TABLE or TEXT at each iteration
+├── Achieved 91.3% accuracy on FinanceBench
+├── Problem: Slow (~170s per question)
+└── Still available as legacy fallback
+
+v3: SmartParallel Approach (CURRENT)
+├── Planning-driven: Generate sub-questions first
+├── Parallel: Execute all searches concurrently
+├── Same 91% accuracy, but 16x faster (~10s)
+└── Production default
+```
+
+### Key Insights from Experiments
+
+1. **Sub-questions > Original question**: The iterative approach used the SAME original question for every search iteration, getting identical text results. SmartParallel generates TARGETED sub-questions for each information need.
+
+2. **Parallel > Sequential**: Sequential iterations were the main bottleneck. Running searches in parallel with ThreadPoolExecutor provided 10-16x speedup.
+
+3. **Planning matters**: The planning phase generates a search strategy that identifies what TYPE of search (table vs text) is needed for each sub-question upfront.
+
+4. **Cerebras for speed**: Using Cerebras (Qwen-3-235B) instead of OpenAI reduced latency from 5-19s per call to 0.3-0.5s.
+
+### Benchmark Results
+
+| Version | Accuracy | Time/Question | Iterations |
+|---------|----------|---------------|------------|
+| SmartParallel | **91%** | **~10s** | 2.4 avg |
+| Iterative | 91.3% | ~170s | 5.8 avg |
+| Speed-Optimized Iterative | 80.4% | ~139s | 10 avg |
+
+### Experiment Directories
+
+See `experiments/` for development history:
+
+| Directory | Description |
+|-----------|-------------|
+| `sec_filings_rag_scratch/` | Original agent development, benchmark results, optimization analysis |
+| `sec_filings_rag/` | Hierarchical document parsing experiments |
+| `llamaindex_agent/` | Alternative LlamaIndex-based implementation |
+| `benchmarks/` | FinanceBench evaluation framework |
+
+---
+
 ## Related Documentation
 
 - **[Main README](../README.md)** - Project overview and setup
-- **[SEC Agent](../docs/SEC_AGENT.md)** - Detailed 10-K agent: section routing, LLM table selection, cross-encoder reranking
-- **[SEC RAG Experiments](../experiments/sec_filings_rag/README.md)** - Hierarchical parsing prototype
+- **[SEC Agent](../docs/SEC_AGENT.md)** - Detailed 10-K agent: SmartParallel architecture, planning-driven retrieval
+- **[Agent Internals Deep Dive](../experiments/sec_filings_rag_scratch/docs/AGENT_INTERNALS_DEEP_DIVE.md)** - Technical internals reference
+- **[Optimization Findings](../experiments/sec_filings_rag_scratch/docs/OPTIMIZATION_FINDINGS.md)** - Performance analysis and benchmarks
 - **[Data Ingestion](rag/data_ingestion/README.md)** - Transcript and 10-K ingestion pipelines
