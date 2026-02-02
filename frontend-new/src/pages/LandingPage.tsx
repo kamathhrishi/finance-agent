@@ -3,75 +3,89 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 import StrataLensLogo from '../components/StrataLensLogo'
 import AboutModal from '../components/AboutModal'
-import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight } from 'lucide-react'
+import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
 
-// Mock data for animated UIs - aligned with example queries
-const filingData = [
+// Mock data for 10-K Analysis Chat - Minimal card style with data extraction
+const filingChatData = [
   {
-    ticker: "INTC",
-    metrics: [
-      { label: "Foundry Revenue", value: "$4.7B", change: "+12%" },
-      { label: "Client Computing", value: "$29.3B", change: "-8%" },
-      { label: "Operating Margin", value: "1.2%", change: "-5.1%" },
-    ]
+    question: "What are $NVDA's key risk factors?",
+    answer: "NVIDIA's main risks include customer concentration and supply chain dependencies.",
+    dataPoints: [
+      { label: "Top 10 customers", value: "52% of revenue" },
+      { label: "Taiwan manufacturing", value: "100% of GPUs" },
+    ],
+    source: "10-K FY2024 • Item 1A"
   },
   {
-    ticker: "MSFT",
-    metrics: [
-      { label: "Azure Revenue", value: "$118.5B", change: "+29%" },
-      { label: "AI Services", value: "$5.2B", change: "+60%" },
-      { label: "Cloud Margin", value: "44.6%", change: "+2.1%" },
-    ]
+    question: "What is $AAPL's services revenue?",
+    answer: "Apple Services continues strong growth, now the second-largest segment.",
+    dataPoints: [
+      { label: "Services Revenue", value: "$85.2B" },
+      { label: "YoY Growth", value: "+14%" },
+    ],
+    source: "10-K FY2024 • Item 7"
   },
   {
-    ticker: "META",
-    metrics: [
-      { label: "AI Capex", value: "$37.5B", change: "+42%" },
-      { label: "Revenue", value: "$134.9B", change: "+16%" },
-      { label: "Operating Margin", value: "41%", change: "+7%" },
-    ]
+    question: "How did $TSLA margins change?",
+    answer: "Tesla's automotive margins compressed due to price cuts and competition.",
+    dataPoints: [
+      { label: "Auto Gross Margin", value: "17.6%" },
+      { label: "vs Prior Year", value: "-8.3 pts" },
+    ],
+    source: "10-K FY2024 • Item 8"
   },
 ]
 
+// Mock data for AI Chat - Full conversation with reasoning
 const chatData = [
   {
-    question: "$INTC foundry business commentary?",
-    answer: "Intel Foundry Services reported $4.7B revenue. Management cited 'significant progress' with external customers and expects breakeven by 2027..."
+    question: "What is $NVDA's revenue breakdown by segment?",
+    thinking: "Searching 10-K filings for segment data...",
+    answer: "NVIDIA's FY2024 revenue: **Data Center** $47.5B (78%), **Gaming** $10.4B (17%), **Pro Viz** $1.6B (3%), **Auto** $1.1B (2%).",
+    sources: ["10-K Item 7", "Income Statement"]
   },
   {
-    question: "Compare $MSFT and $GOOGL cloud",
-    answer: "Azure grew 29% vs Google Cloud's 26%. Microsoft leads in enterprise AI integration while Google focuses on AI infrastructure..."
+    question: "Compare $MSFT and $GOOGL cloud growth",
+    thinking: "Analyzing both companies' cloud segments...",
+    answer: "**Azure** grew 29% to $96.8B. **Google Cloud** grew 26% to $33.1B. Microsoft leads in enterprise AI; Google in infrastructure.",
+    sources: ["MSFT 10-K", "GOOGL 10-K"]
   },
   {
-    question: "$META AI capex guidance?",
-    answer: "Meta expects $37-40B in 2024 capex, primarily for AI infrastructure. Zuckerberg: 'AI is our biggest investment area'..."
+    question: "What did $META say about AI capex?",
+    thinking: "Searching earnings transcripts for AI commentary...",
+    answer: "Zuckerberg: *\"AI is our biggest investment.\"* Meta guides **$37-40B capex** in 2025 for AI infrastructure.",
+    sources: ["Q4 Earnings Call", "10-K Guidance"]
   },
 ]
 
-const transcriptData = [
+// Mock data for Transcript Chat - Quote-focused style
+const transcriptChatData = [
   {
-    company: "Intel Corp.",
-    quarter: "Q4 2024",
-    speakers: [
-      { role: "CEO", text: "Intel Foundry is on track. We're making significant progress with external customers..." },
-      { role: "CFO", text: "We expect foundry to reach breakeven by 2027 as we scale..." },
-    ]
+    question: "What did Tim Cook say about Services?",
+    ticker: "AAPL",
+    quarter: "Q1 2025",
+    speaker: "Tim Cook",
+    role: "CEO",
+    quote: "Services reached a new all-time revenue record of $23.1 billion, growing 14% year-over-year. We now have over 1 billion paid subscriptions.",
+    timestamp: "12:45"
   },
   {
-    company: "Microsoft",
+    question: "Satya's comments on AI adoption?",
+    ticker: "MSFT",
     quarter: "Q2 2025",
-    speakers: [
-      { role: "CEO", text: "Azure continues to take share. AI is now a $5B+ annual run rate business..." },
-      { role: "CFO", text: "Cloud gross margin expanded to 72%, driven by AI services..." },
-    ]
+    speaker: "Satya Nadella",
+    role: "CEO",
+    quote: "Copilot is now used by over 70% of Fortune 500 companies. Azure AI services have become a $5 billion annual run rate business.",
+    timestamp: "24:30"
   },
   {
-    company: "Meta Platforms",
+    question: "Google Cloud performance update?",
+    ticker: "GOOGL",
     quarter: "Q4 2024",
-    speakers: [
-      { role: "CEO", text: "We're investing aggressively in AI infrastructure. Llama is seeing strong adoption..." },
-      { role: "CFO", text: "Capex guidance for next year is $37-40B, primarily for AI..." },
-    ]
+    speaker: "Sundar Pichai",
+    role: "CEO",
+    quote: "Google Cloud crossed $9 billion in quarterly revenue. Our AI infrastructure, including TPUs and Gemini, is seeing unprecedented demand.",
+    timestamp: "35:20"
   },
 ]
 
@@ -83,15 +97,15 @@ const exampleQueries = [
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [filingIndex, setFilingIndex] = useState(0)
+  const [filingChatIndex, setFilingChatIndex] = useState(0)
   const [chatIndex, setChatIndex] = useState(0)
-  const [transcriptIndex, setTranscriptIndex] = useState(0)
+  const [transcriptChatIndex, setTranscriptChatIndex] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [aboutOpen, setAboutOpen] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    const interval = setInterval(() => setFilingIndex(i => (i + 1) % filingData.length), 4000)
+    const interval = setInterval(() => setFilingChatIndex(i => (i + 1) % filingChatData.length), 4000)
     return () => clearInterval(interval)
   }, [])
 
@@ -101,7 +115,7 @@ export default function LandingPage() {
   }, [])
 
   useEffect(() => {
-    const interval = setInterval(() => setTranscriptIndex(i => (i + 1) % transcriptData.length), 4500)
+    const interval = setInterval(() => setTranscriptChatIndex(i => (i + 1) % transcriptChatData.length), 4500)
     return () => clearInterval(interval)
   }, [])
 
@@ -304,43 +318,60 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
+            {/* 10-K Chat Mock - Minimal Data Card Style */}
             <div className="relative">
-              <div className="bg-slate-900 rounded-3xl p-10 shadow-2xl">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                    <span className="font-bold text-slate-900">10-K Analysis</span>
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={filingIndex}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded"
-                      >
-                        {filingData[filingIndex].ticker} FY2024
-                      </motion.span>
-                    </AnimatePresence>
-                  </div>
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 shadow-2xl">
+                <div className="bg-slate-50 rounded-2xl shadow-xl overflow-hidden">
+                  {/* Question bar */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={filingChatIndex}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="px-5 py-4 bg-white border-b border-slate-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <MessageSquare className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">{filingChatData[filingChatIndex].question}</p>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Answer with data cards */}
                   <div className="p-5">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={filingIndex}
+                        key={filingChatIndex}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="space-y-3"
                       >
-                        {filingData[filingIndex].metrics.map((metric, i) => (
-                          <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                            <span className="text-slate-600 font-medium">{metric.label}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="font-bold text-slate-900 text-lg">{metric.value}</span>
-                              <span className={`text-sm font-semibold px-2 py-0.5 rounded ${metric.change.startsWith('+') ? 'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'}`}>
-                                {metric.change}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                        <p className="text-sm text-slate-600 mb-4">{filingChatData[filingChatIndex].answer}</p>
+
+                        {/* Data point cards */}
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          {filingChatData[filingChatIndex].dataPoints.map((point, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm"
+                            >
+                              <p className="text-xs text-slate-400 mb-1">{point.label}</p>
+                              <p className="text-lg font-bold text-purple-600">{point.value}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+
+                        {/* Source tag */}
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-xs text-slate-500">{filingChatData[filingChatIndex].source}</span>
+                        </div>
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -356,13 +387,23 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32"
           >
+            {/* AI Chat Mock - Full Conversation Style */}
             <div className="order-2 lg:order-1 relative">
-              <div className="bg-slate-900 rounded-3xl p-10 shadow-2xl">
+              <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-3xl p-6 shadow-2xl">
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100">
-                    <span className="font-bold text-slate-900">Research Assistant</span>
+                  {/* Chat header */}
+                  <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-100">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#0066cc] to-[#0052a3] rounded-lg flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-bold text-slate-900">StrataLens AI</span>
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-xs text-emerald-600 font-medium">Ready</span>
+                    </div>
                   </div>
-                  <div className="p-5 min-h-[220px]">
+
+                  <div className="p-5 min-h-[260px]">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={chatIndex}
@@ -371,16 +412,49 @@ export default function LandingPage() {
                         exit={{ opacity: 0 }}
                         className="space-y-4"
                       >
+                        {/* User message */}
                         <div className="flex justify-end">
-                          <div className="bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white px-4 py-3 rounded-2xl rounded-br-md text-sm max-w-[85%] shadow-md">
+                          <div className="bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-lg">
                             {chatData[chatIndex].question}
                           </div>
                         </div>
-                        <div className="flex justify-start">
-                          <div className="bg-slate-100 text-slate-700 px-4 py-3 rounded-2xl rounded-bl-md text-sm max-w-[85%] leading-relaxed">
-                            {chatData[chatIndex].answer}
+
+                        {/* Thinking indicator */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="flex items-center gap-2 text-xs text-slate-500"
+                        >
+                          <div className="flex gap-1">
+                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
-                        </div>
+                          <span className="italic">{chatData[chatIndex].thinking}</span>
+                        </motion.div>
+
+                        {/* Assistant response */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
+                          className="flex justify-start"
+                        >
+                          <div className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-3 rounded-2xl rounded-bl-sm text-sm max-w-[95%] leading-relaxed">
+                            <p dangerouslySetInnerHTML={{ __html: chatData[chatIndex].answer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
+
+                            {/* Source chips */}
+                            <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
+                              {chatData[chatIndex].sources.map((source, i) => (
+                                <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1">
+                                  <BookOpen className="w-3 h-3" />
+                                  {source}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -446,41 +520,62 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
+            {/* Transcript Chat Mock - Quote-Focused Style */}
             <div className="relative">
-              <div className="bg-slate-900 rounded-3xl p-10 shadow-2xl">
+              <div className="bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-6 shadow-2xl">
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                    <span className="font-bold text-slate-900">Earnings Call</span>
+                  {/* Question */}
+                  <div className="px-5 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-100">
                     <AnimatePresence mode="wait">
-                      <motion.span
-                        key={transcriptIndex}
+                      <motion.div
+                        key={transcriptChatIndex}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded"
+                        className="flex items-center gap-3"
                       >
-                        {transcriptData[transcriptIndex].quarter}
-                      </motion.span>
+                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                          <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">{transcriptChatData[transcriptChatIndex].question}</p>
+                      </motion.div>
                     </AnimatePresence>
                   </div>
+
+                  {/* Quote response */}
                   <div className="p-5">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={transcriptIndex}
+                        key={transcriptChatIndex}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                       >
-                        <p className="font-bold text-slate-900 mb-4">{transcriptData[transcriptIndex].company}</p>
-                        <div className="space-y-3">
-                          {transcriptData[transcriptIndex].speakers.map((speaker, i) => (
-                            <div key={i} className="p-4 bg-slate-50 rounded-xl">
-                              <span className="inline-block px-2 py-0.5 bg-slate-200 text-slate-700 text-xs font-bold rounded mb-2">
-                                {speaker.role}
-                              </span>
-                              <p className="text-sm text-slate-600 leading-relaxed">"{speaker.text}"</p>
-                            </div>
-                          ))}
+                        {/* Speaker attribution */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                            {transcriptChatData[transcriptChatIndex].speaker.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{transcriptChatData[transcriptChatIndex].speaker}</p>
+                            <p className="text-xs text-slate-500">{transcriptChatData[transcriptChatIndex].role} • ${transcriptChatData[transcriptChatIndex].ticker}</p>
+                          </div>
+                          <div className="ml-auto text-right">
+                            <p className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">{transcriptChatData[transcriptChatIndex].quarter}</p>
+                          </div>
+                        </div>
+
+                        {/* Quote block */}
+                        <div className="relative pl-4 border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent py-3 pr-3 rounded-r-lg">
+                          <p className="text-sm text-slate-700 leading-relaxed italic">
+                            "{transcriptChatData[transcriptChatIndex].quote}"
+                          </p>
+                        </div>
+
+                        {/* Timestamp */}
+                        <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>at {transcriptChatData[transcriptChatIndex].timestamp} in earnings call</span>
                         </div>
                       </motion.div>
                     </AnimatePresence>
