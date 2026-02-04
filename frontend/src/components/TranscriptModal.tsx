@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, Building2, Calendar, FileText, Highlighter } from 'lucide-react'
 import { config } from '../lib/config'
@@ -14,7 +14,7 @@ interface TranscriptModalProps {
   onClose: () => void
   company: string
   ticker: string
-  quarter: string  // Format: "2025_Q2" or "Q2 2025"
+  quarter: string
   relevantChunks: TranscriptChunk[]
 }
 
@@ -29,14 +29,12 @@ interface TranscriptData {
 
 // Parse quarter string to year and quarter number
 function parseQuarter(quarter: string | number | null | undefined): { year: number; quarterNum: number } | null {
-  // Ensure quarter is a string
   if (quarter == null) return null
   const quarterStr = String(quarter)
 
-  // Handle formats: "2025_Q2", "2025_q2", "Q2 2025", "Q2_2025", "2025 Q2"
   const patterns = [
-    /(\d{4})[-_\s]?[Qq](\d)/,  // 2025_Q2, 2025-Q2, 2025 Q2
-    /[Qq](\d)[-_\s]?(\d{4})/,  // Q2_2025, Q2-2025, Q2 2025
+    /(\d{4})[-_\s]?[Qq](\d)/,
+    /[Qq](\d)[-_\s]?(\d{4})/,
   ]
 
   for (const pattern of patterns) {
@@ -52,71 +50,108 @@ function parseQuarter(quarter: string | number | null | undefined): { year: numb
   return null
 }
 
-// Format transcript text with speaker sections
-function formatTranscriptWithSpeakers(text: string): string {
-  if (!text) return ''
+// Format transcript text with speaker sections (matches old vanilla JS approach)
+function formatTranscriptWithSpeakers(transcriptText: string, relevantChunks: TranscriptChunk[] = []): string {
+  if (!transcriptText) return 'No transcript available'
 
-  const lines = text.split('\n')
-  let formatted = ''
-  let currentSpeaker = ''
-  let currentContent: string[] = []
+  // Enhanced speaker patterns to better match earnings call transcripts
+  const speakerPatterns = [
+    // Pattern for full names like "Kenneth J. Dorell:" or "Mark Elliot Zuckerberg:"
+    /^([A-Z][a-zA-Z\s]+[A-Za-z]):\s/gm,
+    // Pattern for names with middle initials like "Kenneth J. Dorell:"
+    /^([A-Z][a-z]+\s+[A-Z]\.\s+[A-Z][a-z]+):\s/gm,
+    // Pattern for names with periods like "Mr. John Pitzer:"
+    /^([A-Z][a-z]*\.?\s*[A-Za-z\s]+[A-Za-z]):\s/gm,
+    // Pattern for "Operator:" style single words
+    /^([A-Z][a-z]+):\s/gm,
+    // Pattern for names with hyphens like "Lip-Bu Tan:"
+    /^([A-Za-z]+-[A-Za-z\s]+[A-Za-z]):\s/gm,
+  ]
 
-  const flushSpeaker = () => {
-    if (currentSpeaker && currentContent.length > 0) {
-      formatted += `<div class="speaker-section mb-4">
-        <div class="speaker-name font-semibold text-[#0083f1] mb-1">${currentSpeaker}</div>
-        <div class="speaker-content text-slate-700 leading-relaxed">${currentContent.join('\n')}</div>
-      </div>`
-    }
-    currentContent = []
-  }
+  let formattedText = transcriptText
+  let hasSpeakers = false
+  const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'all', 'this', 'that']
 
-  for (const line of lines) {
-    const match = line.match(/^([A-Z][a-zA-Z\s\-'.]+(?:\s*[-–]\s*[A-Za-z\s,]+)?)\s*[:–-]\s*(.*)$/)
-    if (match) {
-      flushSpeaker()
-      currentSpeaker = match[1].trim()
-      if (match[2]) {
-        currentContent.push(match[2])
+  // Apply formatting for each speaker pattern
+  speakerPatterns.forEach(pattern => {
+    formattedText = formattedText.replace(pattern, (match, speaker) => {
+      const cleanSpeaker = speaker.trim()
+      // Skip if it's too short, contains numbers, or is a common word
+      if (cleanSpeaker.length < 3 || /\d/.test(cleanSpeaker) || commonWords.includes(cleanSpeaker.toLowerCase())) {
+        return match
       }
-    } else if (line.trim()) {
-      currentContent.push(line)
-    }
-  }
-  flushSpeaker()
+      hasSpeakers = true
+      return `<div class="speaker-section mb-6"><div class="speaker-name font-semibold text-[#0083f1] mb-2 text-base">${cleanSpeaker}:</div>`
+    })
+  })
 
-  return formatted || `<div class="text-slate-700 leading-relaxed whitespace-pre-wrap">${text}</div>`
+  // Close any unclosed speaker sections and wrap content
+  if (hasSpeakers) {
+    formattedText = formattedText.replace(
+      /(<div class="speaker-section mb-6"><div class="speaker-name font-semibold text-\[#0083f1\] mb-2 text-base">[^<]*<\/div>)([^<]*?)(?=<div class="speaker-section mb-6">|$)/gs,
+      (_match, speakerTag, content) => {
+        const cleanContent = content.trim().replace(/\n\s*\n/g, '\n')
+        return speakerTag + `<div class="speaker-content text-slate-700 leading-relaxed whitespace-pre-wrap">${cleanContent}</div></div>`
+      }
+    )
+  } else {
+    formattedText = `<div class="speaker-section mb-4"><div class="speaker-content text-slate-700 leading-relaxed whitespace-pre-wrap">${formattedText}</div></div>`
+  }
+
+  // Apply chunk highlighting if relevant chunks are provided
+  if (relevantChunks && relevantChunks.length > 0) {
+    formattedText = highlightRelevantChunks(formattedText, relevantChunks)
+  }
+
+  return formattedText
 }
 
-// Highlight relevant chunks in transcript
-function highlightRelevantChunks(html: string, chunks: TranscriptChunk[]): string {
-  if (!chunks || chunks.length === 0) return html
+// Highlight relevant chunks in the transcript
+function highlightRelevantChunks(formattedText: string, relevantChunks: TranscriptChunk[]): string {
+  let highlightedText = formattedText
+  let highlightCount = 0
 
-  let result = html
+  relevantChunks.forEach((chunk, index) => {
+    if (chunk.chunk_text && chunk.chunk_text.trim().length > 20) {
+      // Try multiple strategies to find and highlight the chunk
+      const strategies = [
+        // Strategy 1: Full chunk text (first 200 chars)
+        chunk.chunk_text.substring(0, 200),
+        // Strategy 2: First 100 chars
+        chunk.chunk_text.substring(0, 100),
+        // Strategy 3: First 50 chars
+        chunk.chunk_text.substring(0, 50),
+      ]
 
-  for (const chunk of chunks) {
-    if (!chunk.chunk_text || chunk.chunk_text.length < 20) continue
+      for (const textToMatch of strategies) {
+        if (textToMatch.length < 20) continue
 
-    // Escape special regex characters
-    const escapedText = chunk.chunk_text
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/\s+/g, '\\s+')  // Handle flexible whitespace
+        try {
+          // Escape special regex characters
+          const escapedChunkText = textToMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          // Create regex with flexible whitespace
+          const chunkRegex = new RegExp(escapedChunkText.replace(/\s+/g, '\\s+'), 'gi')
 
-    try {
-      const regex = new RegExp(`(${escapedText.substring(0, 200)})`, 'gi')
-      const score = chunk.relevance_score || 0.5
-      const opacity = Math.max(0.2, Math.min(1.0, score))
+          if (chunkRegex.test(highlightedText)) {
+            const relevanceScore = chunk.relevance_score || 0.5
+            const highlightIntensity = Math.min(Math.max(relevanceScore * 100, 20), 60) / 100
+            const isFirst = highlightCount === 0
 
-      result = result.replace(regex, (match) =>
-        `<mark class="chunk-highlight" style="background-color: rgba(59, 130, 246, ${opacity}); padding: 2px 4px; border-radius: 3px; cursor: pointer;" title="Relevance: ${Math.round(score * 100)}%">${match}</mark>`
-      )
-    } catch (e) {
-      // Regex failed, skip this chunk
-      console.warn('Failed to highlight chunk:', e)
+            highlightedText = highlightedText.replace(chunkRegex, (match) => {
+              return `<mark ${isFirst ? 'id="first-highlight"' : ''} class="highlighted-chunk" style="background: linear-gradient(135deg, rgba(59, 130, 246, ${highlightIntensity}) 0%, rgba(59, 130, 246, ${highlightIntensity * 0.6}) 100%); padding: 4px 8px; border-radius: 4px; border-left: 3px solid rgb(59, 130, 246); display: inline; cursor: pointer; transition: all 0.2s ease;" data-chunk-id="${chunk.chunk_id || index}" title="Cited passage - ${(relevanceScore * 100).toFixed(0)}% relevant">${match}</mark>`
+            })
+            highlightCount++
+            break // Stop trying strategies once one succeeds
+          }
+        } catch (e) {
+          console.warn('Failed to highlight chunk:', e)
+        }
+      }
     }
-  }
+  })
 
-  return result
+  console.log(`Highlighted ${highlightCount} of ${relevantChunks.length} chunks`)
+  return highlightedText
 }
 
 export default function TranscriptModal({
@@ -130,6 +165,8 @@ export default function TranscriptModal({
   const [transcript, setTranscript] = useState<TranscriptData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [highlightCount, setHighlightCount] = useState(0)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Fetch transcript when modal opens
   useEffect(() => {
@@ -147,13 +184,13 @@ export default function TranscriptModal({
       }
 
       try {
-        // Try demo endpoint first (no auth required)
         const response = await fetch(
-          `${config.apiBaseUrl}/demo/transcript/${ticker}/${parsed.year}/${parsed.quarterNum}`
+          `${config.apiBaseUrl}/transcript/${ticker}/${parsed.year}/${parsed.quarterNum}`
         )
 
         if (!response.ok) {
-          throw new Error(`Transcript not found for ${ticker} Q${parsed.quarterNum} ${parsed.year}`)
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.detail || `Transcript not found for ${ticker} Q${parsed.quarterNum} ${parsed.year}`)
         }
 
         const data = await response.json()
@@ -186,6 +223,21 @@ export default function TranscriptModal({
     }
   }, [isOpen, onClose])
 
+  // Scroll to first highlight and count highlights after render
+  useEffect(() => {
+    if (!loading && transcript && contentRef.current) {
+      setTimeout(() => {
+        const highlights = contentRef.current?.querySelectorAll('.highlighted-chunk')
+        setHighlightCount(highlights?.length || 0)
+
+        const firstHighlight = document.getElementById('first-highlight')
+        if (firstHighlight) {
+          firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [loading, transcript])
+
   // Download transcript
   const handleDownload = useCallback(() => {
     if (!transcript?.transcript_text) return
@@ -199,12 +251,9 @@ export default function TranscriptModal({
     URL.revokeObjectURL(url)
   }, [transcript, ticker, quarter])
 
-  // Process and highlight transcript
+  // Process transcript with formatting and highlighting
   const processedTranscript = transcript?.transcript_text
-    ? highlightRelevantChunks(
-        formatTranscriptWithSpeakers(transcript.transcript_text),
-        relevantChunks
-      )
+    ? formatTranscriptWithSpeakers(transcript.transcript_text, relevantChunks)
     : ''
 
   const parsed = parseQuarter(quarter)
@@ -221,7 +270,7 @@ export default function TranscriptModal({
           onClick={onClose}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
           {/* Modal */}
           <motion.div
@@ -240,7 +289,7 @@ export default function TranscriptModal({
                 </h2>
                 {relevantChunks.length > 0 && (
                   <p className="text-sm text-slate-500 mt-0.5">
-                    {relevantChunks.length} relevant section{relevantChunks.length > 1 ? 's' : ''} highlighted
+                    {highlightCount > 0 ? `${highlightCount} section${highlightCount !== 1 ? 's' : ''} highlighted` : `${relevantChunks.length} relevant section${relevantChunks.length !== 1 ? 's' : ''}`}
                   </p>
                 )}
               </div>
@@ -268,18 +317,33 @@ export default function TranscriptModal({
                   <span>{transcript.metadata.date}</span>
                 </div>
               )}
-              {relevantChunks.length > 0 && (
+              {highlightCount > 0 && (
                 <div className="flex items-center gap-1.5 ml-auto">
                   <Highlighter className="w-4 h-4 text-blue-500" />
                   <span className="text-blue-600 font-medium">
-                    {relevantChunks.length} highlighted
+                    {highlightCount} highlighted
                   </span>
                 </div>
               )}
             </div>
 
+            {/* Highlight summary banner */}
+            {!loading && !error && highlightCount > 0 && (
+              <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+                <div className="flex items-center gap-2">
+                  <Highlighter className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-blue-800">
+                    {highlightCount} Relevant Section{highlightCount !== 1 ? 's' : ''} Found
+                  </span>
+                </div>
+                <p className="text-sm text-blue-700 mt-1">
+                  Highlighted sections show the passages cited in the AI response. Scroll down or click highlights for details.
+                </p>
+              </div>
+            )}
+
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div ref={contentRef} className="flex-1 overflow-y-auto px-6 py-4">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="w-8 h-8 border-3 border-[#0083f1] border-t-transparent rounded-full animate-spin" />
@@ -306,7 +370,7 @@ export default function TranscriptModal({
             {/* Footer */}
             <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
               <p className="text-sm text-slate-500">
-                Click highlighted sections for more details
+                {highlightCount > 0 ? 'Click highlighted sections for details' : 'Full earnings call transcript'}
               </p>
               <button
                 onClick={handleDownload}

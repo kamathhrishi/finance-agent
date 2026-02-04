@@ -17,6 +17,7 @@ from collections import defaultdict
 
 # Import local modules
 from .config import Config
+from .llm_utils import LLMError, is_retryable_error, get_user_friendly_message, format_error_for_user
 from agent.prompts import (
     QUARTER_SYNTHESIS_SYSTEM_PROMPT,
     get_quarter_synthesis_prompt,
@@ -720,31 +721,47 @@ Do NOT start from scratch - improve and expand the previous answer."""
         # to clearly state that and (optionally) end with: "Do you want me to search the news instead?"
         no_structured_context = (not context_chunks) and not news_context and not ten_k_context
 
-        prompt = f"""Answer the question based on the following information from {source_description}.{data_sources_text}{previous_answer_section}
+        prompt = f"""You are a senior equity research analyst writing a detailed research report. Answer the question based on the following information from {source_description}.{data_sources_text}{previous_answer_section}
 
 DATA CONTEXT: {quarters_info}
 {data_limitation_note}
 {news_section}{ten_k_section}
-Transcript Information from {source_description}:
+Source Information from {source_description}:
 {context}
 
 Question: {question}
 
-Instructions:
-1. Answer based on the information provided above (transcript data{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''})
-2. Always reference {company_name} by name (e.g., "{company_name} said...", "{company_name} reported...", "According to {company_name}...")
-3. Include specific quotes, numbers, and details from the transcript when available
-4. **When referencing information, ALWAYS mention the specific quarter and year in human-friendly format** (e.g., "In Q1 2025, {company_name} reported...", "During Q4 2024, {company_name} mentioned...")
-5. **For multi-quarter requests**: If the user asks for "last 3 quarters" but you only have data from fewer quarters, clearly state what quarters you're analyzing using human-friendly format (e.g., "Based on available data from Q2 2025, here's what I found..." or "Analyzing the last 2 available quarters (Q1 2025, Q2 2025)...")
-6. **Compare and contrast trends across quarters** when multiple quarters are available, always using human-friendly format{news_sources_instruction}{ten_k_sources_instruction}
-7. If the answer is not in the provided data, say "The information is not available in {source_description}."
-8. NEVER use the word "chunks" or mention "retrieved information" - speak naturally as if referencing the earnings calls directly (e.g., "Based on Apple's earnings call..." NOT "Based on retrieved chunks...")
-9. **Use markdown formatting** with **bold text** for key points, bullet points for lists, and proper formatting
-10. **Be transparent about data limitations**: If you only have partial data for the requested timeframe, acknowledge this clearly
-11. **Complete Transcript Access**: If users need the full transcript or want to verify specific details, mention that complete transcripts are available (e.g., "The complete transcript is available for detailed review")
-{('12. **No structured data available**: In this case, clearly state that the information is not available in earnings transcripts or 10-K filings. If it seems like web/news sources might help, you may end your answer with the exact sentence: \"Do you want me to search the web instead?\"' if no_structured_context else '')}
+REPORT WRITING INSTRUCTIONS:
 
-Provide a natural, professional response in **markdown format** based on the transcript information. For multi-quarters analysis, organize your response chronologically or by theme as appropriate."""
+**FORMAT & STRUCTURE:**
+1. Write a comprehensive, well-structured research report - NOT just a list of quotes
+2. Use clear sections with headers (##) to organize your analysis
+3. Start with an **Executive Summary** (2-3 sentences capturing the key findings)
+4. Organize the body into logical sections based on the question (e.g., "Key Risk Categories", "Financial Impact", "Management Outlook")
+5. End with a **Key Takeaways** section summarizing the most important points
+
+**CONTENT DEPTH & ANALYTICAL VOICE:**
+6. **Provide analysis and context**, not just raw quotes. Explain WHY something matters and its implications
+7. **Be opinionated like a real analyst** - share your assessment of whether risks are material, if management's strategy seems sound, or if concerns are overstated. Use phrases like "This appears significant because...", "A key concern here is...", "Notably, this suggests..."
+8. When citing data, provide context: compare to prior periods, industry benchmarks, or explain significance
+9. **Offer your analytical perspective** - identify what seems most important, what might be underappreciated by the market, or where the company seems well/poorly positioned
+10. Include specific numbers, percentages, and metrics with proper attribution
+11. Use quotes sparingly and strategically - integrate them naturally into your analysis rather than listing them
+
+**ATTRIBUTION & SOURCES:**
+11. Reference {company_name} by name (e.g., "{company_name} disclosed...", "According to {company_name}'s filing...")
+12. **Always mention the specific period** (e.g., "In FY2024...", "During Q1 2025...", "As reported in the 10-K...")
+13. Use citation markers like [1], [2] for transcript sources, [10K1] for 10-K data, [N1] for news{news_sources_instruction}{ten_k_sources_instruction}
+
+**QUALITY STANDARDS:**
+14. If the answer is not in the provided data, say "The information is not available in {source_description}."
+15. **Stay focused on the question** - ignore irrelevant information in the source data
+16. NEVER use the word "chunks" - speak naturally as referencing official company documents
+17. **Use rich markdown formatting**: headers, **bold** for emphasis, bullet points, tables where appropriate
+18. Be transparent about data limitations if you only have partial information
+{('19. **No structured data available**: Clearly state that the information is not available in the company filings. If web/news sources might help, end with: \"Do you want me to search the web instead?\"' if no_structured_context else '')}
+
+Write a professional equity research report in **markdown format**. Be thorough, analytical, and **opinionated** - share your assessment, highlight what matters most, and provide the kind of insightful analysis a portfolio manager would value. This should read like a report from a top-tier investment bank analyst, not a simple regurgitation of facts."""
 
         rag_logger.info(f"📝 Prompt created: length={len(prompt)}")
         rag_logger.info(f"🔍 Prompt preview: {prompt[:200]}...")
@@ -844,14 +861,16 @@ Provide a natural, professional response in **markdown format** based on the tra
                     except Exception as api_error:
                         error_text = str(api_error)
                         # Retry only on obvious transient/rate-limit style errors
-                        is_transient = any(
-                            key in error_text.lower()
-                            for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                        )
+                        is_transient = is_retryable_error(api_error)
                         if attempt >= max_attempts or not is_transient:
                             rag_logger.error(f"❌ Streaming API error (final): {api_error}")
-                            raise
-                        wait_seconds = attempt
+                            # Raise user-friendly error instead of exposing internals
+                            raise LLMError(
+                                user_message=get_user_friendly_message(api_error),
+                                technical_message=str(api_error),
+                                retryable=is_transient
+                            )
+                        wait_seconds = attempt * 2  # Exponential backoff
                         rag_logger.warning(
                             f"⚠️ Streaming API rate limit / queue error, retrying attempt {attempt}/{max_attempts} "
                             f"in {wait_seconds}s: {api_error}"
@@ -926,15 +945,15 @@ Provide a natural, professional response in **markdown format** based on the tra
                                 )
                             break
                         except Exception as api_error:
-                            error_text = str(api_error)
-                            is_transient = any(
-                                key in error_text.lower()
-                                for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                            )
+                            is_transient = is_retryable_error(api_error)
                             if attempt >= max_attempts or not is_transient:
                                 rag_logger.error(f"❌ Non-streaming fallback API error (final): {api_error}")
-                                raise
-                            wait_seconds = attempt
+                                raise LLMError(
+                                    user_message=get_user_friendly_message(api_error),
+                                    technical_message=str(api_error),
+                                    retryable=is_transient
+                                )
+                            wait_seconds = attempt * 2
                             rag_logger.warning(
                                 f"⚠️ Non-streaming fallback rate limit / queue error, retrying attempt "
                                 f"{attempt}/{max_attempts} in {wait_seconds}s: {api_error}"
@@ -999,15 +1018,15 @@ Provide a natural, professional response in **markdown format** based on the tra
                             provider = "OpenAI"
                         break
                     except Exception as api_error:
-                        error_text = str(api_error)
-                        is_transient = any(
-                            key in error_text.lower()
-                            for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                        )
+                        is_transient = is_retryable_error(api_error)
                         if attempt >= max_attempts or not is_transient:
                             rag_logger.error(f"❌ Non-streaming API error (final): {api_error}")
-                            raise
-                        wait_seconds = attempt
+                            raise LLMError(
+                                user_message=get_user_friendly_message(api_error),
+                                technical_message=str(api_error),
+                                retryable=is_transient
+                            )
+                        wait_seconds = attempt * 2
                         rag_logger.warning(
                             f"⚠️ Non-streaming rate limit / queue error, retrying attempt "
                             f"{attempt}/{max_attempts} in {wait_seconds}s: {api_error}"
@@ -1156,58 +1175,68 @@ Do NOT start from scratch - improve and expand the previous answer."""
             data_sources_text = ""
 
         if comprehensive:
-            prompt = f"""You are a financial analyst assistant. Answer the question based on the following transcript sections from multiple companies' earnings calls. Each section is labeled with its company ticker and quarter information.{data_sources_text}{previous_answer_section}
+            prompt = f"""You are a senior equity research analyst writing a detailed comparative research report. Analyze the following company data and provide a comprehensive report.{data_sources_text}{previous_answer_section}
 
 {news_section}{ten_k_section}
-Transcript Sections (labeled by company and quarter):
+Company Data (labeled by company and quarter):
 {context}
 
 Question: {question}
 
-Instructions:
-1. Provide a COMPREHENSIVE analysis using ALL available evidence from the chunks{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}
-2. Always reference specific companies by name (e.g., "Apple said...", "Microsoft reported...", "According to Apple...")
-3. Always include source attribution using human-friendly format based on data source (e.g., "According to Apple's Q1 2025 earnings call...", "Per Apple's FY 2024 10-K filing...")
+REPORT WRITING INSTRUCTIONS:
+
+**FORMAT & STRUCTURE:**
+1. Write a comprehensive comparative research report - NOT just a list of quotes
+2. Start with an **Executive Summary** (3-4 sentences capturing the key findings across all companies)
+3. Use clear sections with headers (##) - organize by theme OR by company depending on what's clearer
+4. Include a **Comparative Analysis** section highlighting key differences and similarities
+5. End with **Key Takeaways** summarizing the most important insights
+
+**CONTENT DEPTH & ANALYTICAL VOICE:**
+6. **Provide analysis and context**, not just raw quotes. Explain implications and significance
+7. **Be opinionated like a real analyst** - assess which company is better positioned, identify relative strengths/weaknesses, and share your view on competitive dynamics
+8. Compare and contrast companies on key metrics - use tables where helpful
+9. Include specific numbers, percentages, and metrics with proper attribution
+10. Highlight industry trends or themes that emerge across multiple companies
+11. **Offer your analytical perspective** - which company's approach seems more promising? What risks seem most material? Use phrases like "Company X appears better positioned because...", "A notable divergence is..."
+12. Use quotes sparingly and strategically - integrate them into your analysis
+
+**ATTRIBUTION & SOURCES:**
+11. Reference companies by name with proper attribution (e.g., "Apple disclosed in its FY2024 10-K...", "According to Microsoft's Q1 2025 earnings call...")
+12. Use citation markers: [TICKER] for company-specific data, [10K1] for 10-K data, [N1] for news
 {additional_sources_instruction}
-4. Structure your response clearly with specific company sections or comparative analysis
-5. Include specific quotes, numbers, and details from the transcripts when available
-6. Highlight similarities and differences between companies with specific evidence
-7. Use the company labels [TICKER] to reference specific sections
-8. If some companies have no relevant information, explicitly state this
-9. Base your answer on the provided information (transcript data{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}) - do not use external knowledge beyond what's provided
-10. Be thorough and detailed - include all relevant information from the transcripts
-11. Use specific metrics, quotes, and statements from each company
-12. NEVER use the word "chunks" or "retrieved information" - speak naturally as if referencing earnings calls directly (e.g., "In Meta's Q1 earnings..." NOT "In the retrieved chunks...")
-13. **Complete Transcript Access**: If users need full transcripts for verification, mention that complete transcripts are available (e.g., "Complete transcripts are available for detailed review")
+13. Always mention the specific period (e.g., "In FY2024...", "During Q1 2025...")
 
-        Provide a comprehensive, evidence-based answer in **markdown format** that thoroughly analyzes each company's position on the topic.
+**QUALITY STANDARDS:**
+14. **Stay focused on the question** - ignore irrelevant information
+15. If some companies have no relevant data, explicitly state this
+16. NEVER use the word "chunks" - reference official company documents naturally
+17. Use rich markdown: headers, **bold**, bullet points, tables for comparisons
+18. This should read like a professional equity research report
 
-IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earnings calls," "transcript data," or "earnings information" instead."""
+Write a comprehensive comparative analysis in **markdown format** that provides actionable insights across all companies."""
         else:
-            prompt = f"""You are a financial analyst assistant. Answer the question based on the following transcript sections from multiple companies' earnings calls. Each section is labeled with its company ticker and quarter information.{data_sources_text}{previous_answer_section}
+            prompt = f"""You are an equity research analyst providing a focused analysis. Answer based on the following company data.{data_sources_text}{previous_answer_section}
 
 {news_section}{ten_k_section}
-Transcript Sections (labeled by company and quarter):
+Company Data (labeled by company and quarter):
 {context}
 
 Question: {question}
 
-Instructions:
-1. Provide a CONCISE but complete answer using evidence from the chunks{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}
-2. Always reference specific companies by name (e.g., "Apple said...", "Microsoft reported...")
-3. Always include source attribution using human-friendly format based on data source (e.g., "According to Apple's Q1 2025 earnings call...", "Per Apple's FY 2024 10-K filing...")
+INSTRUCTIONS:
+1. Provide a focused but thorough analysis with key evidence
+2. Start with a brief **Summary** (2-3 sentences)
+3. Include specific numbers, metrics, and properly attributed quotes
+4. Reference companies by name with period attribution (e.g., "Apple's FY2024 10-K shows...", "In Microsoft's Q1 2025 call...")
 {additional_sources_instruction}
-4. Include key quotes, numbers, and details from the transcripts
-5. Highlight main similarities and differences between companies
-6. Use the company labels [TICKER] to reference specific sections
-7. If some companies have no relevant information, mention this briefly
-8. Base your answer on the provided information (transcript data{', news sources' if news_context else ''}{', and 10-K filings' if ten_k_context else ''}) - do not use external knowledge beyond what's provided
-9. Be clear and direct while including specific evidence
-10. NEVER use the word "chunks" or "retrieved information" - speak naturally as if referencing earnings calls directly (e.g., "In Apple's Q3 earnings..." NOT "In the retrieved chunks...")
+5. Highlight key similarities and differences between companies
+6. If some companies lack relevant data, note this briefly
+7. **Stay focused on the question** - ignore irrelevant information
+8. NEVER use the word "chunks" - reference official documents naturally
+9. Use markdown formatting: **bold** for emphasis, bullet points for lists
 
-Provide a concise, evidence-based answer in **markdown format** that covers each company's position on the topic.
-
-IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earnings calls," "transcript data," or "earnings information" instead."""
+Provide a professional, evidence-based analysis in **markdown format**."""
 
         rag_logger.info(f"📝 Multi-ticker prompt created: length={len(prompt)}")
 
@@ -1277,21 +1306,21 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                             )
                         break
                     except Exception as api_error:
-                        error_text = str(api_error)
-                        is_transient = any(
-                            key in error_text.lower()
-                            for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                        )
+                        is_transient = is_retryable_error(api_error)
                         if attempt >= max_attempts or not is_transient:
                             rag_logger.error(f"❌ Multi-ticker streaming API error (final): {api_error}")
-                            raise
-                        wait_seconds = attempt
+                            raise LLMError(
+                                user_message=get_user_friendly_message(api_error),
+                                technical_message=str(api_error),
+                                retryable=is_transient
+                            )
+                        wait_seconds = attempt * 2
                         rag_logger.warning(
                             f"⚠️ Multi-ticker streaming rate limit / queue error, retrying attempt "
                             f"{attempt}/{max_attempts} in {wait_seconds}s: {api_error}"
                         )
                         time.sleep(wait_seconds)
-                
+
                 chunk_count = 0
                 content_chunk_count = 0
                 try:
@@ -1355,15 +1384,15 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                                 )
                             break
                         except Exception as api_error:
-                            error_text = str(api_error)
-                            is_transient = any(
-                                key in error_text.lower()
-                                for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                            )
+                            is_transient = is_retryable_error(api_error)
                             if attempt >= max_attempts or not is_transient:
                                 rag_logger.error(f"❌ Multi-ticker non-streaming fallback API error (final): {api_error}")
-                                raise
-                            wait_seconds = attempt
+                                raise LLMError(
+                                    user_message=get_user_friendly_message(api_error),
+                                    technical_message=str(api_error),
+                                    retryable=is_transient
+                                )
+                            wait_seconds = attempt * 2
                             rag_logger.warning(
                                 f"⚠️ Multi-ticker non-streaming fallback rate limit / queue error, retrying attempt "
                                 f"{attempt}/{max_attempts} in {wait_seconds}s: {api_error}"
@@ -1425,21 +1454,21 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                             provider = "OpenAI"
                         break
                     except Exception as api_error:
-                        error_text = str(api_error)
-                        is_transient = any(
-                            key in error_text.lower()
-                            for key in ["too_many_requests", "queue_exceeded", "rate_limit", "503"]
-                        )
+                        is_transient = is_retryable_error(api_error)
                         if attempt >= max_attempts or not is_transient:
                             rag_logger.error(f"❌ Multi-ticker non-streaming API error (final): {api_error}")
-                            raise
-                        wait_seconds = attempt
+                            raise LLMError(
+                                user_message=get_user_friendly_message(api_error),
+                                technical_message=str(api_error),
+                                retryable=is_transient
+                            )
+                        wait_seconds = attempt * 2
                         rag_logger.warning(
                             f"⚠️ Multi-ticker non-streaming rate limit / queue error, retrying attempt "
                             f"{attempt}/{max_attempts} in {wait_seconds}s: {api_error}"
                         )
                         time.sleep(wait_seconds)
-                
+
                 call_time = time.time() - start_time
                 answer = response.choices[0].message.content.strip()
                 rag_logger.info(f"✅ ===== MULTI-TICKER RESPONSE GENERATION LLM RESPONSE ===== (call time: {call_time:.3f}s)")
@@ -1812,11 +1841,25 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                     for iter_info in evaluation_context:
                         iteration_num = iter_info.get('iteration', 'Unknown')
                         eval_data = iter_info.get('evaluation', {})
+                        searches = iter_info.get('searches_performed', {})
 
                         iteration_memory_section += f"\n--- ITERATION {iteration_num} ---\n"
                         iteration_memory_section += f"Confidence Score: {iter_info.get('confidence', 'N/A')}\n"
                         iteration_memory_section += f"Decision: {'Continued iterating' if eval_data.get('should_iterate') else 'Stopped'}\n"
                         iteration_memory_section += f"Reasoning: {eval_data.get('iteration_decision_reasoning', 'N/A')}\n"
+
+                        # Show what searches were actually performed and their results
+                        if searches:
+                            iteration_memory_section += f"\nSearches Performed:\n"
+                            if searches.get('transcript_search_performed'):
+                                results = searches.get('transcript_search_results', 0)
+                                iteration_memory_section += f"  - Transcript search: {results} chunks found\n"
+                            if searches.get('news_search_performed'):
+                                results = searches.get('news_search_results', 0)
+                                iteration_memory_section += f"  - News search: {results} articles found\n"
+                            if searches.get('ten_k_search_performed'):
+                                results = searches.get('ten_k_search_results', 0)
+                                iteration_memory_section += f"  - 10-K search: {results} results found\n"
 
                         if eval_data.get('follow_up_questions'):
                             iteration_memory_section += f"\nQuestions Asked:\n"
@@ -1828,13 +1871,14 @@ IMPORTANT: NEVER use the word "chunks" in your response. Use phrases like "earni
                     iteration_memory_section += "="*80 + "\n"
                     iteration_memory_section += "CRITICAL INSTRUCTIONS FOR THIS ITERATION:\n"
                     iteration_memory_section += "="*80 + "\n"
-                    iteration_memory_section += "1. Review ALL previous iterations above\n"
+                    iteration_memory_section += "1. Review ALL previous iterations above - including what searches were performed\n"
                     iteration_memory_section += "2. DO NOT ask questions that are semantically similar to already-asked questions\n"
                     iteration_memory_section += "3. DO NOT re-investigate gaps that were already addressed in previous iterations\n"
-                    iteration_memory_section += "4. Focus on NEW gaps or aspects that have NOT been covered yet\n"
+                    iteration_memory_section += "4. If a data source was searched and returned 0 results, do NOT keep retrying the same source\n"
                     iteration_memory_section += "5. If previous iterations already gathered specific data types (e.g., revenue metrics),\n"
                     iteration_memory_section += "   do NOT ask for the same data again - focus on different aspects\n"
-                    iteration_memory_section += "6. Generate follow-up questions that explore DIFFERENT dimensions than previous iterations\n"
+                    iteration_memory_section += "6. If the user's specified data source has been exhaustively searched with limited results,\n"
+                    iteration_memory_section += "   consider setting should_iterate=false and providing the best answer with available data\n"
                     iteration_memory_section += "="*80 + "\n"
 
                 # Include agent's initial reasoning if available
@@ -1848,25 +1892,57 @@ Evaluate whether the answer addresses what the agent planned to find above.
 """
 
                 # Data source routing - controls which search types are allowed
-                data_source_routing = ""
+                data_source_routing = f"""
+**🚨 MANDATORY DATA SOURCE CONSTRAINT (from user's question):**
+The user's question was analyzed and routed to data_source="{data_source}".
+
+**STRICT RULES - YOU MUST FOLLOW THESE:**
+
+1. **If user explicitly mentioned a data source in their question (e.g., "from the 10k", "in the earnings call", "latest news"), you MUST respect that choice throughout ALL iterations.**
+
+2. **For data_source="{data_source}":**"""
+
                 if data_source == '10k':
-                    data_source_routing = """**User explicitly requested 10-K SEC filing data only.**
-- NEVER set needs_transcript_search=true - user wants 10-K data, not earnings transcripts
-- Only set needs_news_search=true if user ALSO explicitly asks for news
-- Focus on improving the answer using 10-K filing data already retrieved"""
+                    data_source_routing += """
+   - The user explicitly wants 10-K SEC filing data
+   - NEVER set needs_transcript_search=true - this violates the user's explicit request
+   - Only set needs_news_search=true if user ALSO explicitly asked for news in the question
+   - If 10-K data has been exhaustively searched and doesn't contain the answer:
+     * Set should_iterate=false
+     * State clearly: "The requested information is not available in the 10-K filings"
+     * Do NOT suggest switching to earnings transcripts - respect the user's data source choice"""
                 elif data_source == 'latest_news':
-                    data_source_routing = """**User explicitly requested latest news only.**
-- NEVER set needs_transcript_search=true - user wants news, not earnings transcripts
-- Set needs_news_search=true if more news would help
-- Focus on improving the answer using news data"""
+                    data_source_routing += """
+   - The user explicitly wants latest news/web data
+   - NEVER set needs_transcript_search=true - this violates the user's explicit request
+   - Set needs_news_search=true if more news would help answer the question
+   - If news has been exhaustively searched and doesn't contain the answer:
+     * Set should_iterate=false
+     * State clearly: "The requested information is not available in recent news"
+     * Do NOT suggest switching to transcripts/10-K - respect the user's data source choice"""
                 elif data_source == 'earnings_transcripts':
-                    data_source_routing = """**User is asking about earnings transcripts/calls.**
-- Set needs_transcript_search=true if more transcript data would help
-- Only set needs_news_search=true if user ALSO explicitly asks for news"""
-                else:
-                    data_source_routing = """**No specific data source restriction.**
-- Set needs_transcript_search=true if transcript data would help
-- Set needs_news_search=true if news data would help"""
+                    data_source_routing += """
+   - The user is asking about earnings transcripts/calls
+   - Set needs_transcript_search=true if more transcript data would help
+   - Only set needs_news_search=true if user ALSO explicitly asked for news
+   - If transcripts have been exhaustively searched and don't contain the answer:
+     * Set should_iterate=false
+     * State clearly: "The requested information is not available in earnings transcripts"
+     * Do NOT automatically switch to other sources unless user asked for them"""
+                else:  # hybrid or unspecified
+                    data_source_routing += """
+   - No specific data source restriction - user's question is broad
+   - Set needs_transcript_search=true if transcript data would help
+   - Set needs_news_search=true if news data would help
+   - You may use multiple data sources to build a comprehensive answer"""
+
+                data_source_routing += """
+
+3. **EXHAUSTION RULE:** If you've already searched the user's specified data source in previous iterations and found limited/no additional information, DO NOT keep retrying the same source. Instead:
+   - Set should_iterate=false
+   - Provide the best answer possible with available data
+   - Be transparent about data limitations
+   - Do NOT switch to unauthorized data sources just to have "something" to show"""
 
                 evaluation_prompt = f"""
 You are a STRICT expert financial analyst evaluating the quality of an AI-generated answer. Be critical and demanding - only excellent, comprehensive answers should pass.
@@ -1936,7 +2012,7 @@ The agent must decide what type of information to search for in the next iterati
 - Need historical context, trends, or comparisons across quarters
 - Answer would benefit from detailed financial data (earnings transcripts, 10-K filings)
 - **Set needs_transcript_search=true if historical financial data would significantly improve the answer**
-- **EXCEPTION: If data_source routing above says NO TRANSCRIPT SEARCH, respect that override**
+- **⚠️ CRITICAL: Check the DATA SOURCE ROUTING section above FIRST. If the user explicitly requested a different data source (10k, news), you MUST NOT set needs_transcript_search=true - this would violate their explicit request.**
 
 **NEWS/WEB SEARCH (needs_news_search=true if ANY condition applies):**
 - **ALWAYS use news if user EXPLICITLY asks for it:**
@@ -1968,21 +2044,26 @@ The agent must decide what type of information to search for in the next iterati
 
 **IMPORTANT:** The agent can decide to search BOTH transcripts AND news if both would help. Set both flags to true if needed.
 
-**STOP iterating (should_iterate=false) ONLY if ALL these are true:**
+**STOP iterating (should_iterate=false) if ANY of these are true:**
+
+**Condition A - Answer is excellent:**
 - Answer is EXCEPTIONAL and COMPREHENSIVE (90%+ complete)
 - EVERY part of question thoroughly addressed with rich detail
 - Abundant specific numbers, percentages, and concrete metrics
-- Multiple relevant executive quotes included
-- Comprehensive time-based comparisons provided
-- Proper context for all data points
-- NO gaps, NO areas for improvement
-- **Answer is so complete that another iteration would add minimal value**
+- Answer is so complete that another iteration would add minimal value
+
+**Condition B - Data source exhausted (CRITICAL):**
+- User explicitly requested a specific data source (10k, earnings transcripts, or news)
+- That data source has been searched in previous iterations
+- No significant new information was found in recent iterations
+- **In this case: STOP and provide the best answer with available data. Do NOT switch to unauthorized data sources.**
+- State clearly in your reasoning: "The user's specified data source has been exhaustively searched."
 
 **AUTOMATIC STOP CONDITION:**
 - If overall_confidence reaches 0.9 (90%) or higher, the system will AUTOMATICALLY stop iterating
 - When confidence is 90%+, set should_iterate=false to align with the auto-stop
 
-**IMPORTANT:** Err on the side of iterating. If in doubt, iterate. Only stop if the answer is truly outstanding.
+**IMPORTANT:** Err on the side of iterating for broad questions. But if user specified a data source and it's exhausted, respect that and stop gracefully.
 
 TASK 3 - DETAILED Reasoning (ELABORATE and SPECIFIC):
 In "iteration_decision_reasoning", provide a COMPREHENSIVE 3-5 sentence explanation:

@@ -56,12 +56,12 @@ function getCitationTitle(source: Source, type: 'transcript' | '10k' | 'news'): 
   return source.title || 'News Article'
 }
 
-// Citation badge component
+// Citation badge component - enterprise style
 function CitationBadge({ type }: { type: 'transcript' | '10k' | 'news' }) {
   const badges = {
-    transcript: { icon: <FileText className="w-3 h-3" />, label: 'Transcript', color: 'bg-blue-100 text-blue-700' },
-    '10k': { icon: <Table className="w-3 h-3" />, label: '10-K', color: 'bg-purple-100 text-purple-700' },
-    news: { icon: <Newspaper className="w-3 h-3" />, label: 'News', color: 'bg-emerald-100 text-emerald-700' },
+    transcript: { icon: <FileText className="w-3 h-3" />, label: 'Transcript', color: 'bg-slate-100 text-slate-600' },
+    '10k': { icon: <Table className="w-3 h-3" />, label: '10-K', color: 'bg-slate-100 text-slate-600' },
+    news: { icon: <Newspaper className="w-3 h-3" />, label: 'News', color: 'bg-slate-100 text-slate-600' },
   }
   const badge = badges[type]
 
@@ -97,7 +97,7 @@ function CitationCard({ source, onViewTranscript }: CitationCardProps) {
   return (
     <div
       className={`bg-white border rounded-lg overflow-hidden transition-all ${
-        expanded ? 'border-[#0083f1]/30 shadow-sm' : 'border-slate-200'
+        expanded ? 'border-slate-300' : 'border-slate-200'
       }`}
     >
       <div className="p-3">
@@ -115,7 +115,7 @@ function CitationCard({ source, onViewTranscript }: CitationCardProps) {
             </div>
 
             {/* Title - prominent */}
-            <h4 className="font-semibold text-slate-900 text-sm">{title}</h4>
+            <h4 className="font-medium text-[#0a1628] text-sm">{title}</h4>
 
             {/* Subtitle */}
             {subtitle && (
@@ -132,11 +132,11 @@ function CitationCard({ source, onViewTranscript }: CitationCardProps) {
                   e.stopPropagation()
                   onViewTranscript(source)
                 }}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[#0083f1] bg-[#0083f1]/5 hover:bg-[#0083f1]/10 rounded transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
                 title="View full transcript with highlighted sections"
               >
                 <Eye className="w-3.5 h-3.5" />
-                View Transcript
+                View
               </button>
             )}
             {type === 'news' && source.url && (
@@ -145,7 +145,7 @@ function CitationCard({ source, onViewTranscript }: CitationCardProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="p-1.5 text-slate-400 hover:text-[#0083f1] hover:bg-[#0083f1]/5 rounded transition-colors"
+                className="p-1.5 text-slate-400 hover:text-[#0a1628] hover:bg-slate-100 rounded transition-colors"
                 title="Open article"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -217,18 +217,18 @@ function CitationsSection({ sources, onViewTranscript }: CitationsSectionProps) 
   if (news.length > 0) parts.push(`${news.length} news`)
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 overflow-hidden">
+    <div className="mt-4 rounded-lg border border-slate-200 overflow-hidden">
       {/* Header - clickable */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
       >
         <div className="flex items-center gap-2">
-          <LinkIcon className="w-4 h-4 text-[#0083f1]" />
-          <span className="font-medium text-slate-800">
+          <LinkIcon className="w-4 h-4 text-slate-500" />
+          <span className="font-medium text-[#0a1628] text-sm">
             {sources.length} source{sources.length > 1 ? 's' : ''}
           </span>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-slate-400 font-mono">
             ({parts.join(', ')})
           </span>
         </div>
@@ -349,32 +349,32 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.2 }}
         className={`flex gap-4 ${isUser ? 'flex-row-reverse' : ''}`}
       >
         {/* Avatar */}
-        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+        <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
           isUser
             ? 'bg-slate-200'
-            : 'bg-gradient-to-br from-[#0083f1] to-[#0070d8] shadow-sm'
+            : 'bg-[#0a1628]'
         }`}>
           {isUser ? (
-            <User className="w-5 h-5 text-slate-600" />
+            <User className="w-4 h-4 text-slate-600" />
           ) : (
-            <StrataLensLogo size={18} className="text-white" />
+            <StrataLensLogo size={16} className="text-white" />
           )}
         </div>
 
         {/* Message content */}
         <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
-          {/* Reasoning trace (for assistant) - lighter colors */}
+          {/* Reasoning trace (for assistant) */}
           {!isUser && hasReasoning && (
             <div className="w-full mb-3">
               <button
                 onClick={() => setShowReasoning(!showReasoning)}
-                className="flex items-center gap-2 text-sm text-slate-400 hover:text-[#0083f1] mb-2 transition-colors"
+                className="flex items-center gap-2 text-sm text-slate-400 hover:text-[#0a1628] mb-2 transition-colors"
               >
                 {showReasoning ? (
                   <ChevronUp className="w-4 h-4" />
@@ -389,11 +389,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             </div>
           )}
 
-          {/* Message bubble - DARKER text for actual chat content */}
+          {/* Message bubble - clean enterprise style */}
           <div
             className={`
               ${isUser
-                ? 'bg-gradient-to-br from-[#0083f1] to-[#0070d8] text-white rounded-2xl rounded-tr-md px-4 py-3 shadow-sm max-w-[85%]'
+                ? 'bg-slate-100 text-[#0a1628] rounded-lg px-4 py-3 max-w-[85%]'
                 : 'w-full'
               }
               ${message.isStreaming && !message.content ? 'min-w-[100px]' : ''}
@@ -404,27 +404,27 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                 <div className="whitespace-pre-wrap">{message.content}</div>
               ) : (
                 <div className="prose prose-slate max-w-none
-                  prose-headings:text-slate-900 prose-headings:font-bold
+                  prose-headings:text-[#0a1628] prose-headings:font-semibold
                   prose-h1:text-xl prose-h1:mb-4 prose-h1:mt-6
                   prose-h2:text-lg prose-h2:mb-3 prose-h2:mt-5
                   prose-h3:text-base prose-h3:mb-2 prose-h3:mt-4
-                  prose-p:text-slate-800 prose-p:leading-relaxed prose-p:mb-3
-                  prose-strong:text-slate-900 prose-strong:font-bold
+                  prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-3
+                  prose-strong:text-[#0a1628] prose-strong:font-semibold
                   prose-ul:my-2 prose-ol:my-2
-                  prose-li:text-slate-800 prose-li:my-1
-                  prose-code:text-[#0083f1] prose-code:bg-blue-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-medium prose-code:before:content-[''] prose-code:after:content-['']
-                  prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-xl prose-pre:p-4
-                  prose-blockquote:border-l-[#0083f1] prose-blockquote:bg-blue-50/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:text-slate-700
+                  prose-li:text-slate-700 prose-li:my-1
+                  prose-code:text-[#0a1628] prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-[''] prose-code:after:content-['']
+                  prose-pre:bg-[#0a1628] prose-pre:text-slate-100 prose-pre:rounded-lg prose-pre:p-4
+                  prose-blockquote:border-l-[#0a1628] prose-blockquote:bg-slate-50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r prose-blockquote:text-slate-600
                   prose-table:border-collapse prose-table:w-full
-                  prose-th:bg-slate-100 prose-th:text-slate-900 prose-th:font-semibold prose-th:text-left prose-th:p-2 prose-th:border prose-th:border-slate-200
-                  prose-td:p-2 prose-td:border prose-td:border-slate-200 prose-td:text-slate-800
-                  prose-a:text-[#0083f1] prose-a:font-medium prose-a:no-underline hover:prose-a:underline
+                  prose-th:bg-slate-100 prose-th:text-[#0a1628] prose-th:font-semibold prose-th:text-left prose-th:p-2 prose-th:border prose-th:border-slate-200
+                  prose-td:p-2 prose-td:border prose-td:border-slate-200 prose-td:text-slate-700
+                  prose-a:text-[#0a1628] prose-a:font-medium prose-a:underline prose-a:underline-offset-2
                 ">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {message.content}
                   </ReactMarkdown>
                   {message.isStreaming && (
-                    <span className="inline-block w-2 h-4 ml-1 bg-[#0083f1] animate-pulse rounded-sm" />
+                    <span className="inline-block w-0.5 h-4 ml-1 bg-[#0a1628] animate-pulse" />
                   )}
                 </div>
               )

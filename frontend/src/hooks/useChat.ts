@@ -1,11 +1,15 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import {
   streamChat,
   generateMessageId,
+  fetchConversations,
+  fetchConversation,
   type ChatMessage,
   type ReasoningStep,
   type Source,
   type SSEEvent,
+  type Conversation,
 } from '../lib/api'
 
 interface UseChatReturn {
@@ -15,13 +19,86 @@ interface UseChatReturn {
   sendMessage: (content: string) => Promise<void>
   clearMessages: () => void
   currentReasoning: ReasoningStep[]
+  // Conversation management
+  conversations: Conversation[]
+  currentConversationId: string | null
+  loadConversation: (conversationId: string) => Promise<void>
+  startNewConversation: () => void
+  refreshConversations: () => Promise<void>
 }
 
 export function useChat(): UseChatReturn {
+  const { getToken, isSignedIn } = useAuth()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentReasoning, setCurrentReasoning] = useState<ReasoningStep[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+
+  // Fetch conversations on mount if signed in
+  useEffect(() => {
+    if (isSignedIn) {
+      refreshConversations()
+    }
+  }, [isSignedIn])
+
+  const refreshConversations = useCallback(async () => {
+    if (!isSignedIn) return
+    try {
+      const token = await getToken()
+      if (token) {
+        const convs = await fetchConversations(token)
+        setConversations(convs)
+      }
+    } catch (err) {
+      console.error('Failed to fetch conversations:', err)
+    }
+  }, [isSignedIn, getToken])
+
+  const loadConversation = useCallback(async (conversationId: string) => {
+    if (!isSignedIn) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const token = await getToken()
+      if (token) {
+        const conversation = await fetchConversation(conversationId, token)
+        console.log('Loaded conversation:', conversationId, conversation)
+        console.log('Messages in conversation:', conversation.messages)
+        setCurrentConversationId(conversationId)
+        // Convert backend messages to frontend format
+        const messages = conversation.messages || []
+        console.log('Messages array:', messages, 'length:', messages.length)
+        const loadedMessages: ChatMessage[] = messages.map((msg) => {
+          console.log('Mapping message:', msg.role, msg.content?.substring(0, 50))
+          return {
+            id: msg.id,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content || '',
+            sources: msg.citations || [],
+            timestamp: new Date(msg.created_at),
+            isStreaming: false,
+          }
+        })
+        console.log('Loaded messages:', loadedMessages.length, loadedMessages)
+        setMessages(loadedMessages)
+        setCurrentReasoning([]) // Clear reasoning when loading saved conversation
+      }
+    } catch (err) {
+      console.error('Failed to load conversation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load conversation')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isSignedIn, getToken])
+
+  const startNewConversation = useCallback(() => {
+    setCurrentConversationId(null)
+    setMessages([])
+    setError(null)
+    setCurrentReasoning([])
+  }, [])
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return
@@ -29,6 +106,12 @@ export function useChat(): UseChatReturn {
     setError(null)
     setIsLoading(true)
     setCurrentReasoning([])
+
+    // Get auth token if signed in
+    let authToken: string | null = null
+    if (isSignedIn) {
+      authToken = await getToken()
+    }
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -56,8 +139,18 @@ export function useChat(): UseChatReturn {
       let accumulatedContent = ''
       const accumulatedReasoning: ReasoningStep[] = []
       let accumulatedSources: Source[] = []
+      let newConversationId = currentConversationId
 
-      for await (const event of streamChat(content)) {
+      for await (const event of streamChat(content, {
+        conversationId: currentConversationId || undefined,
+        authToken,
+      })) {
+        // Capture conversation_id from first response
+        if (event.conversation_id && !newConversationId) {
+          newConversationId = event.conversation_id
+          setCurrentConversationId(newConversationId)
+        }
+
         // Debug log
         console.log('SSE Event:', event.type, event)
 
@@ -84,6 +177,11 @@ export function useChat(): UseChatReturn {
             : msg
         )
       )
+
+      // Refresh conversations list after sending a message
+      if (isSignedIn) {
+        refreshConversations()
+      }
     } catch (err) {
       console.error('Chat error:', err)
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
@@ -104,7 +202,7 @@ export function useChat(): UseChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading])
+  }, [isLoading, isSignedIn, getToken, currentConversationId, refreshConversations])
 
   const handleSSEEvent = useCallback(
     (
@@ -282,6 +380,7 @@ export function useChat(): UseChatReturn {
     setMessages([])
     setError(null)
     setCurrentReasoning([])
+    setCurrentConversationId(null)
   }, [])
 
   return {
@@ -291,5 +390,10 @@ export function useChat(): UseChatReturn {
     sendMessage,
     clearMessages,
     currentReasoning,
+    conversations,
+    currentConversationId,
+    loadConversation,
+    startNewConversation,
+    refreshConversations,
   }
 }

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import type { ReasoningStep } from '../lib/api'
 
@@ -101,16 +101,21 @@ export default function ReasoningTrace({ steps, isStreaming }: ReasoningTracePro
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
+      transition={{ duration: 0.2 }}
       className="overflow-hidden bg-slate-50/80 rounded-xl p-4 border border-slate-200/60"
     >
       <div className="space-y-2">
-        <AnimatePresence mode="popLayout">
-          {processedSteps.map((step, index) => (
+        {processedSteps.map((step, index) => {
+          // Use stable key based on message content to prevent re-animation
+          const stableKey = `${step.step}-${step.message.slice(0, 50)}-${index}`
+          const isLatest = index === processedSteps.length - 1
+
+          return (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
+              key={stableKey}
+              initial={isLatest ? { opacity: 0, x: -8 } : false}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.03 }}
+              transition={{ duration: 0.15 }}
               className="flex items-start gap-2.5"
             >
               {/* Simple circular bullet - lighter blue */}
@@ -119,7 +124,7 @@ export default function ReasoningTrace({ steps, isStreaming }: ReasoningTracePro
               {step.step === 'search_group' ? (
                 // Search group with queries on separate lines
                 <div className="flex-1">
-                  <span className="text-slate-500 text-sm">Searching earnings transcripts</span>
+                  <span className="text-slate-500 text-sm">Searching for additional context</span>
                   <div className="mt-1.5 ml-1 space-y-1">
                     {(step.data?.queries as string[] || step.message.split('\n')).map((query, qIdx) => (
                       <p key={qIdx} className="text-slate-400 text-sm italic leading-relaxed">
@@ -133,17 +138,13 @@ export default function ReasoningTrace({ steps, isStreaming }: ReasoningTracePro
                 <span className="text-slate-500 text-sm leading-relaxed">{step.message}</span>
               )}
             </motion.div>
-          ))}
-        </AnimatePresence>
+          )
+        })}
         {isStreaming && processedSteps.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-slate-400 mt-2 pt-2 border-t border-slate-200/60"
-          >
+          <div className="flex items-center gap-2 text-slate-400 mt-2 pt-2 border-t border-slate-200/60">
             <Loader2 className="w-4 h-4 animate-spin text-[#0083f1]/70" />
             <span className="text-sm">Processing...</span>
-          </motion.div>
+          </div>
         )}
       </div>
     </motion.div>

@@ -1344,10 +1344,21 @@ class RAGAgent:
                     specificity_score=evaluation.get('specificity_score', 0)
                 )
 
+            # Track searches performed in this iteration (will be updated after searches complete)
+            iteration_searches = {
+                'transcript_search_performed': False,
+                'transcript_search_results': 0,
+                'news_search_performed': False,
+                'news_search_results': 0,
+                'ten_k_search_performed': False,
+                'ten_k_search_results': 0
+            }
+
             evaluation_context.append({
                 'iteration': iteration + 1,
                 'evaluation': evaluation,
-                'confidence': evaluation_confidence
+                'confidence': evaluation_confidence,
+                'searches_performed': iteration_searches  # Will be updated after searches
             })
             
             # Note: Evaluation happens internally - frontend only sees action traces
@@ -1365,6 +1376,10 @@ class RAGAgent:
             iteration_reasoning = evaluation.get('iteration_decision_reasoning', '')
             completeness_score = evaluation.get('completeness_score', 10)
             specificity_score = evaluation.get('specificity_score', 10)
+
+            # Track all new chunks found in THIS iteration (from all search types)
+            # These will be used for answer generation along with previous_answer
+            iteration_new_chunks = []
             
             # Log the agent's decision (but don't print evaluation reasoning to avoid it appearing in frontend)
             print(f"\n🤖 Agent Decision: {'ITERATE' if should_iterate else 'STOP'}")
@@ -1468,17 +1483,22 @@ class RAGAgent:
                     tickers_to_process, target_quarter, target_quarters
                 )
                 
+                # Track that transcript search was performed
+                iteration_searches['transcript_search_performed'] = True
+                iteration_searches['transcript_search_results'] = len(transcript_chunks) if transcript_chunks else 0
+
                 if transcript_chunks:
                     rag_logger.info(f"✅ Found {len(transcript_chunks)} transcript chunks from agent decision")
                     print(f"   ✅ Found {len(transcript_chunks)} transcript chunks")
-                    
-                    # Merge with existing chunks
+
+                    # Merge with existing chunks and track for this iteration
                     existing_citations = {chunk['citation'] for chunk in accumulated_chunks}
                     for chunk in transcript_chunks:
                         if chunk['citation'] not in existing_citations:
                             accumulated_chunks.append(chunk)
+                            iteration_new_chunks.append(chunk)  # Track for this iteration's answer
                             existing_citations.add(chunk['citation'])
-                            
+
                             # Add citation
                             citation_entry = {
                                 "type": "transcript",
@@ -1511,7 +1531,11 @@ class RAGAgent:
                 
                 # Perform news search
                 iteration_news_results = self.tavily_service.search_news(news_search_query, max_results=5, include_answer="advanced")
-                
+
+                # Track that news search was performed
+                iteration_searches['news_search_performed'] = True
+                iteration_searches['news_search_results'] = len(iteration_news_results.get('results', [])) if iteration_news_results else 0
+
                 if iteration_news_results.get("results"):
                     rag_logger.info(f"✅ Found {len(iteration_news_results['results'])} news articles from agent decision")
                     print(f"   ✅ Found {len(iteration_news_results['results'])} news articles")
@@ -1549,15 +1573,25 @@ class RAGAgent:
             else:
                 all_follow_up_questions = follow_up_questions
             
+            # SAFETY CHECK: Skip transcript-based follow-up search for 10k/news only queries
+            # The follow-up search uses the transcript database, so it should be skipped
+            # when the user explicitly asked for a different data source
+            skip_followup_transcript_search = current_data_source in ['10k', 'latest_news']
+
+            if skip_followup_transcript_search and all_follow_up_questions:
+                rag_logger.info(f"🚫 Skipping follow-up transcript search - data_source='{current_data_source}' (user explicitly asked for {current_data_source} only)")
+                print(f"🚫 Skipping transcript search - using {current_data_source} data only")
+                all_follow_up_questions = []  # Clear follow-up questions to prevent transcript search
+
             if all_follow_up_questions:
                 # Use ALL follow-up questions (not just the first one)
                 # This retrieves ~5 chunks per question, so 3 questions = ~15 chunks total
                 follow_up_questions_asked.extend(all_follow_up_questions)
-                
+
                 print(f"🔄 Searching with {len(all_follow_up_questions)} follow-up questions in parallel:")
                 for i, q in enumerate(all_follow_up_questions, 1):
                     print(f"   {i}. {q}")
-                
+
                 # Stream follow-up question event
                 if event_yielder:
                     questions_list = '\n'.join([f'Searching: "{q}"' for q in all_follow_up_questions])
@@ -1585,9 +1619,10 @@ class RAGAgent:
                     existing_citations = {chunk['citation'] for chunk in accumulated_chunks}
                     new_chunks = [chunk for chunk in refined_chunks if chunk['citation'] not in existing_citations]
                     accumulated_chunks.extend(new_chunks)
+                    iteration_new_chunks.extend(new_chunks)  # Track for this iteration's answer
                     accumulated_citations.extend([chunk['citation'] for chunk in new_chunks])
-                    
-                    print(f"   🔍 Added {len(new_chunks)} new chunks")
+
+                    print(f"   🔍 Added {len(new_chunks)} new chunks from follow-up search")
 
                     # Stream search results event
                     if event_yielder:
@@ -1603,25 +1638,30 @@ class RAGAgent:
                             }
                         })
                         await asyncio.sleep(0.01)
-                    
-                    # Regenerate answer (NO streaming during iterations - we'll stream the final answer only)
-                    # Pass previous answer so LLM can build upon it
-                    if is_general_question or (is_multi_ticker and len(individual_results) > 1):
-                        refined_answer = self.response_generator.generate_multi_ticker_response(
-                            question, accumulated_chunks, individual_results, show_details, comprehensive, stream_callback=None, news_context=news_context, ten_k_context=ten_k_context, previous_answer=best_answer
-                        )
-                    else:
-                        refined_answer = self.response_generator.generate_openai_response(
-                            question, [chunk['chunk_text'] for chunk in accumulated_chunks], accumulated_chunks,
-                            ticker=tickers_to_process[0] if tickers_to_process else None, stream_callback=None, news_context=news_context, ten_k_context=ten_k_context, previous_answer=best_answer
-                        )
-                    
-                    best_answer = refined_answer
-                    best_citations = accumulated_citations.copy()
-                    best_context_chunks = [chunk['chunk_text'] for chunk in accumulated_chunks]
-                    best_chunks = accumulated_chunks.copy()
+
+            # Regenerate answer if we found ANY new chunks in this iteration (from any search type)
+            if iteration_new_chunks:
+                rag_logger.info(f"📝 Regenerating answer with {len(iteration_new_chunks)} new chunks from this iteration + previous answer")
+
+                # Regenerate answer using only NEW chunks from this iteration + previous answer
+                # The previous answer is a "compression" of all prior chunks, so we don't need to re-send them
+                # This is more token-efficient and ensures the LLM focuses on new information
+                if is_general_question or (is_multi_ticker and len(individual_results) > 1):
+                    refined_answer = self.response_generator.generate_multi_ticker_response(
+                        question, iteration_new_chunks, individual_results, show_details, comprehensive, stream_callback=None, news_context=news_context, ten_k_context=ten_k_context, previous_answer=best_answer
+                    )
+                else:
+                    refined_answer = self.response_generator.generate_openai_response(
+                        question, [chunk['chunk_text'] for chunk in iteration_new_chunks], iteration_new_chunks,
+                        ticker=tickers_to_process[0] if tickers_to_process else None, stream_callback=None, news_context=news_context, ten_k_context=ten_k_context, previous_answer=best_answer
+                    )
+
+                best_answer = refined_answer
+                best_citations = accumulated_citations.copy()
+                best_context_chunks = [chunk['chunk_text'] for chunk in accumulated_chunks]
+                best_chunks = accumulated_chunks.copy()
             else:
-                break
+                rag_logger.info(f"📝 No new chunks found in iteration {iteration + 1}, keeping previous answer")
         
         # After all iterations complete, generate/regenerate the final answer WITH streaming
         if stream_callback:
@@ -2129,7 +2169,8 @@ class RAGAgent:
                             fiscal_year=fiscal_year,
                             max_iterations=5,  # Hard limit on iterations
                             confidence_threshold=0.9,
-                            event_yielder=stream  # Pass stream flag to enable event yielding
+                            event_yielder=stream,  # Pass stream flag to enable event yielding
+                            embedding_function=self.search_engine.embedding_model.encode  # Generate embeddings for sub-questions
                         ):
                             # Handle SEC agent events
                             event_type = event.get('type', '')

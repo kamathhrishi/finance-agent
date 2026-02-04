@@ -8,23 +8,46 @@ from datetime import datetime
 
 
 class ChatCitation(BaseModel):
-    """Citation information for RAG responses"""
-    company: str = Field(..., description="Company ticker symbol")
-    quarter: str = Field(..., description="Quarter (e.g., '2025_q1') or 'News' or 'FY2024' for 10-K")
-    chunk_id: str = Field(..., description="Unique identifier for the text chunk")
-    chunk_text: str = Field(..., description="Relevant text chunk or title")
-    relevance_score: float = Field(..., description="Similarity score (0-1)")
+    """Citation information for RAG responses - supports transcript, news, and 10-K citations"""
+    # All fields are optional to support different citation types
+    # Transcript citations: company, quarter, chunk_id, chunk_text, relevance_score
+    # News citations: title, url, published_date
+    # 10-K citations: ticker, fiscal_year, section, path, chunk_type
+
+    # Common fields
+    company: Optional[str] = Field(None, description="Company ticker symbol")
+    ticker: Optional[str] = Field(None, description="Ticker symbol (alias for company)")
+    chunk_id: Optional[str] = Field(None, description="Unique identifier for the text chunk")
+    chunk_text: Optional[str] = Field(None, description="Relevant text chunk or title")
+    relevance_score: Optional[float] = Field(None, description="Similarity score (0-1)")
     source_file: Optional[str] = Field(None, description="Original source file name or URL")
-    transcript_available: bool = Field(False, description="Whether complete transcript is available")
-    # Optional fields for different citation types
+    transcript_available: Optional[bool] = Field(False, description="Whether complete transcript is available")
+
+    # Citation type
     citation_type: Optional[str] = Field(None, description="Type of citation: 'transcript', 'news', '10-K'")
+    type: Optional[str] = Field(None, description="Type of citation (alias)")
+
+    # Transcript-specific fields
+    quarter: Optional[str] = Field(None, description="Quarter (e.g., '2025_q1')")
+    year: Optional[int] = Field(None, description="Year for transcript citations")
+
+    # News-specific fields
+    title: Optional[str] = Field(None, description="Title for news citations")
     url: Optional[str] = Field(None, description="URL for news citations")
     published_date: Optional[str] = Field(None, description="Published date for news citations")
+
+    # 10-K specific fields
     fiscal_year: Optional[int] = Field(None, description="Fiscal year for 10-K citations")
     section: Optional[str] = Field(None, description="SEC section for 10-K citations")
-    # Transcript-specific fields for frontend
-    year: Optional[int] = Field(None, description="Year for transcript citations (separate from quarter)")
-    ticker: Optional[str] = Field(None, description="Ticker symbol (alias for company)")
+    path: Optional[str] = Field(None, description="Document path for 10-K citations")
+    chunk_type: Optional[str] = Field(None, description="Chunk type for 10-K citations")
+
+    # Marker/source number
+    marker: Optional[str] = Field(None, description="Citation marker (e.g., [1], [N1])")
+    source_number: Optional[int] = Field(None, description="Source number in the response")
+
+    class Config:
+        extra = "allow"  # Allow additional fields not defined in schema
 
 
 class ChatMessage(BaseModel):

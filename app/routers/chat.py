@@ -25,6 +25,7 @@ from app.schemas import (
 from config import settings
 from app.utils import rate_limiter, RATE_LIMIT_PER_MONTH, record_successful_query_usage
 from agent import Agent as RAGSystem, create_agent as create_rag_system
+from agent.rag.llm_utils import LLMError, format_error_for_user
 from app.utils.logging_utils import log_info, log_error, log_warning
 from app.utils import create_error_response, raise_sanitized_http_exception
 from db.db_connection_utils import get_postgres_connection
@@ -320,29 +321,36 @@ async def stream_chat_message_v2(
                     
                     # Save assistant message to conversation
                     try:
+                        # Answer and citations are nested inside 'response' key
+                        response_data = final_result.get('response', {})
+                        answer_content = response_data.get('answer', '')
+                        citations_list = response_data.get('citations', [])
+
                         assistant_message_id = await stream_db.fetchval('''
                             INSERT INTO chat_messages (conversation_id, role, content, citations, context)
                             VALUES ($1, 'assistant', $2, $3, $4)
                             RETURNING id
-                        ''', conversation_id, final_result.get('answer', ''), json.dumps(final_result.get('citations', [])), json.dumps({
+                        ''', conversation_id, answer_content, json.dumps(citations_list), json.dumps({
                             'timing': final_result.get('timing', {}),
                             'comprehensive': comprehensive
                         }))
-                        
+
                         # Update conversation timestamp
                         await stream_db.execute('''
-                            UPDATE chat_conversations 
-                            SET updated_at = CURRENT_TIMESTAMP 
+                            UPDATE chat_conversations
+                            SET updated_at = CURRENT_TIMESTAMP
                             WHERE id = $1
                         ''', conversation_id)
-                        
-                        logger.info(f"✅ Assistant message saved: {assistant_message_id}")
+
+                        logger.info(f"✅ Assistant message saved: {assistant_message_id}, content length: {len(answer_content)}")
                     except Exception as e:
                         logger.error(f"Failed to save assistant message: {e}")
                     
                     # Log analytics
                     try:
                         execution_time = time.time() - start_time
+                        # Citations are nested inside 'response' key
+                        analytics_citations = final_result.get('response', {}).get('citations', [])
                         await log_chat_analytics(
                             db=stream_db,
                             ip_address="unknown",
@@ -351,20 +359,47 @@ async def stream_chat_message_v2(
                             comprehensive_search=comprehensive,
                             success=True,
                             response_time_ms=execution_time * 1000,
-                            citations_count=len(final_result.get('citations', [])),
+                            citations_count=len(analytics_citations),
                             user_id=user_id
                         )
                     except Exception as e:
                         logger.error(f"Failed to log analytics: {e}")
             
-            except Exception as e:
-                logger.error(f"Error during chat streaming: {e}", exc_info=True)
+            except LLMError as e:
+                # User-friendly LLM error - don't expose technical details
+                logger.error(f"LLM error during chat streaming: {e.technical_message}", exc_info=False)
                 error_event = {
                     'type': 'error',
-                    'message': 'Sorry, an error occurred while processing your request. Please try again.'
+                    'message': e.user_message  # Use the user-friendly message
                 }
                 yield f"data: {json.dumps(error_event)}\n\n"
-                
+
+                # Log failed analytics
+                try:
+                    await log_chat_analytics(
+                        db=stream_db,
+                        ip_address="unknown",
+                        user_type=UserType.AUTHORIZED,
+                        query_text=message,
+                        comprehensive_search=comprehensive,
+                        success=False,
+                        response_time_ms=0,
+                        citations_count=0,
+                        error_message=e.technical_message,
+                        user_id=user_id
+                    )
+                except Exception as analytics_error:
+                    logger.error(f"Failed to log failed analytics: {analytics_error}")
+            except Exception as e:
+                logger.error(f"Error during chat streaming: {e}", exc_info=True)
+                # Use format_error_for_user to get a user-friendly message
+                user_message = format_error_for_user(e)
+                error_event = {
+                    'type': 'error',
+                    'message': user_message
+                }
+                yield f"data: {json.dumps(error_event)}\n\n"
+
                 # Log failed analytics
                 try:
                     await log_chat_analytics(
@@ -583,23 +618,28 @@ async def stream_landing_demo_message_v2(
                 if final_result:
                     # Save assistant message to conversation
                     try:
+                        # Answer and citations are nested inside 'response' key
+                        response_data = final_result.get('response', {})
+                        answer_content = response_data.get('answer', '')
+                        citations_list = response_data.get('citations', [])
+
                         assistant_message_id = await stream_db.fetchval('''
                             INSERT INTO chat_messages (conversation_id, role, content, citations, context)
                             VALUES ($1, 'assistant', $2, $3, $4)
                             RETURNING id
-                        ''', conversation_id, final_result.get('answer', ''), json.dumps(final_result.get('citations', [])), json.dumps({
+                        ''', conversation_id, answer_content, json.dumps(citations_list), json.dumps({
                             'timing': final_result.get('timing', {}),
                             'comprehensive': comprehensive
                         }))
-                        
+
                         # Update conversation timestamp
                         await stream_db.execute('''
-                            UPDATE chat_conversations 
-                            SET updated_at = CURRENT_TIMESTAMP 
+                            UPDATE chat_conversations
+                            SET updated_at = CURRENT_TIMESTAMP
                             WHERE id = $1
                         ''', conversation_id)
-                        
-                        logger.info(f"✅ Demo stream assistant message saved: {assistant_message_id}")
+
+                        logger.info(f"✅ Demo stream assistant message saved: {assistant_message_id}, content length: {len(answer_content)}")
                     except Exception as e:
                         logger.error(f"Failed to save demo stream assistant message: {e}")
                     
@@ -607,6 +647,8 @@ async def stream_landing_demo_message_v2(
                     try:
                         client_ip = request.client.host if request.client else "unknown"
                         execution_time = time.time() - start_time
+                        # Citations are nested inside 'response' key
+                        analytics_citations = final_result.get('response', {}).get('citations', [])
                         await log_chat_analytics(
                             db=stream_db,
                             ip_address=client_ip,
@@ -615,7 +657,7 @@ async def stream_landing_demo_message_v2(
                             comprehensive_search=comprehensive,
                             success=True,
                             response_time_ms=execution_time * 1000,
-                            citations_count=len(final_result.get('citations', [])),
+                            citations_count=len(analytics_citations),
                             session_id=session_id
                         )
                     except Exception as e:
@@ -1126,6 +1168,14 @@ async def get_chat_conversations(
 ):
     """Get list of conversation threads (like ChatGPT sidebar)"""
     try:
+        # Return empty when auth is disabled (no persistent conversations)
+        if settings.APPLICATION.AUTH_DISABLED:
+            return ChatConversationsResponse(
+                success=True,
+                conversations=[],
+                total_count=0
+            )
+
         user_id = uuid.UUID(current_user["id"])
         
         # Get conversations with message counts

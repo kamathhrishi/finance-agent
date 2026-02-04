@@ -62,7 +62,7 @@ export default function ChatInput({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative flex items-end gap-3 bg-white border border-slate-200 rounded-2xl shadow-lg shadow-slate-900/5 hover:border-[#0083f1]/30 hover:shadow-[#0083f1]/5 transition-all ${
+      className={`relative flex items-end gap-3 bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus-within:border-[#0a1628] focus-within:ring-1 focus-within:ring-[#0a1628] transition-all ${
         isLarge ? 'p-4' : 'p-3'
       }`}
     >
@@ -74,18 +74,18 @@ export default function ChatInput({
         placeholder={placeholder}
         disabled={isLoading}
         rows={1}
-        className={`flex-1 resize-none bg-transparent border-none outline-none placeholder:text-slate-400 text-slate-900 ${
+        className={`flex-1 resize-none bg-transparent border-none outline-none placeholder:text-slate-400 text-[#0a1628] ${
           isLarge ? 'text-lg' : 'text-base'
         } scrollbar-thin`}
       />
       <button
         onClick={handleSubmit}
         disabled={!value.trim() || isLoading}
-        className={`flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ${
-          isLarge ? 'w-12 h-12' : 'w-10 h-10'
+        className={`flex-shrink-0 flex items-center justify-center rounded-lg transition-colors ${
+          isLarge ? 'w-11 h-11' : 'w-9 h-9'
         } ${
           value.trim() && !isLoading
-            ? 'bg-gradient-to-br from-[#0083f1] to-[#0070d8] hover:from-[#0070d8] hover:to-[#005cb6] text-white shadow-lg shadow-[#0083f1]/25'
+            ? 'bg-[#0a1628] hover:bg-[#1e293b] text-white'
             : 'bg-slate-100 text-slate-400 cursor-not-allowed'
         }`}
       >

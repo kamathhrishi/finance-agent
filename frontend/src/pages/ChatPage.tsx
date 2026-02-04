@@ -10,14 +10,23 @@ import { useChat } from '../hooks/useChat'
 
 export default function ChatPage() {
   const [searchParams] = useSearchParams()
-  const { messages, isLoading, sendMessage, clearMessages } = useChat()
+  const {
+    messages,
+    isLoading,
+    sendMessage,
+    conversations,
+    currentConversationId,
+    loadConversation,
+    startNewConversation,
+  } = useChat()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const hasExecutedInitialQuery = useRef(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const lastScrollTime = useRef(0)
   const isUserScrolling = useRef(false)
+  const scrollRAF = useRef<number | null>(null)
+  const lastContentLength = useRef(0)
 
   // Auto-execute query from URL parameter
   useEffect(() => {
@@ -28,64 +37,87 @@ export default function ChatPage() {
     }
   }, [searchParams, sendMessage, messages.length])
 
-  // Throttled scroll function to avoid animation collisions
-  const scrollToBottom = useCallback((force = false) => {
-    const now = Date.now()
-    // Throttle to max once every 100ms, unless forced
-    if (!force && now - lastScrollTime.current < 100) return
-    // Don't auto-scroll if user is scrolling
+  // Smooth scroll using requestAnimationFrame to avoid fighting
+  const scrollToBottom = useCallback((smooth = false) => {
     if (isUserScrolling.current) return
 
-    lastScrollTime.current = now
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
+    // Cancel any pending scroll
+    if (scrollRAF.current) {
+      cancelAnimationFrame(scrollRAF.current)
+    }
+
+    scrollRAF.current = requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: smooth ? 'smooth' : 'instant',
+        block: 'end'
+      })
+    })
   }, [])
 
-  // Track user scrolling to avoid fighting
+  // Track user scrolling - check if near bottom
   useEffect(() => {
     const container = messagesContainerRef.current
     if (!container) return
 
     let scrollTimeout: ReturnType<typeof setTimeout>
     const handleScroll = () => {
-      isUserScrolling.current = true
-      clearTimeout(scrollTimeout)
-      // Reset after 1 second of no scrolling
-      scrollTimeout = setTimeout(() => {
+      // Check if user is near the bottom (within 150px)
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150
+
+      // Only mark as user scrolling if they scrolled UP (away from bottom)
+      if (!isNearBottom) {
+        isUserScrolling.current = true
+        clearTimeout(scrollTimeout)
+        scrollTimeout = setTimeout(() => {
+          isUserScrolling.current = false
+        }, 2000)
+      } else {
         isUserScrolling.current = false
-      }, 1000)
+      }
     }
 
-    container.addEventListener('scroll', handleScroll)
+    container.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
       container.removeEventListener('scroll', handleScroll)
       clearTimeout(scrollTimeout)
+      if (scrollRAF.current) cancelAnimationFrame(scrollRAF.current)
     }
   }, [])
 
-  // Auto-scroll on new messages - throttled and non-smooth during streaming
+  // Auto-scroll on content changes - debounced during streaming
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
-    const isStreaming = lastMessage?.isStreaming
+    if (!lastMessage) return
 
+    const isStreaming = lastMessage.isStreaming
+    const currentLength = lastMessage.content?.length || 0
+
+    // During streaming, only scroll when content actually grows (not on every render)
     if (isStreaming) {
-      // During streaming, use instant scroll (no animation fighting)
-      scrollToBottom()
+      if (currentLength > lastContentLength.current) {
+        lastContentLength.current = currentLength
+        scrollToBottom(false) // instant scroll during streaming
+      }
     } else {
-      // After streaming completes, do a smooth final scroll
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+      // After streaming completes, do a final smooth scroll
+      lastContentLength.current = 0
+      setTimeout(() => scrollToBottom(true), 50)
     }
   }, [messages, scrollToBottom])
 
   const isEmpty = messages.length === 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/20 to-slate-50/30">
+    <div className="min-h-screen bg-[#faf9f7]">
       {/* Sidebar */}
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        conversations={conversations}
+        currentConversationId={currentConversationId}
+        onLoadConversation={loadConversation}
+        onNewConversation={startNewConversation}
       />
 
       {/* Main content area - shifts based on sidebar */}
@@ -95,14 +127,14 @@ export default function ChatPage() {
         }`}
       >
         {/* Header bar */}
-        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/60">
+        <header className="sticky top-0 z-20 bg-white border-b border-slate-200">
           <div className="flex items-center justify-between h-14 px-4 lg:px-6">
             <div className="flex items-center gap-3">
               <div className="lg:hidden w-10" /> {/* Spacer for mobile menu button */}
-              <h1 className="text-lg font-semibold text-slate-800">Chat</h1>
+              <h1 className="text-lg font-semibold text-[#0a1628]">Research</h1>
               {messages.length > 0 && (
-                <span className="text-sm text-slate-400">
-                  {messages.filter(m => m.role === 'user').length} messages
+                <span className="text-sm text-slate-400 font-mono">
+                  {messages.filter(m => m.role === 'user').length} queries
                 </span>
               )}
             </div>
@@ -110,15 +142,15 @@ export default function ChatPage() {
             <div className="flex items-center gap-2">
               {messages.length > 0 && (
                 <button
-                  onClick={clearMessages}
-                  className="text-sm text-slate-500 hover:text-[#0083f1] font-medium transition-colors px-3 py-1.5 hover:bg-[#0083f1]/5 rounded-lg"
+                  onClick={startNewConversation}
+                  className="text-sm text-slate-500 hover:text-[#0a1628] font-medium transition-colors px-3 py-1.5 hover:bg-slate-100 rounded-lg"
                 >
-                  New chat
+                  New session
                 </button>
               )}
               <button
                 onClick={() => setAboutOpen(true)}
-                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#0083f1] font-medium transition-colors px-3 py-1.5 hover:bg-[#0083f1]/5 rounded-lg"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#0a1628] font-medium transition-colors px-3 py-1.5 hover:bg-slate-100 rounded-lg"
               >
                 <Info className="w-4 h-4" />
                 About
@@ -131,41 +163,38 @@ export default function ChatPage() {
         <main ref={messagesContainerRef} className="flex-1 pb-32 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-4 lg:px-6">
             {isEmpty ? (
-              // Empty state
+              // Empty state - enterprise style
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center py-12"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-[#0083f1] to-[#0070d8] rounded-2xl flex items-center justify-center shadow-lg mb-6">
-                  <MessageSquare className="w-8 h-8 text-white" />
+                <div className="w-14 h-14 bg-[#0a1628] rounded-xl flex items-center justify-center mb-6">
+                  <MessageSquare className="w-7 h-7 text-white" />
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900 mb-2">
-                  What would you like to know?
+                <h1 className="text-2xl font-semibold text-[#0a1628] mb-2" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                  Research Query
                 </h1>
                 <p className="text-slate-500 max-w-md mb-8">
-                  Ask any question about US public companies. I can analyze 10-K filings, earnings
-                  transcripts, and financial data.
+                  Query SEC filings and earnings transcripts for 500+ tech companies.
+                  Semiconductors, software, and fintech coverage.
                 </p>
 
-                {/* Data Coverage Badges */}
+                {/* Data Coverage Badges - more muted */}
                 <div className="flex flex-wrap justify-center gap-3 mb-8">
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                    9,000+ US companies
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
+                    500+ Companies
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600">
-                    <span className="w-1.5 h-1.5 bg-[#0083f1] rounded-full"></span>
-                    Earnings calls 2022-2025
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
+                    3Y Earnings
                   </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs text-slate-600">
-                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                    10-K filings
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
+                    10-K Filings
                   </span>
                 </div>
 
-                {/* Example queries */}
-                <div className="grid sm:grid-cols-2 gap-3 w-full max-w-2xl">
+                {/* Example queries - clean */}
+                <div className="grid sm:grid-cols-2 gap-2 w-full max-w-2xl">
                   {[
                     "What is $AAPL's revenue breakdown by segment?",
                     "How has $NVDA's gross margin changed over time?",
@@ -175,7 +204,7 @@ export default function ChatPage() {
                     <button
                       key={index}
                       onClick={() => sendMessage(query)}
-                      className="p-4 text-left bg-white border border-slate-200 rounded-xl hover:border-[#0083f1]/50 hover:shadow-md hover:shadow-[#0083f1]/5 transition-all text-sm text-slate-700"
+                      className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
                     >
                       {query}
                     </button>
@@ -195,19 +224,19 @@ export default function ChatPage() {
         </main>
 
         {/* Fixed input at bottom */}
-        <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-width)] bg-gradient-to-t from-white via-white to-transparent pt-6 pb-4 transition-all duration-200"
+        <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-width)] bg-gradient-to-t from-[#faf9f7] via-[#faf9f7] to-transparent pt-6 pb-4 transition-all duration-200"
           style={{ '--sidebar-width': sidebarCollapsed ? '72px' : '240px' } as React.CSSProperties}
         >
           <div className="max-w-4xl mx-auto px-4 lg:px-6">
             <ChatInput
               onSubmit={sendMessage}
               isLoading={isLoading}
-              placeholder="Ask a question... (mention tickers with $)"
+              placeholder="Query SEC filings and earnings transcripts..."
               autoFocus={!searchParams.get('q')}
             />
             <p className="text-center text-xs text-slate-400 mt-3">
-              StrataLens uses AI to analyze SEC filings and earnings transcripts.
-              Always verify important financial decisions.
+              Results derived from primary SEC filings and earnings transcripts.
+              Always verify for investment decisions.
             </p>
           </div>
         </div>

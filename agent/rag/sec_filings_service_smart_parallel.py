@@ -20,6 +20,10 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import CrossEncoder
+import time
+
+# Import LLM utilities for retry and error handling
+from .llm_utils import LLMError, is_retryable_error, get_user_friendly_message
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -131,34 +135,66 @@ class SmartParallelSECFilingsService:
 
     def _make_llm_call(self, messages: List[Dict], temperature: float = 0.1,
                        max_tokens: int = 2000, expect_json: bool = False) -> str:
-        """Make LLM API call, preferring Cerebras for speed."""
+        """Make LLM API call with retry logic, preferring Cerebras for speed."""
         self.current_session['api_calls'] = self.current_session.get('api_calls', 0) + 1
 
-        if self.cerebras_available:
-            try:
-                response = self.cerebras_client.chat.completions.create(
-                    model=self.cerebras_model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
-                return response.choices[0].message.content
-            except Exception as e:
-                rag_logger.warning(f"Cerebras call failed: {e}, falling back to Gemini")
+        max_retries = 3
+        last_error = None
 
-        if self.gemini_available:
-            try:
-                import google.generativeai as genai
-                model = genai.GenerativeModel(self.gemini_model)
-                # Convert messages to Gemini format
-                prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-                response = model.generate_content(prompt)
-                return response.text
-            except Exception as e:
-                rag_logger.error(f"Gemini call failed: {e}")
-                raise
+        for attempt in range(max_retries):
+            # Try Cerebras first
+            if self.cerebras_available:
+                try:
+                    response = self.cerebras_client.chat.completions.create(
+                        model=self.cerebras_model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    last_error = e
+                    if is_retryable_error(e) and attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 2
+                        rag_logger.warning(f"Cerebras call failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    rag_logger.warning(f"Cerebras call failed: {e}, falling back to Gemini")
 
-        raise RuntimeError("No LLM client available")
+            # Fallback to Gemini
+            if self.gemini_available:
+                try:
+                    import google.generativeai as genai
+                    model = genai.GenerativeModel(self.gemini_model)
+                    # Convert messages to Gemini format
+                    prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                    response = model.generate_content(prompt)
+                    return response.text
+                except Exception as e:
+                    last_error = e
+                    if is_retryable_error(e) and attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 2
+                        rag_logger.warning(f"Gemini call failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                        continue
+                    rag_logger.error(f"Gemini call failed: {e}")
+
+            # If we get here without a successful response, break to raise error
+            if not self.cerebras_available and not self.gemini_available:
+                break
+
+        # All retries exhausted
+        if last_error:
+            raise LLMError(
+                user_message=get_user_friendly_message(last_error),
+                technical_message=str(last_error),
+                retryable=is_retryable_error(last_error)
+            )
+        raise LLMError(
+            user_message="Unable to process your request. Please try again.",
+            technical_message="No LLM client available",
+            retryable=False
+        )
 
     def _parse_json_with_retry(self, response_text: str, max_retries: int = 5,
                                 default_result: Dict = None) -> Dict:
@@ -200,7 +236,8 @@ class SmartParallelSECFilingsService:
         fiscal_year: int = None,
         max_iterations: int = 5,
         confidence_threshold: float = 0.9,
-        event_yielder=None
+        event_yielder=None,
+        embedding_function=None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Execute smart parallel 10-K search with planning-driven retrieval.
@@ -213,12 +250,14 @@ class SmartParallelSECFilingsService:
 
         Args:
             query: User's question
-            query_embedding: Query embedding vector
+            query_embedding: Query embedding vector (fallback if embedding_function not provided)
             ticker: Company ticker symbol
             fiscal_year: Optional fiscal year filter
             max_iterations: Maximum iterations (default 5)
             confidence_threshold: Quality score to stop early (default 0.9)
             event_yielder: Optional callback for streaming events
+            embedding_function: Optional function to generate embeddings for sub-questions
+                               (signature: embedding_function(text) -> np.ndarray)
 
         Yields:
             Events with iteration progress and final results
@@ -294,7 +333,8 @@ class SmartParallelSECFilingsService:
                 query_embedding=query_embedding,
                 ticker=ticker,
                 fiscal_year=fiscal_year,
-                all_tables=all_tables
+                all_tables=all_tables,
+                embedding_function=embedding_function
             )
 
             # Deduplicate and accumulate
@@ -484,12 +524,22 @@ Return ONLY valid JSON:
         ticker: str,
         fiscal_year: int,
         all_tables: List[Dict],
-        top_k: int = 20
+        top_k: int = 20,
+        embedding_function=None
     ) -> List[Dict]:
         """
         Execute multiple searches in PARALLEL.
 
         Returns combined, deduplicated list of chunks.
+
+        Args:
+            search_plan: List of search items with 'query' and 'type'
+            query_embedding: Fallback embedding if embedding_function not provided
+            ticker: Company ticker
+            fiscal_year: Fiscal year filter
+            all_tables: Pre-fetched tables for table searches
+            top_k: Number of chunks per search
+            embedding_function: Function to generate embeddings for sub-questions
         """
         if not search_plan:
             return []
@@ -508,7 +558,19 @@ Return ONLY valid JSON:
                     chunks = self._retrieve_tables_sync(query, all_tables, ticker=ticker, fiscal_year=fiscal_year, top_k=5)
                 else:
                     # Text retrieval with reranking
-                    chunks = self._retrieve_text_sync(query, query_embedding, ticker, fiscal_year, top_k)
+                    # Generate embedding for this specific sub-question if embedding_function is provided
+                    if embedding_function is not None:
+                        try:
+                            sub_question_embedding = embedding_function([query])[0]
+                            rag_logger.debug(f"🔤 Generated embedding for sub-question: '{query[:50]}...'")
+                        except Exception as e:
+                            rag_logger.warning(f"⚠️ Failed to generate embedding for sub-question, using fallback: {e}")
+                            sub_question_embedding = query_embedding
+                    else:
+                        # Fallback to original query embedding (old behavior)
+                        sub_question_embedding = query_embedding
+
+                    chunks = self._retrieve_text_sync(query, sub_question_embedding, ticker, fiscal_year, top_k)
 
                 # Tag source and ensure ticker/fiscal_year are set
                 for chunk in chunks:
@@ -601,13 +663,22 @@ Return JSON with table indices (1-indexed):
 
     def _retrieve_text_sync(self, query: str, query_embedding: np.ndarray,
                             ticker: str, fiscal_year: int, top_k: int = 20) -> List[Dict]:
-        """Synchronous text retrieval with reranking."""
+        """Synchronous text retrieval with section selection and reranking."""
         try:
-            # Get text chunks using the sync search method
+            # STEP 1: Get available sections for this ticker/fiscal_year
+            available_sections = self._get_available_sections(ticker, fiscal_year)
+
+            # STEP 2: Use LLM to select relevant sections (if sections available)
+            selected_sections = []
+            if available_sections:
+                selected_sections = self._select_relevant_sections(query, available_sections)
+
+            # STEP 3: Get text chunks with optional section filtering
             chunks = self.database_manager.search_10k_filings(
                 query_embedding=query_embedding,
                 ticker=ticker,
-                fiscal_year=fiscal_year
+                fiscal_year=fiscal_year,
+                selected_sections=selected_sections if selected_sections else None
             )
 
             if not chunks:
@@ -639,6 +710,119 @@ Return JSON with table indices (1-indexed):
         except Exception as e:
             rag_logger.error(f"Text retrieval failed: {e}")
             return []
+
+    def _get_available_sections(self, ticker: str, fiscal_year: int) -> List[Dict]:
+        """
+        Get all unique SEC sections available for a ticker/fiscal_year.
+
+        Returns list like:
+        [
+            {'sec_section': 'item_1a', 'sec_section_title': 'Risk Factors', 'chunk_count': 42},
+            {'sec_section': 'item_7', 'sec_section_title': "MD&A", 'chunk_count': 156},
+        ]
+        """
+        try:
+            from psycopg2.extras import RealDictCursor
+            conn = self.database_manager._get_db_connection()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+            query = """
+            SELECT DISTINCT
+                sec_section,
+                sec_section_title,
+                COUNT(*) as chunk_count
+            FROM ten_k_chunks
+            WHERE UPPER(ticker) = %s AND fiscal_year = %s AND sec_section IS NOT NULL
+            GROUP BY sec_section, sec_section_title
+            ORDER BY chunk_count DESC
+            """
+
+            cursor.execute(query, (ticker.upper(), fiscal_year))
+            sections = cursor.fetchall()
+            self.database_manager._return_db_connection(conn)
+
+            result = [dict(row) for row in sections] if sections else []
+            rag_logger.info(f"📚 Found {len(result)} SEC sections for {ticker} FY{fiscal_year}")
+            return result
+
+        except Exception as e:
+            rag_logger.error(f"Failed to get sections: {e}")
+            return []
+
+    def _select_relevant_sections(self, query: str, available_sections: List[Dict]) -> List[str]:
+        """
+        Use LLM to select relevant SEC sections for the query.
+
+        Args:
+            query: User's question
+            available_sections: List of available sections with metadata
+
+        Returns:
+            List of selected sec_section identifiers (e.g., ['item_1a', 'item_7'])
+        """
+        if not available_sections:
+            return []
+
+        # Create section summary for LLM
+        section_summaries = []
+        for i, section in enumerate(available_sections, 1):
+            sec_title = section.get('sec_section_title', 'Unknown')
+            sec_id = section.get('sec_section', 'unknown')
+            chunk_count = section.get('chunk_count', 0)
+            section_summaries.append(f"{i}. {sec_id} - {sec_title} ({chunk_count} chunks)")
+
+        prompt = f"""Select the most relevant SEC 10-K sections for this question: {query}
+
+Available sections:
+{chr(10).join(section_summaries)}
+
+SEC 10-K Section Guide:
+- item_1 (Business): Company description, products, services, operations
+- item_1a (Risk Factors): Risks to business and financials - USE FOR RISK QUESTIONS
+- item_1b (Unresolved Staff Comments): SEC review comments
+- item_2 (Properties): Physical locations, facilities
+- item_3 (Legal Proceedings): Lawsuits, litigation, legal matters
+- item_5 (Market for Common Equity): Stock info, shareholders
+- item_7 (MD&A): Management analysis, financial performance discussion
+- item_7a (Market Risk Disclosures): Interest rate, currency risks
+- item_8 (Financial Statements): Balance sheet, income statement, cash flow
+- item_9a (Controls and Procedures): Internal controls, compliance
+- item_10 (Directors and Officers): Board members, executives
+- item_11 (Executive Compensation): Salaries, bonuses, stock options
+
+Return JSON with section numbers (1-indexed):
+{{"selected_sections": [1, 3], "reasoning": "Brief explanation"}}
+
+IMPORTANT: Select 1-3 sections maximum. Be selective."""
+
+        try:
+            messages = [
+                {"role": "system", "content": "Select relevant SEC sections. Return JSON only."},
+                {"role": "user", "content": prompt}
+            ]
+
+            response = self._make_llm_call(messages, temperature=0.1, max_tokens=500)
+            result = self._parse_json_with_retry(response, default_result={'selected_sections': []})
+
+            selected_indices = result.get('selected_sections', [])
+            selected_sections = []
+
+            for idx in selected_indices:
+                if 1 <= idx <= len(available_sections):
+                    sec_section = available_sections[idx - 1].get('sec_section')
+                    if sec_section:
+                        selected_sections.append(sec_section)
+
+            if selected_sections:
+                rag_logger.info(f"🎯 Selected {len(selected_sections)} sections: {selected_sections}")
+            else:
+                rag_logger.info("⚠️ No specific sections selected, will search all")
+
+            return selected_sections
+
+        except Exception as e:
+            rag_logger.error(f"Section selection failed: {e}")
+            return []  # Return empty to search all sections
 
     async def _get_all_tables_for_ticker(self, ticker: str, fiscal_year: int = None) -> List[Dict]:
         """Get all available tables for a ticker."""

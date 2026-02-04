@@ -905,51 +905,58 @@ class DatabaseManager:
             rag_logger.error(f"❌ Async 10-K search failed: {e}")
             return []
 
-    def search_10k_filings(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None) -> List[Dict[str, Any]]:
-        """Search 10-K filings using vector similarity (sync)."""
+    def search_10k_filings(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None,
+                           selected_sections: List[str] = None) -> List[Dict[str, Any]]:
+        """Search 10-K filings using vector similarity with optional section filtering (sync)."""
         try:
             ticker = ticker.upper()  # Normalize ticker case to match DB storage
             rag_logger.info(f"📄 Starting 10-K search for ticker: {ticker}, fiscal_year: {fiscal_year}")
+            if selected_sections:
+                rag_logger.info(f"   🎯 Restricting to sections: {selected_sections}")
 
             conn = self._get_db_connection()
             cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-            # Build query with optional fiscal year filtering
-            if fiscal_year:
-                query = """
+            # Build query with optional fiscal year and section filtering
+            base_select = """
                 SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                        sec_section, sec_section_title, path_string, chunk_index,
                        1 - (embedding <=> %s::vector) as similarity
                 FROM ten_k_chunks
-                WHERE UPPER(ticker) = %s AND fiscal_year = %s
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """
-                params = (
-                    query_embedding.flatten().tolist(),
-                    ticker,
-                    fiscal_year,
-                    query_embedding.flatten().tolist(),
-                    self.config.get("chunks_per_quarter", 15)
-                )
-            else:
-                query = """
-                SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
-                       sec_section, sec_section_title, path_string, chunk_index,
-                       1 - (embedding <=> %s::vector) as similarity
-                FROM ten_k_chunks
-                WHERE UPPER(ticker) = %s
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """
-                params = (
-                    query_embedding.flatten().tolist(),
-                    ticker,
-                    query_embedding.flatten().tolist(),
-                    self.config.get("chunks_per_quarter", 15)
-                )
+            """
 
-            cursor.execute(query, params)
+            # Build WHERE clause dynamically
+            conditions = ["UPPER(ticker) = %s"]
+            params = [query_embedding.flatten().tolist(), ticker]
+
+            if fiscal_year:
+                conditions.append("fiscal_year = %s")
+                params.append(fiscal_year)
+
+            if selected_sections:
+                # Add section filtering
+                section_placeholders = ','.join(['%s'] * len(selected_sections))
+                conditions.append(f"sec_section IN ({section_placeholders})")
+                params.extend(selected_sections)
+
+            where_clause = " AND ".join(conditions)
+
+            # Add ORDER BY and LIMIT
+            # Increase limit when filtering by sections to get more relevant chunks
+            chunk_limit = self.config.get("chunks_per_quarter", 15)
+            if selected_sections:
+                chunk_limit = chunk_limit * 2  # Get more chunks when filtering by section
+
+            query = f"""
+                {base_select}
+                WHERE {where_clause}
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """
+            params.append(query_embedding.flatten().tolist())
+            params.append(chunk_limit)
+
+            cursor.execute(query, tuple(params))
             results = cursor.fetchall()
 
             self._return_db_connection(conn)

@@ -27,11 +27,11 @@ const filingChatData = [
     source: "10-K FY2024 • Item 7"
   },
   {
-    question: "How did $TSLA margins change?",
-    answer: "Tesla's automotive margins compressed due to price cuts and competition.",
+    question: "How did $AMD margins change?",
+    answer: "AMD's data center margins expanded significantly with MI300 ramp.",
     dataPoints: [
-      { label: "Auto Gross Margin", value: "17.6%" },
-      { label: "vs Prior Year", value: "-8.3 pts" },
+      { label: "Data Center Margin", value: "52.4%" },
+      { label: "vs Prior Year", value: "+6.2 pts" },
     ],
     source: "10-K FY2024 • Item 8"
   },
@@ -62,13 +62,13 @@ const chatData = [
 // Mock data for Transcript Chat - Quote-focused style
 const transcriptChatData = [
   {
-    question: "What did Tim Cook say about Services?",
-    ticker: "AAPL",
-    quarter: "Q1 2025",
-    speaker: "Tim Cook",
+    question: "What did Jensen Huang say about AI demand?",
+    ticker: "NVDA",
+    quarter: "Q4 2024",
+    speaker: "Jensen Huang",
     role: "CEO",
-    quote: "Services reached a new all-time revenue record of $23.1 billion, growing 14% year-over-year. We now have over 1 billion paid subscriptions.",
-    timestamp: "12:45"
+    quote: "Demand for accelerated computing and generative AI has surged. Data centers are racing to modernize the entire computing stack.",
+    timestamp: "08:45"
   },
   {
     question: "Satya's comments on AI adoption?",
@@ -80,21 +80,30 @@ const transcriptChatData = [
     timestamp: "24:30"
   },
   {
-    question: "Google Cloud performance update?",
-    ticker: "GOOGL",
+    question: "Lisa Su on data center momentum?",
+    ticker: "AMD",
     quarter: "Q4 2024",
-    speaker: "Sundar Pichai",
+    speaker: "Lisa Su",
     role: "CEO",
-    quote: "Google Cloud crossed $9 billion in quarterly revenue. Our AI infrastructure, including TPUs and Gemini, is seeing unprecedented demand.",
-    timestamp: "35:20"
+    quote: "Our data center GPU revenue grew more than 100% sequentially. MI300X is seeing exceptional demand from cloud and enterprise customers.",
+    timestamp: "15:20"
   },
 ]
 
 const exampleQueries = [
-  "$INTC management commentary on foundry business in last 3 quarters",
-  "Compare $MSFT and $GOOGL cloud segment",
+  "What is $NVDA's competitive moat in AI chips?",
+  "Compare $MSFT and $GOOGL cloud segment growth",
   "$META AI capex commentary in last 3 quarters",
 ]
+
+// Tech company tickers for the scrolling banner
+const techTickers = [
+  'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'AMZN', 'TSLA', 'AMD', 'AVGO', 'CRM',
+  'ADBE', 'INTC', 'QCOM', 'NFLX', 'CSCO', 'ORCL', 'NOW', 'UBER', 'ABNB', 'COIN',
+  'SQ', 'PLTR', 'SNOW', 'CRWD', 'PANW', 'MU', 'AMAT', 'LRCX', 'KLAC', 'MRVL'
+]
+
+const AUTH_DISABLED = import.meta.env.VITE_AUTH_DISABLED === 'true'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -135,146 +144,167 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white font-sans antialiased">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#0066cc] to-[#0052a3] rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:shadow-lg group-hover:shadow-blue-500/30 transition-shadow">
+            <div className="w-9 h-9 bg-[#0a1628] rounded-lg flex items-center justify-center">
               <StrataLensLogo size={17} className="text-white" />
             </div>
-            <span className="text-lg font-bold text-slate-900 tracking-tight">StrataLens</span>
+            <span className="text-lg font-semibold text-[#0a1628] tracking-tight">StrataLens</span>
           </a>
           <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-slate-600 text-sm font-medium hover:text-slate-900 transition-colors px-2 py-1">Features</a>
-            <a href="#why" className="text-slate-600 text-sm font-medium hover:text-slate-900 transition-colors px-2 py-1">Why StrataLens</a>
+            <a href="#features" className="text-slate-500 text-sm font-medium hover:text-[#0a1628] transition-colors px-2 py-1">Features</a>
+            <a href="#why" className="text-slate-500 text-sm font-medium hover:text-[#0a1628] transition-colors px-2 py-1">Why StrataLens</a>
             <button
               onClick={() => setAboutOpen(true)}
-              className="text-slate-600 text-sm font-medium hover:text-slate-900 transition-colors px-2 py-1"
+              className="text-slate-500 text-sm font-medium hover:text-[#0a1628] transition-colors px-2 py-1"
             >
               About
             </button>
-            <SignedOut>
-              <button
-                onClick={() => navigate('/sign-in')}
-                className="text-slate-600 text-sm font-medium hover:text-slate-900 transition-colors px-2 py-1"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => navigate('/sign-up')}
-                className="px-5 py-2.5 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white text-sm font-semibold rounded-xl hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5"
-              >
-                Get Started
-              </button>
-            </SignedOut>
-            <SignedIn>
+            {AUTH_DISABLED ? (
               <button
                 onClick={() => navigate('/chat')}
-                className="px-5 py-2.5 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white text-sm font-semibold rounded-xl hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/35 hover:-translate-y-0.5"
+                className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
               >
-                Open App
+                Open Platform
               </button>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+            ) : (
+              <>
+                <SignedOut>
+                  <button
+                    onClick={() => navigate('/sign-in')}
+                    className="text-slate-500 text-sm font-medium hover:text-[#0a1628] transition-colors px-2 py-1"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => navigate('/sign-up')}
+                    className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
+                  >
+                    Get Started
+                  </button>
+                </SignedOut>
+                <SignedIn>
+                  <button
+                    onClick={() => navigate('/chat')}
+                    className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
+                  >
+                    Open Platform
+                  </button>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
       <section className="pt-16 min-h-screen flex items-center relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/80 to-slate-100" />
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-radial from-blue-100/40 via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-radial from-slate-200/50 via-transparent to-transparent" />
+        {/* Background - subtle warm tone */}
+        <div className="absolute inset-0 bg-[#faf9f7]" />
 
-        {/* Dot pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `radial-gradient(circle, #0066cc 1px, transparent 1px)`,
-          backgroundSize: '32px 32px'
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.4]" style={{
+          backgroundImage: `linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)`,
+          backgroundSize: '64px 64px'
         }} />
 
         <div className="max-w-6xl mx-auto px-6 py-20 relative z-10 w-full">
           <div className="max-w-3xl mx-auto text-center">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-slate-50 border border-blue-200/60 rounded-full mb-8 shadow-sm">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-slate-700">AI-Powered Equity Research</span>
-              </div>
+              {/* Enterprise Label - subtle, no animation */}
+              <span className="inline-block text-xs font-medium uppercase tracking-[0.2em] text-slate-400 mb-6">
+                Market Intelligence Platform
+              </span>
 
-              {/* Headline */}
-              <h1 className="text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight text-slate-800 mb-5">
-                Equity Research Copilot
+              {/* Headline - Serif for authority */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#0a1628] mb-6 leading-[1.15]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                Institutional-Grade{' '}
+                <span className="block">Research Intelligence</span>
               </h1>
 
               {/* Subheadline */}
-              <p className="text-base md:text-lg text-slate-500 leading-relaxed mb-8 max-w-lg mx-auto">
-                Quick insights from U.S. public markets data
+              <p className="text-lg text-slate-500 leading-relaxed mb-10 max-w-xl mx-auto">
+                Transform SEC filings and earnings transcripts into actionable insights.
+                Built for analysts who demand accuracy and speed.
               </p>
 
-              {/* Data pills */}
-              <div className="flex flex-wrap justify-center gap-3 mb-10">
-                {[
-                  { color: 'bg-emerald-500', text: '9,000+ US companies' },
-                  { color: 'bg-blue-500', text: 'Earnings calls 2022-2025' },
-                  { color: 'bg-purple-500', text: '10-K SEC filings' },
-                ].map((pill, i) => (
-                  <span key={i} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-sm text-slate-600 shadow-sm">
-                    <span className={`w-2 h-2 ${pill.color} rounded-full`} />
-                    {pill.text}
-                  </span>
-                ))}
+              {/* Stats row - more muted */}
+              <div className="flex items-center justify-center gap-10 mb-8">
+                <div className="text-center">
+                  <div className="text-2xl font-semibold text-[#0a1628]">500+</div>
+                  <div className="text-sm text-slate-400">Tech Companies</div>
+                </div>
+                <div className="w-px h-12 bg-slate-200" />
+                <div className="text-center">
+                  <div className="text-2xl font-semibold text-[#0a1628]">3 Years</div>
+                  <div className="text-sm text-slate-400">Earnings Data</div>
+                </div>
+                <div className="w-px h-12 bg-slate-200" />
+                <div className="text-center">
+                  <div className="text-2xl font-semibold text-[#0a1628]">10-K</div>
+                  <div className="text-sm text-slate-400">SEC Filings</div>
+                </div>
+              </div>
+
+              {/* Coming Soon - subtle */}
+              <div className="flex items-center justify-center gap-2 mb-10 text-xs text-slate-400">
+                <span className="font-medium">Expanding to:</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">8-K</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">10-Q</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">Private Companies</span>
               </div>
             </motion.div>
 
-            {/* Search Input - Enterprise Style */}
+            {/* Search Input */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-2xl mx-auto mb-8"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="max-w-2xl mx-auto mb-6"
             >
-              <div className="relative bg-white rounded-2xl border-2 border-slate-200 shadow-xl shadow-slate-200/50 hover:border-[#0066cc]/40 hover:shadow-blue-100/50 transition-all focus-within:border-[#0066cc] focus-within:shadow-blue-100/60">
+              <div className="relative bg-white rounded-lg border border-slate-300 shadow-sm hover:border-slate-400 transition-all duration-200 focus-within:border-[#0a1628] focus-within:ring-1 focus-within:ring-[#0a1628]">
                 <textarea
                   ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="What do you want to know? (mention tickers with $)"
-                  className="w-full px-6 py-5 pr-14 text-base text-slate-900 placeholder:text-slate-400 bg-transparent resize-none focus:outline-none min-h-[60px] max-h-[120px]"
+                  placeholder="Query SEC filings and earnings transcripts..."
+                  className="w-full px-5 py-4 pr-14 text-base text-[#0a1628] placeholder:text-slate-400 bg-transparent resize-none focus:outline-none min-h-[56px] max-h-[120px]"
                   rows={1}
-                  autoFocus
                 />
                 <button
                   onClick={() => handleSubmit(inputValue)}
                   disabled={!inputValue.trim()}
-                  className="absolute right-4 bottom-4 w-10 h-10 bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white rounded-xl flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:from-[#0052a3] hover:to-[#003d7a] transition-all shadow-md shadow-blue-500/25 hover:shadow-lg disabled:shadow-none"
+                  className="absolute right-3 bottom-3 w-10 h-10 bg-[#0a1628] text-white rounded-lg flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1e293b] transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
 
-            {/* Example Queries - Vertical List */}
+            {/* Example Queries */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.4 }}
               className="max-w-2xl mx-auto"
             >
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Try an example</p>
-              <div className="space-y-2">
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Example Queries</p>
+              <div className="flex flex-col gap-2">
                 {exampleQueries.map((query, i) => (
                   <button
                     key={i}
                     onClick={() => handleSubmit(query)}
-                    className="w-full flex items-center justify-between px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-left text-slate-700 hover:border-[#0066cc]/50 hover:bg-blue-50/30 hover:text-slate-900 transition-all group shadow-sm hover:shadow-md"
+                    className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-lg text-left text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all group"
                   >
-                    <span className="font-medium">{query}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#0066cc] group-hover:translate-x-1 transition-all" />
+                    <span className="text-sm">{query}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
                   </button>
                 ))}
               </div>
@@ -283,24 +313,45 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Coverage Banner - Enterprise style */}
+      <div className="py-10 bg-white border-y border-slate-200 relative overflow-hidden">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-40 bg-gradient-to-r from-white to-transparent z-10" />
+        <div className="absolute right-0 top-0 bottom-0 w-40 bg-gradient-to-l from-white to-transparent z-10" />
+
+        {/* Label */}
+        <p className="text-center text-xs font-medium text-slate-400 uppercase tracking-[0.15em] mb-5">
+          Coverage includes
+        </p>
+
+        {/* Tickers - more muted */}
+        <div className="flex animate-scroll-right gap-16">
+          {[...techTickers, ...techTickers].map((ticker, i) => (
+            <span key={i} className="text-lg font-medium text-slate-300 whitespace-nowrap tracking-wide">
+              ${ticker}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Features Section */}
-      <section id="features" className="py-28 bg-white relative">
+      <section id="features" className="py-24 bg-[#faf9f7] relative">
         <div className="max-w-6xl mx-auto px-6">
           {/* Section Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-20 text-center"
+            className="text-center mb-20"
           >
-            <span className="inline-block px-4 py-1.5 bg-blue-50 text-[#0066cc] text-xs font-bold uppercase tracking-wider rounded-full mb-4">
-              Features
+            <span className="inline-block text-xs font-medium uppercase tracking-[0.2em] text-slate-400 mb-4">
+              Capabilities
             </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Everything you need
+            <h2 className="text-3xl md:text-4xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+              Comprehensive Research Suite
             </h2>
-            <p className="text-lg text-slate-500 max-w-md mx-auto">
-              10-K filings, earnings transcripts, financial metrics—delivered instantly.
+            <p className="text-lg text-slate-500 max-w-xl mx-auto">
+              Purpose-built tools for institutional-quality analysis of SEC filings, earnings calls, and market data.
             </p>
           </motion.div>
 
@@ -309,90 +360,88 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-28"
           >
             <div>
-              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider rounded-full mb-4">
+              <span className="inline-block text-xs font-medium uppercase tracking-[0.15em] text-slate-400 mb-3">
                 SEC Filings
               </span>
-              <h3 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">
-                Extract insights from 10-K filings
+              <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                10-K Filing Analysis
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Get instant answers from annual reports. Revenue breakdowns, risk factors, segment analysis—all sourced directly from official SEC filings.
+                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 500+ tech companies. Risk factors, revenue breakdowns, competitive positioning—all extracted and structured.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Financial metrics extracted automatically",
-                  "Year-over-year comparisons",
+                  "Automated financial metric extraction",
+                  "Semiconductor, software, fintech coverage",
                   "Risk factors and MD&A analysis"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-emerald-600" />
+                    <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-[#0a1628]" />
                     </div>
-                    <span className="text-slate-700">{item}</span>
+                    <span className="text-slate-600 text-sm">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            {/* 10-K Chat Mock - Minimal Data Card Style */}
+            {/* 10-K Chat Mock */}
             <div className="relative">
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 shadow-2xl">
-                <div className="bg-slate-50 rounded-2xl shadow-xl overflow-hidden">
-                  {/* Question bar */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                {/* Question header */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={filingChatIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="px-5 py-4 bg-slate-50 border-b border-slate-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#0a1628] rounded-lg flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-sm font-medium text-[#0a1628]">{filingChatData[filingChatIndex].question}</p>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Answer content */}
+                <div className="p-5">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={filingChatIndex}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="px-5 py-4 bg-white border-b border-slate-200"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <MessageSquare className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <p className="text-sm font-medium text-slate-700">{filingChatData[filingChatIndex].question}</p>
+                      <p className="text-sm text-slate-600 mb-4">{filingChatData[filingChatIndex].answer}</p>
+
+                      {/* Data point cards */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {filingChatData[filingChatIndex].dataPoints.map((point, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="bg-slate-50 rounded-lg p-4 border border-slate-200"
+                          >
+                            <p className="text-xs text-slate-400 mb-1">{point.label}</p>
+                            <p className="text-lg font-semibold text-[#0a1628]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{point.value}</p>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Source tag */}
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs text-slate-500 font-mono">{filingChatData[filingChatIndex].source}</span>
                       </div>
                     </motion.div>
                   </AnimatePresence>
-
-                  {/* Answer with data cards */}
-                  <div className="p-5">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={filingChatIndex}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                      >
-                        <p className="text-sm text-slate-600 mb-4">{filingChatData[filingChatIndex].answer}</p>
-
-                        {/* Data point cards */}
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          {filingChatData[filingChatIndex].dataPoints.map((point, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: i * 0.1 }}
-                              className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm"
-                            >
-                              <p className="text-xs text-slate-400 mb-1">{point.label}</p>
-                              <p className="text-lg font-bold text-purple-600">{point.value}</p>
-                            </motion.div>
-                          ))}
-                        </div>
-
-                        {/* Source tag */}
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-xs text-slate-500">{filingChatData[filingChatIndex].source}</span>
-                        </div>
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
                 </div>
               </div>
             </div>
@@ -403,103 +452,96 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-28"
           >
-            {/* AI Chat Mock - Full Conversation Style */}
+            {/* AI Chat Mock - Clean conversation style */}
             <div className="order-2 lg:order-1 relative">
-              <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-3xl p-6 shadow-2xl">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  {/* Chat header */}
-                  <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-slate-100">
-                    <div className="w-8 h-8 bg-gradient-to-br from-[#0066cc] to-[#0052a3] rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="font-bold text-slate-900">StrataLens AI</span>
-                    <div className="ml-auto flex items-center gap-1.5">
-                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-emerald-600 font-medium">Ready</span>
-                    </div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                {/* Chat header */}
+                <div className="flex items-center gap-3 px-5 py-4 bg-slate-50 border-b border-slate-200">
+                  <div className="w-8 h-8 bg-[#0a1628] rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
+                  <span className="font-semibold text-[#0a1628]">Research Assistant</span>
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                    <span className="text-xs text-slate-500">Active</span>
+                  </div>
+                </div>
 
-                  <div className="p-5 min-h-[260px]">
-                    <AnimatePresence mode="wait">
+                <div className="p-5 min-h-[260px]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={chatIndex}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="space-y-4"
+                    >
+                      {/* User message */}
+                      <div className="flex justify-end">
+                        <div className="bg-slate-100 text-[#0a1628] px-4 py-2.5 rounded-lg text-sm max-w-[85%]">
+                          {chatData[chatIndex].question}
+                        </div>
+                      </div>
+
+                      {/* Thinking indicator - no bounce */}
                       <motion.div
-                        key={chatIndex}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="space-y-4"
+                        transition={{ delay: 0.2 }}
+                        className="flex items-center gap-2 text-xs text-slate-400"
                       >
-                        {/* User message */}
-                        <div className="flex justify-end">
-                          <div className="bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-lg">
-                            {chatData[chatIndex].question}
+                        <span className="italic">{chatData[chatIndex].thinking}</span>
+                      </motion.div>
+
+                      {/* Assistant response */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-white border-l-2 border-[#0a1628] text-slate-700 px-4 py-3 text-sm max-w-[95%] leading-relaxed">
+                          <p dangerouslySetInnerHTML={{ __html: chatData[chatIndex].answer.replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#0a1628]">$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
+
+                          {/* Source chips */}
+                          <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                            {chatData[chatIndex].sources.map((source, i) => (
+                              <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded flex items-center gap-1 font-mono">
+                                <BookOpen className="w-3 h-3" />
+                                {source}
+                              </span>
+                            ))}
                           </div>
                         </div>
-
-                        {/* Thinking indicator */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                          className="flex items-center gap-2 text-xs text-slate-500"
-                        >
-                          <div className="flex gap-1">
-                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                          </div>
-                          <span className="italic">{chatData[chatIndex].thinking}</span>
-                        </motion.div>
-
-                        {/* Assistant response */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4 }}
-                          className="flex justify-start"
-                        >
-                          <div className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-3 rounded-2xl rounded-bl-sm text-sm max-w-[95%] leading-relaxed">
-                            <p dangerouslySetInnerHTML={{ __html: chatData[chatIndex].answer.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
-
-                            {/* Source chips */}
-                            <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
-                              {chatData[chatIndex].sources.map((source, i) => (
-                                <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full flex items-center gap-1">
-                                  <BookOpen className="w-3 h-3" />
-                                  {source}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </motion.div>
                       </motion.div>
-                    </AnimatePresence>
-                  </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
             <div className="order-1 lg:order-2">
-              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full mb-4">
-                AI Research
+              <span className="inline-block text-xs font-medium uppercase tracking-[0.15em] text-slate-400 mb-3">
+                Natural Language
               </span>
-              <h3 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">
-                Ask questions in plain English
+              <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                Query in Plain English
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                No more digging through documents. Ask complex questions and get comprehensive answers backed by real data.
+                Compare cloud growth across $MSFT, $GOOGL, and $AMZN. Analyze semiconductor supply chains. Understand fintech unit economics. All in natural language.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Answers sourced from official filings",
-                  "Citations for every claim",
+                  "Cross-company competitive analysis",
+                  "Every insight sourced and verifiable",
                   "Follow-up questions supported"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-emerald-600" />
+                    <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-[#0a1628]" />
                     </div>
-                    <span className="text-slate-700">{item}</span>
+                    <span className="text-slate-600 text-sm">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -514,90 +556,88 @@ export default function LandingPage() {
             className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"
           >
             <div>
-              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wider rounded-full mb-4">
+              <span className="inline-block text-xs font-medium uppercase tracking-[0.15em] text-slate-400 mb-3">
                 Earnings Calls
               </span>
-              <h3 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">
-                Search earnings transcripts
+              <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                Executive Commentary Search
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Find what management said about any topic. Guidance, competitive positioning, strategic priorities—searchable across all calls.
+                Find what Jensen Huang said about AI demand. What Lisa Su said about data center momentum. What Satya Nadella said about Copilot adoption. Direct quotes, fully searchable.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Management commentary and guidance",
+                  "Executive commentary and guidance",
                   "Analyst Q&A insights",
-                  "Historical transcript search"
+                  "3 years of earnings call history"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-emerald-600" />
+                    <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
+                      <Check className="w-3 h-3 text-[#0a1628]" />
                     </div>
-                    <span className="text-slate-700">{item}</span>
+                    <span className="text-slate-600 text-sm">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            {/* Transcript Chat Mock - Quote-Focused Style */}
+            {/* Transcript Chat Mock - Clean Quote Style */}
             <div className="relative">
-              <div className="bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-6 shadow-2xl">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                  {/* Question */}
-                  <div className="px-5 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-slate-100">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={transcriptChatIndex}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-3"
-                      >
-                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                          <MessageSquare className="w-4 h-4 text-emerald-600" />
-                        </div>
-                        <p className="text-sm font-medium text-slate-700">{transcriptChatData[transcriptChatIndex].question}</p>
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+                {/* Question */}
+                <div className="px-5 py-4 bg-slate-50 border-b border-slate-200">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={transcriptChatIndex}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 bg-[#0a1628] rounded-lg flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-sm font-medium text-[#0a1628]">{transcriptChatData[transcriptChatIndex].question}</p>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
 
-                  {/* Quote response */}
-                  <div className="p-5">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={transcriptChatIndex}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                      >
-                        {/* Speaker attribution */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                            {transcriptChatData[transcriptChatIndex].speaker.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{transcriptChatData[transcriptChatIndex].speaker}</p>
-                            <p className="text-xs text-slate-500">{transcriptChatData[transcriptChatIndex].role} • ${transcriptChatData[transcriptChatIndex].ticker}</p>
-                          </div>
-                          <div className="ml-auto text-right">
-                            <p className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">{transcriptChatData[transcriptChatIndex].quarter}</p>
-                          </div>
+                {/* Quote response */}
+                <div className="p-5">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={transcriptChatIndex}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      {/* Speaker attribution */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-[#0a1628] font-semibold text-sm">
+                          {transcriptChatData[transcriptChatIndex].speaker.split(' ').map(n => n[0]).join('')}
                         </div>
+                        <div>
+                          <p className="font-semibold text-[#0a1628]">{transcriptChatData[transcriptChatIndex].speaker}</p>
+                          <p className="text-xs text-slate-500">{transcriptChatData[transcriptChatIndex].role} · ${transcriptChatData[transcriptChatIndex].ticker}</p>
+                        </div>
+                        <div className="ml-auto text-right">
+                          <p className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">{transcriptChatData[transcriptChatIndex].quarter}</p>
+                        </div>
+                      </div>
 
-                        {/* Quote block */}
-                        <div className="relative pl-4 border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent py-3 pr-3 rounded-r-lg">
-                          <p className="text-sm text-slate-700 leading-relaxed italic">
-                            "{transcriptChatData[transcriptChatIndex].quote}"
-                          </p>
-                        </div>
+                      {/* Quote block */}
+                      <div className="relative pl-4 border-l-2 border-[#0a1628] bg-slate-50 py-3 pr-4 rounded-r">
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          "{transcriptChatData[transcriptChatIndex].quote}"
+                        </p>
+                      </div>
 
-                        {/* Timestamp */}
-                        <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>at {transcriptChatData[transcriptChatIndex].timestamp} in earnings call</span>
-                        </div>
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
+                      {/* Timestamp */}
+                      <div className="flex items-center gap-2 mt-4 text-xs text-slate-400 font-mono">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{transcriptChatData[transcriptChatIndex].timestamp}</span>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -606,11 +646,7 @@ export default function LandingPage() {
       </section>
 
       {/* Why StrataLens Section */}
-      <section id="why" className="py-28 bg-gradient-to-b from-slate-100 to-slate-50 relative">
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: `radial-gradient(circle, #94a3b8 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
-        }} />
+      <section id="why" className="py-24 bg-white relative">
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -618,47 +654,47 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="inline-block px-4 py-1.5 bg-white text-slate-600 text-xs font-bold uppercase tracking-wider rounded-full mb-4 shadow-sm border border-slate-200">
-              Comparison
+            <span className="inline-block text-xs font-medium uppercase tracking-[0.2em] text-slate-400 mb-4">
+              Differentiation
             </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
-              Why StrataLens?
+            <h2 className="text-3xl md:text-4xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+              Primary Source Intelligence
             </h2>
             <p className="text-lg text-slate-500">
-              Built for serious equity research
+              Built for analysts who demand accuracy and auditability
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {/* StrataLens Card */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="bg-white rounded-3xl p-8 border-2 border-slate-200 shadow-xl hover:border-[#0066cc]/50 hover:shadow-2xl transition-all"
+              className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm"
             >
               <div className="flex items-center mb-8">
-                <div className="w-14 h-14 bg-gradient-to-br from-[#0066cc] to-[#0052a3] rounded-2xl flex items-center justify-center mr-4 shadow-lg shadow-blue-500/25">
-                  <Shield className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 bg-[#0a1628] rounded-lg flex items-center justify-center mr-4">
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-extrabold text-slate-900">StrataLens</h3>
-                  <p className="text-sm text-emerald-600 font-semibold">Primary Sources</p>
+                  <h3 className="text-xl font-semibold text-[#0a1628]">StrataLens</h3>
+                  <p className="text-sm text-slate-500">Primary Sources</p>
                 </div>
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {[
-                  { title: "Official SEC Filings", desc: "10-K, 10-Q reports directly from the SEC" },
+                  { title: "Official SEC Filings", desc: "10-K reports directly from the SEC" },
                   { title: "Earnings Transcripts", desc: "Word-for-word executive commentary" },
-                  { title: "Primary Sources", desc: "Same documents institutional investors use" },
-                  { title: "Verifiable & Accurate", desc: "Citation-backed, traceable insights" },
+                  { title: "Tech Sector Focus", desc: "500+ companies: semis, software, fintech" },
+                  { title: "Verifiable & Auditable", desc: "Citation-backed, traceable insights" },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-[#0a1628]" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900">{item.title}</p>
+                      <p className="font-medium text-[#0a1628] text-sm">{item.title}</p>
                       <p className="text-sm text-slate-500">{item.desc}</p>
                     </div>
                   </div>
@@ -668,33 +704,33 @@ export default function LandingPage() {
 
             {/* LLM + Web Search Card */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="bg-slate-100 rounded-3xl p-8 border-2 border-slate-300"
+              className="bg-slate-50 rounded-xl p-8 border border-slate-200"
             >
               <div className="flex items-center mb-8">
-                <div className="w-14 h-14 bg-slate-400 rounded-2xl flex items-center justify-center mr-4">
-                  <Globe className="w-7 h-7 text-white" />
+                <div className="w-12 h-12 bg-slate-300 rounded-lg flex items-center justify-center mr-4">
+                  <Globe className="w-6 h-6 text-slate-500" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-extrabold text-slate-500">LLM + Web Search</h3>
-                  <p className="text-sm text-slate-400 font-semibold">Secondary Sources</p>
+                  <h3 className="text-xl font-semibold text-slate-400">Generic LLM</h3>
+                  <p className="text-sm text-slate-400">Secondary Sources</p>
                 </div>
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {[
-                  { title: "News Articles", desc: "Second-hand interpretations and opinions" },
-                  { title: "Web Content", desc: "Unverified, potentially outdated information" },
-                  { title: "Secondary Sources", desc: "Filtered through journalists and bloggers" },
-                  { title: "No Verification", desc: "Cannot trace back to original sources" },
+                  { title: "News Articles", desc: "Second-hand interpretations" },
+                  { title: "Web Content", desc: "Unverified, potentially outdated" },
+                  { title: "No Sector Focus", desc: "Generic coverage across industries" },
+                  { title: "No Verification", desc: "Cannot trace to original sources" },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-4">
-                    <div className="w-6 h-6 bg-slate-300 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <X className="w-4 h-4 text-slate-500" />
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <X className="w-3 h-3 text-slate-400" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-500">{item.title}</p>
+                      <p className="font-medium text-slate-400 text-sm">{item.title}</p>
                       <p className="text-sm text-slate-400">{item.desc}</p>
                     </div>
                   </div>
@@ -706,10 +742,10 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-28 bg-gradient-to-br from-[#0052a3] via-[#0066cc] to-[#0083f1] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
+      <section className="py-24 bg-[#0a1628] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)`,
+          backgroundSize: '48px 48px'
         }} />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -717,52 +753,52 @@ export default function LandingPage() {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto px-6 text-center relative z-10"
         >
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
-            Start researching in seconds
+          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-6" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            Accelerate Your Research Workflow
           </h2>
-          <p className="text-lg text-blue-100 mb-10">
-            No signup required. Just ask a question and get instant insights from SEC filings and earnings calls.
+          <p className="text-lg text-slate-400 mb-10">
+            Transform how you analyze SEC filings and earnings transcripts. Built for institutional-quality research.
           </p>
           <button
             onClick={() => navigate('/chat')}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-[#0066cc] text-base font-bold rounded-xl hover:bg-blue-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
+            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-[#0a1628] text-base font-medium rounded-lg hover:bg-slate-100 transition-colors"
           >
-            Get Started Free
+            Start Researching
             <ArrowRight className="w-5 h-5" />
           </button>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 bg-slate-900">
+      <footer className="py-10 px-6 bg-[#0a1628] border-t border-slate-800">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#0066cc] to-[#0052a3] rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
                 <StrataLensLogo size={14} className="text-white" />
               </div>
-              <span className="text-base font-bold text-white">StrataLens</span>
+              <span className="text-base font-medium text-white">StrataLens</span>
             </div>
-            <p className="text-sm text-slate-400">
-              AI-powered equity research. Built for investors.
+            <p className="text-sm text-slate-500">
+              Institutional-grade market intelligence platform
             </p>
-            <a
-              href="https://github.com/kamathhrishi/stratalens-ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-              </svg>
-              <span>Open Source</span>
-            </a>
           </div>
         </div>
       </footer>
 
       {/* About Modal */}
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
+
+      {/* Ticker scroll animation */}
+      <style>{`
+        @keyframes scroll-right {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-scroll-right {
+          animation: scroll-right 60s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }

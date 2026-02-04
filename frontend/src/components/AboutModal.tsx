@@ -51,7 +51,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#0083f1] to-[#0070d8] rounded-xl flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 bg-[#0a1628] rounded-xl flex items-center justify-center shadow-sm">
                   <StrataLensLogo size={20} className="text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">About StrataLens</h2>
@@ -79,7 +79,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 href="https://kamathhrishi.github.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-[#0083f1] hover:text-[#0070d8] font-medium transition-colors mb-6"
+                className="inline-flex items-center gap-2 text-[#0a1628] hover:text-[#1e293b] font-medium transition-colors mb-6"
               >
                 Visit kamathhrishi.github.io
                 <ExternalLink className="w-4 h-4" />
