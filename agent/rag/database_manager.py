@@ -70,35 +70,49 @@ class DatabaseManager:
 
     def get_latest_quarter_for_company(self, ticker: str) -> Optional[str]:
         """Get the latest available quarter for a specific company."""
-        try:
-            conn = self._get_db_connection()
-            cursor = conn.cursor()
-            
-            # Find the latest quarter for this specific company
-            query = """
-            SELECT year, quarter 
-            FROM transcript_chunks 
-            WHERE ticker = %s 
-            ORDER BY year DESC, quarter DESC 
-            LIMIT 1
-            """
-            
-            cursor.execute(query, (ticker.upper(),))
-            result = cursor.fetchone()
-            self._return_db_connection(conn)
-            
-            if result:
-                year, quarter = result
-                latest_quarter = f"{year}_q{quarter}"
-                logger.info(f"📅 Latest quarter for {ticker}: {latest_quarter}")
-                return latest_quarter
-            else:
-                logger.warning(f"⚠️ No quarters found for company {ticker}")
-                return None
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                conn = self._get_db_connection()
+                cursor = conn.cursor()
                 
-        except Exception as e:
-            logger.error(f"❌ Error finding latest quarter for {ticker}: {e}")
-            return None
+                # Find the latest quarter for this specific company
+                query = """
+                SELECT year, quarter 
+                FROM transcript_chunks 
+                WHERE ticker = %s 
+                ORDER BY year DESC, quarter DESC 
+                LIMIT 1
+                """
+                
+                cursor.execute(query, (ticker.upper(),))
+                result = cursor.fetchone()
+                self._return_db_connection(conn)
+                
+                if result:
+                    year, quarter = result
+                    latest_quarter = f"{year}_q{quarter}"
+                    logger.info(f"📅 Latest quarter for {ticker}: {latest_quarter}")
+                    return latest_quarter
+                else:
+                    logger.warning(f"⚠️ No quarters found for company {ticker}")
+                    return None
+                    
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                logger.warning(f"⚠️ Database connection error (attempt {attempt + 1}/{max_retries + 1}) finding latest quarter for {ticker}: {e}")
+                try:
+                    if 'conn' in locals():
+                        conn.close()
+                except:
+                    pass
+                if attempt >= max_retries:
+                    logger.error(f"❌ Error finding latest quarter for {ticker} after {max_retries + 1} attempts: {e}")
+                    return None
+                import time
+                time.sleep(0.1 * (attempt + 1))
+            except Exception as e:
+                logger.error(f"❌ Error finding latest quarter for {ticker}: {e}")
+                return None
     
     def get_last_n_quarters_for_company(self, ticker: str, n: int) -> List[str]:
         """
@@ -129,76 +143,119 @@ class DatabaseManager:
             (latest first, going backwards chronologically)
             Will return fewer than N quarters if the company doesn't have that many available.
         """
-        try:
-            conn = self._get_db_connection()
-            cursor = conn.cursor()
-            
-            # Find the last N quarters for this specific company
-            # ORDER BY year DESC, quarter DESC ensures:
-            # - Latest year first (2025 before 2024)
-            # - Within each year, latest quarter first (Q4, Q3, Q2, Q1)
-            # This gives us: 2025_q2, 2025_q1, 2024_q4, 2024_q3, 2024_q2, 2024_q1, etc.
-            query = """
-            SELECT DISTINCT year, quarter 
-            FROM transcript_chunks 
-            WHERE ticker = %s 
-            ORDER BY year DESC, quarter DESC 
-            LIMIT %s
-            """
-            
-            cursor.execute(query, (ticker.upper(), n))
-            results = cursor.fetchall()
-            self._return_db_connection(conn)
-            
-            if results:
-                quarters = [f"{year}_q{quarter}" for year, quarter in results]
-                logger.info(f"📅 Last {n} quarters for {ticker}: {quarters}")
-                return quarters
-            else:
-                # ✅ IMPROVED: Better logging for debugging
-                logger.warning(f"⚠️ No quarters found for company {ticker} in database")
-                logger.warning(f"⚠️ This could mean: (1) ticker not in DB, (2) no transcript data, or (3) data ingestion issue")
-                logger.warning(f"⚠️ Check if {ticker} data exists: SELECT COUNT(*) FROM transcript_chunks WHERE ticker='{ticker.upper()}'")
-                return []
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                conn = self._get_db_connection()
+                cursor = conn.cursor()
+                
+                # Find the last N quarters for this specific company
+                # ORDER BY year DESC, quarter DESC ensures:
+                # - Latest year first (2025 before 2024)
+                # - Within each year, latest quarter first (Q4, Q3, Q2, Q1)
+                # This gives us: 2025_q2, 2025_q1, 2024_q4, 2024_q3, 2024_q2, 2024_q1, etc.
+                query = """
+                SELECT DISTINCT year, quarter 
+                FROM transcript_chunks 
+                WHERE ticker = %s 
+                ORDER BY year DESC, quarter DESC 
+                LIMIT %s
+                """
+                
+                cursor.execute(query, (ticker.upper(), n))
+                results = cursor.fetchall()
+                self._return_db_connection(conn)
+                
+                if results:
+                    quarters = [f"{year}_q{quarter}" for year, quarter in results]
+                    logger.info(f"📅 Last {n} quarters for {ticker}: {quarters}")
+                    return quarters
+                else:
+                    # ✅ IMPROVED: Better logging for debugging
+                    logger.warning(f"⚠️ No quarters found for company {ticker} in database")
+                    logger.warning(f"⚠️ This could mean: (1) ticker not in DB, (2) no transcript data, or (3) data ingestion issue")
+                    logger.warning(f"⚠️ Check if {ticker} data exists: SELECT COUNT(*) FROM transcript_chunks WHERE ticker='{ticker.upper()}'")
+                    return []
 
-        except Exception as e:
-            # ✅ IMPROVED: More detailed error logging
-            logger.error(f"❌ Database error finding last {n} quarters for {ticker}: {e}")
-            logger.error(f"❌ Exception type: {type(e).__name__}")
-            import traceback
-            logger.error(f"❌ Stack trace: {traceback.format_exc()}")
-            return []
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                # Connection error - retry with fresh connection
+                error_msg = str(e)
+                logger.warning(f"⚠️ Database connection error (attempt {attempt + 1}/{max_retries + 1}) finding last {n} quarters for {ticker}: {error_msg}")
+                
+                # Try to clean up the connection
+                try:
+                    if 'conn' in locals():
+                        try:
+                            conn.close()
+                        except:
+                            pass
+                except:
+                    pass
+                
+                # If this was the last attempt, log error and return empty
+                if attempt >= max_retries:
+                    logger.error(f"❌ Database error finding last {n} quarters for {ticker} after {max_retries + 1} attempts: {e}")
+                    logger.error(f"❌ Exception type: {type(e).__name__}")
+                    import traceback
+                    logger.error(f"❌ Stack trace: {traceback.format_exc()}")
+                    return []
+                
+                # Wait a bit before retrying
+                import time
+                time.sleep(0.1 * (attempt + 1))
+                
+            except Exception as e:
+                # ✅ IMPROVED: More detailed error logging
+                logger.error(f"❌ Database error finding last {n} quarters for {ticker}: {e}")
+                logger.error(f"❌ Exception type: {type(e).__name__}")
+                import traceback
+                logger.error(f"❌ Stack trace: {traceback.format_exc()}")
+                return []
     
     def get_general_latest_quarter(self) -> Optional[str]:
         """Get the latest available quarter across all companies."""
-        try:
-            conn = self._get_db_connection()
-            cursor = conn.cursor()
-            
-            # Find the latest quarter across all companies
-            query = """
-            SELECT year, quarter 
-            FROM transcript_chunks 
-            ORDER BY year DESC, quarter DESC 
-            LIMIT 1
-            """
-            
-            cursor.execute(query)
-            result = cursor.fetchone()
-            self._return_db_connection(conn)
-            
-            if result:
-                year, quarter = result
-                latest_quarter = f"{year}_q{quarter}"
-                logger.info(f"📅 General latest quarter: {latest_quarter}")
-                return latest_quarter
-            else:
-                logger.warning("⚠️ No quarters found in database")
-                return None
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                conn = self._get_db_connection()
+                cursor = conn.cursor()
                 
-        except Exception as e:
-            logger.error(f"❌ Error finding general latest quarter: {e}")
-            return None
+                # Find the latest quarter across all companies
+                query = """
+                SELECT year, quarter 
+                FROM transcript_chunks 
+                ORDER BY year DESC, quarter DESC 
+                LIMIT 1
+                """
+                
+                cursor.execute(query)
+                result = cursor.fetchone()
+                self._return_db_connection(conn)
+                
+                if result:
+                    year, quarter = result
+                    latest_quarter = f"{year}_q{quarter}"
+                    logger.info(f"📅 General latest quarter: {latest_quarter}")
+                    return latest_quarter
+                else:
+                    logger.warning("⚠️ No quarters found in database")
+                    return None
+                    
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                logger.warning(f"⚠️ Database connection error (attempt {attempt + 1}/{max_retries + 1}) finding general latest quarter: {e}")
+                try:
+                    if 'conn' in locals():
+                        conn.close()
+                except:
+                    pass
+                if attempt >= max_retries:
+                    logger.error(f"❌ Error finding general latest quarter after {max_retries + 1} attempts: {e}")
+                    return None
+                import time
+                time.sleep(0.1 * (attempt + 1))
+            except Exception as e:
+                logger.error(f"❌ Error finding general latest quarter: {e}")
+                return None
     
     def resolve_latest_quarter_reference(self, quarter_reference: str, ticker: str = None) -> str:
         """
@@ -267,7 +324,30 @@ class DatabaseManager:
         """Get a database connection from the pool or create a new one."""
         if self._connection_pool:
             try:
-                return self._connection_pool.getconn()
+                conn = self._connection_pool.getconn()
+                # Validate connection is still alive
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT 1")
+                    cursor.close()
+                    return conn
+                except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                    # Connection is stale, close it and get a new one
+                    logger.warning(f"⚠️  Connection from pool is stale: {e}, getting new connection")
+                    try:
+                        conn.close()
+                    except:
+                        pass
+                    # Try to get another connection from pool
+                    try:
+                        conn = self._connection_pool.getconn()
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT 1")
+                        cursor.close()
+                        return conn
+                    except Exception as e2:
+                        logger.warning(f"⚠️  Could not get valid connection from pool: {e2}, creating direct connection")
+                        return psycopg2.connect(self.pgvector_connection_string)
             except Exception as e:
                 logger.warning(f"⚠️  Could not get connection from pool: {e}")
                 # Fallback to direct connection
@@ -277,9 +357,19 @@ class DatabaseManager:
     
     def _return_db_connection(self, conn):
         """Return a database connection to the pool or close it."""
-        if self._connection_pool and conn:
+        if not conn:
+            return
+            
+        if self._connection_pool:
             try:
                 self._connection_pool.putconn(conn)
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                # Connection is bad, close it instead of returning to pool
+                logger.warning(f"⚠️  Connection is invalid, closing instead of returning to pool: {e}")
+                try:
+                    conn.close()
+                except:
+                    pass
             except Exception as e:
                 logger.warning(f"⚠️  Could not return connection to pool: {e}")
                 try:
