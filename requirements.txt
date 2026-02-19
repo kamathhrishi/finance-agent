@@ -62,3 +62,6 @@ tenacity==9.0.0
 logfire[fastapi]
 logfire[asyncpg]
 
+# AWS S3
+boto3>=1.35.0
+
