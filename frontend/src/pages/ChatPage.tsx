@@ -157,6 +157,7 @@ export default function ChatPage() {
                 {/* Example queries - clean */}
                 <div className="grid sm:grid-cols-2 gap-2 w-full max-w-2xl">
                   {[
+                    "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
                     "What is $AAPL's revenue breakdown by segment?",
                     "How has $NVDA's gross margin changed over time?",
                     "What are the main risks mentioned in $TSLA's 10-K?",

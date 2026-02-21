@@ -145,44 +145,46 @@ class TavilyService:
     def format_news_context(self, news_results: Dict[str, Any]) -> str:
         """
         Format news search results into context string for LLM with citation markers.
+        Uses the same SOURCE [N1]: pattern as transcripts and 10-K so the LLM cites news
+        consistently (e.g. [N1], [N2] in the answer).
         
         Args:
             news_results (Dict): Results from search_news()
         
         Returns:
-            Formatted string with news context including citation markers [N1], [N2], etc.
+            Formatted string with news context including SOURCE [N1], [N2], etc.
         """
         if not news_results.get("results"):
             return ""
         
-        context_parts = ["\n=== LATEST NEWS (from Tavily) ===\n"]
+        context_parts = ["\n=== LATEST NEWS ===\n"]
         
         # Add AI-generated answer if available
         if news_results.get("answer"):
             context_parts.append(f"Summary: {news_results['answer']}\n")
         
-        # Add individual articles with citation markers
+        # Format each article like SOURCE [N1]: so the LLM cites the same way as transcripts/10-K
         for i, result in enumerate(news_results.get("results", [])[:5], 1):
             title = result.get("title", "No title")
             url = result.get("url", "")
             content = result.get("content", "")
             published_date = result.get("published_date", "")
-            
-            # Use [N1], [N2], etc. as citation markers for news
-            citation_marker = f"[N{i}]"
-            context_parts.append(f"\n{citation_marker} {title}")
+            meta = []
             if published_date:
-                context_parts.append(f"   Published: {published_date}")
+                meta.append(f"Published: {published_date}")
             if url:
-                context_parts.append(f"   Source: {url}")
+                meta.append(f"Source: {url}")
+            meta_str = ", ".join(meta)
+            header = f"SOURCE [N{i}] {title}"
+            if meta_str:
+                header += f" ({meta_str})"
+            context_parts.append(f"\n{header}:")
             if content:
-                # Truncate content if too long
-                content_preview = content[:500] + "..." if len(content) > 500 else content
-                context_parts.append(f"   {content_preview}")
+                content_preview = content[:800] + "..." if len(content) > 800 else content
+                context_parts.append(content_preview)
+            context_parts.append("")
         
-        context_parts.append("\n=== END NEWS ===\n")
-        context_parts.append("\nNote: News citations are marked as [N1], [N2], etc. and should be referenced in your response.")
-        
+        context_parts.append("=== END NEWS ===\n")
         return "\n".join(context_parts)
     
     def get_news_citations(self, news_results: Dict[str, Any]) -> List[Dict[str, Any]]:

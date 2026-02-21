@@ -564,11 +564,11 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
         if news_context:
             news_sources_instruction = """
 7. **News Sources Available**: You have access to both earnings transcripts and recent news sources. Use whichever sources best answer the question:
-   - News sources ([N1], [N2], etc.) provide current context, recent developments, and market reactions
-   - Earnings transcripts provide official company statements, financial metrics, and management commentary
-   - When both are relevant, naturally integrate them; when only one is relevant, use only that source
-   - Neither source type is more authoritative - choose based on what the question asks for
-8. **When referencing news sources**: Use the citation markers (e.g., [N1], [N2]) and attribute them clearly (e.g., "According to recent reports ([N1])").
+   - News articles appear as SOURCE [N1], SOURCE [N2], etc. (same format as transcript SOURCE [13] or 10-K SOURCE [10K-1])
+   - You MUST cite news in your answer with the exact marker and brackets: [N1], [N2], etc. — e.g. "According to recent reports [N1], cybersecurity stocks fell..."
+   - News provides current context, recent developments, and market reactions; transcripts provide official company statements and metrics
+   - When both are relevant, integrate them and cite each source type; when only one is relevant, use only that source
+8. **When referencing news sources**: Use the EXACT citation markers from the context (e.g., [N1], [N2]) and attribute them clearly (e.g., "According to recent reports ([N1])" or "As reported ([N2])...").
 9. **Source Attribution**: Reflect the sources you actually used. If you used both, mention both; if you only used one type, that's fine too."""
 
         # Only include 10-K-specific citation instructions when ten_k_context is present

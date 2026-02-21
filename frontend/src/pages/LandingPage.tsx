@@ -91,6 +91,7 @@ const transcriptChatData = [
 ]
 
 const exampleQueries = [
+  "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
   "What is $NVDA's competitive moat in AI chips?",
   "Compare $MSFT and $GOOGL cloud segment growth",
   "$META AI capex commentary in last 3 quarters",

@@ -11,6 +11,7 @@ import uuid
 import datetime
 import asyncpg
 import asyncio
+from contextlib import asynccontextmanager
 from typing import Optional
 from datetime import datetime
 from collections import defaultdict
@@ -38,7 +39,7 @@ from psycopg2.extras import RealDictCursor
 
 # Import centralized utilities
 from app.auth.auth_utils import get_current_user, get_optional_user
-from db.db_utils import get_db
+from db.db_utils import get_db, get_db_optional
 from app.utils import create_error_response, raise_sanitized_http_exception
 from analytics.analytics_utils import log_chat_analytics, get_analytics_summary, get_analytics_data
 from analytics.analytics import UserType, AnalyticsQuery, AnalyticsResponse, AnalyticsSummary
@@ -46,6 +47,12 @@ from analytics.analytics import UserType, AnalyticsQuery, AnalyticsResponse, Ana
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _null_async_context():
+    """Async context manager that yields None (for demo stream when DB pool is not initialized)."""
+    yield None
 
 # Import Logfire for observability (optional)
 try:
@@ -474,9 +481,10 @@ async def stream_chat_message_v2(
 async def stream_landing_demo_message_v2(
     request: Request,
     chat_request: ChatMessage,
-    db: asyncpg.Connection = Depends(get_db)
+    db: Optional[asyncpg.Connection] = Depends(get_db_optional)
 ):
-    """Stream demo chat message with step-by-step updates using POST"""
+    """Stream demo chat message with step-by-step updates using POST.
+    Works even when the database pool is not initialized (skips conversation persistence)."""
     
     # Check global message limit
     check_and_increment_message_count()
@@ -538,60 +546,67 @@ async def stream_landing_demo_message_v2(
             _demo_ip_tracking[session_id]['count'] = 0
         logger.info(f"🔓 Demo limit disabled (environment: {env})")
     
-    # Get or create conversation for demo user
+    # Get or create conversation for demo user (skip persistence when DB unavailable)
     conversation_id = None
-    if chat_request.conversation_id:
-        # Demo user wants to continue an existing conversation
-        try:
-            conv_uuid = uuid.UUID(chat_request.conversation_id)
-            existing_conv = await db.fetchrow('''
-                SELECT id FROM chat_conversations 
-                WHERE id = $1 AND user_id IS NULL AND title LIKE 'Demo:%'
-            ''', conv_uuid)
-            
-            if existing_conv:
-                conversation_id = conv_uuid
-                logger.info(f"📂 Demo stream continuing conversation: {conversation_id}")
-        except (ValueError, Exception) as e:
-            logger.warning(f"⚠️ Invalid demo conversation ID: {e}")
-    
-    if not conversation_id:
-        # Create new demo conversation
-        title = f"Demo: {message[:50]}..." if len(message) > 50 else f"Demo: {message}"
-        conversation_id = await db.fetchval('''
-            INSERT INTO chat_conversations (user_id, title)
-            VALUES (NULL, $1)
+    if db is not None:
+        if chat_request.conversation_id:
+            # Demo user wants to continue an existing conversation
+            try:
+                conv_uuid = uuid.UUID(chat_request.conversation_id)
+                existing_conv = await db.fetchrow('''
+                    SELECT id FROM chat_conversations 
+                    WHERE id = $1 AND user_id IS NULL AND title LIKE 'Demo:%'
+                ''', conv_uuid)
+                
+                if existing_conv:
+                    conversation_id = conv_uuid
+                    logger.info(f"📂 Demo stream continuing conversation: {conversation_id}")
+            except (ValueError, Exception) as e:
+                logger.warning(f"⚠️ Invalid demo conversation ID: {e}")
+        
+        if not conversation_id:
+            # Create new demo conversation
+            title = f"Demo: {message[:50]}..." if len(message) > 50 else f"Demo: {message}"
+            conversation_id = await db.fetchval('''
+                INSERT INTO chat_conversations (user_id, title)
+                VALUES (NULL, $1)
+                RETURNING id
+            ''', title)
+            logger.info(f"✅ Created new demo stream conversation: {conversation_id}")
+        
+        # Save user message
+        user_message_id = await db.fetchval('''
+            INSERT INTO chat_messages (conversation_id, role, content)
+            VALUES ($1, 'user', $2)
             RETURNING id
-        ''', title)
-        logger.info(f"✅ Created new demo stream conversation: {conversation_id}")
-    
-    # Save user message
-    user_message_id = await db.fetchval('''
-        INSERT INTO chat_messages (conversation_id, role, content)
-        VALUES ($1, 'user', $2)
-        RETURNING id
-    ''', conversation_id, message)
-    logger.info(f"💬 Saved demo stream user message: {user_message_id}")
+        ''', conversation_id, message)
+        logger.info(f"💬 Saved demo stream user message: {user_message_id}")
+    else:
+        # No DB: use transient conversation id for response only
+        conversation_id = uuid.uuid4()
+        logger.info(f"📂 Demo stream (no DB): using transient conversation_id: {conversation_id}")
     
     async def event_generator():
         # STREAMING + DATABASE CONNECTION PATTERN (see authenticated endpoint for full explanation)
-        # Acquire connection inside generator to ensure it lives for entire stream duration
+        # When DB pool is available, acquire connection for entire stream and persistence.
+        # When DB pool is not initialized, run RAG without persistence (demo still works).
         from db.db_utils import _db_pool
-        if _db_pool is None:
-            error_event = {'type': 'error', 'message': 'Database unavailable'}
-            yield f"data: {json.dumps(error_event)}\n\n"
-            return
-        
-        async with _db_pool.acquire() as stream_db:
+        stream_db = None
+        if _db_pool is not None:
+            stream_db_ctx = _db_pool.acquire()
+        else:
+            stream_db_ctx = _null_async_context()
+        async with stream_db_ctx as stream_db:
             # Get RAG system
             if not rag_system:
                 error_event = {'type': 'error', 'message': 'Chat service unavailable'}
                 yield f"data: {json.dumps(error_event)}\n\n"
                 return
             
-            # Set database connection for RAG system (request-scoped via contextvars)
-            rag_system.set_database_connection(stream_db)
-            
+            # Set database connection for RAG system when available (request-scoped via contextvars)
+            if stream_db is not None:
+                rag_system.set_database_connection(stream_db)
+
             query_successful = False
             start_time = time.time()
 
@@ -666,8 +681,8 @@ async def stream_landing_demo_message_v2(
                         # Minimal yield to allow context switching for other events
                         await asyncio.sleep(0)
                 
-                # Save assistant message and log analytics for demo
-                if final_result:
+                # Save assistant message and log analytics for demo (only when DB is available)
+                if final_result and stream_db is not None:
                     # Save assistant message to conversation
                     try:
                         # Answer and citations are nested inside 'response' key
@@ -732,23 +747,24 @@ async def stream_landing_demo_message_v2(
                 }
                 yield f"data: {json.dumps(error_event)}\n\n"
 
-                # Log failed analytics
-                try:
-                    client_ip = request.client.host if request.client else "unknown"
-                    await log_chat_analytics(
-                        db=stream_db,
-                        ip_address=client_ip,
-                        user_type=UserType.DEMO,
-                        query_text=message,
-                        comprehensive_search=comprehensive,
-                        success=False,
-                        response_time_ms=0,
-                        citations_count=0,
-                        error_message=str(e),
-                        session_id=session_id
-                    )
-                except Exception as analytics_error:
-                    logger.error(f"Failed to log demo failed analytics: {analytics_error}")
+                # Log failed analytics (only when DB is available)
+                if stream_db is not None:
+                    try:
+                        client_ip = request.client.host if request.client else "unknown"
+                        await log_chat_analytics(
+                            db=stream_db,
+                            ip_address=client_ip,
+                            user_type=UserType.DEMO,
+                            query_text=message,
+                            comprehensive_search=comprehensive,
+                            success=False,
+                            response_time_ms=0,
+                            citations_count=0,
+                            error_message=str(e),
+                            session_id=session_id
+                        )
+                    except Exception as analytics_error:
+                        logger.error(f"Failed to log demo failed analytics: {analytics_error}")
     
     headers = {
         "Content-Type": "text/event-stream",

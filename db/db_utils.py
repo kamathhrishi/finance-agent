@@ -22,3 +22,13 @@ async def get_db():
     
     async with _db_pool.acquire() as connection:
         yield connection
+
+
+async def get_db_optional():
+    """Get database connection from the pool, or yield None if pool is not initialized.
+    Use for routes that can run without persistence (e.g. demo when DB is unavailable)."""
+    if _db_pool is None:
+        yield None
+        return
+    async with _db_pool.acquire() as connection:
+        yield connection

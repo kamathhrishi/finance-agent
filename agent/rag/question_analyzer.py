@@ -224,8 +224,9 @@ When marking as invalid, provide a helpful reason explaining what we CAN help wi
 **USER HINTS** - Intelligently determine answer complexity and data sources:
 
 **Data Source Hints:**
-- If user mentions "10-K", "annual report", "SEC filing" -> user_hints: {{"data_source": "10k"}}
-- If user mentions "earnings call", "transcript", "earnings" -> user_hints: {{"data_source": "earnings_transcripts"}}
+- If user explicitly asks for BOTH "10-K/10k filing" AND "earnings transcripts/calls" (e.g. "10k and earnings transcripts", "filing and transcripts") -> user_hints: {{"data_source": "hybrid"}} so BOTH sources are used together.
+- If user mentions only "10-K", "annual report", "SEC filing" -> user_hints: {{"data_source": "10k"}}
+- If user mentions only "earnings call", "transcript", "earnings" -> user_hints: {{"data_source": "earnings_transcripts"}}
 - If user mentions "latest news", "recent news", "news" -> user_hints: {{"data_source": "latest_news"}}
 
 **Answer Mode (ALWAYS SET THIS - REQUIRED):**
@@ -326,6 +327,9 @@ OUTPUT: {{"is_valid": true, "reason": "Question asks for 10-K analysis for a spe
 
 QUESTION: "Compile $ABNB performance from 2020 to 2024 based on its 10k"
 OUTPUT: {{"is_valid": true, "reason": "Question asks for multi-year 10-K compilation", "question_type": "specific_company", "extracted_ticker": "ABNB", "extracted_tickers": ["ABNB"], "topic": "performance compilation", "time_refs": ["2020 to 2024"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "detailed"}}}}
+
+QUESTION: "Study $AAPL 2024 using the 10-K filing and earnings transcripts"
+OUTPUT: {{"is_valid": true, "reason": "User explicitly asks for both 10-K and earnings transcripts", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "company analysis", "time_refs": ["2024"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "hybrid", "answer_mode": "detailed"}}}}
 
 QUESTION: "What did Apple say about their revenue in Q4 2024?"
 OUTPUT: {{"is_valid": true, "reason": "Question about quarterly earnings discussion", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "revenue discussion", "time_refs": ["Q4 2024"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{}}}}

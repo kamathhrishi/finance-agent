@@ -316,6 +316,19 @@ class SearchPlanner:
     # HELPER METHODS - Data Source Selection
     # ========================================================================
 
+    def _question_mentions_both_10k_and_transcripts(self, question: str) -> bool:
+        """True if question text explicitly mentions both 10-K/filing and earnings transcripts/calls."""
+        if not question or not isinstance(question, str):
+            return False
+        q = question.lower()
+        has_10k = any(
+            x in q for x in ("10-k", "10k", "10 k", "annual report", "sec filing", "sec filings")
+        )
+        has_transcript = any(
+            x in q for x in ("earnings transcript", "earnings transcripts", "earnings call", "earnings calls")
+        )
+        return bool(has_10k and has_transcript)
+
     def _decide_data_sources(
         self,
         topic: str,
@@ -344,8 +357,15 @@ class SearchPlanner:
             if hint == 'hybrid':
                 sources = ['earnings_transcripts', '10k']
             elif hint in ['10k', 'news', 'earnings_transcripts']:
+                # Safeguard: if question explicitly mentions BOTH 10k and transcripts, use both
+                if self._question_mentions_both_10k_and_transcripts(original_question) and hint in ['10k', 'earnings_transcripts']:
+                    sources = ['earnings_transcripts', '10k']
+                    rag_logger.info(f"📌 Question asks for both 10-K and transcripts; using hybrid (override single hint '{hint}')")
+                else:
+                    sources = [hint]
+            else:
                 sources = [hint]
-            rag_logger.info(f"📌 Using user-specified data source: {hint}")
+            rag_logger.info(f"📌 Using user-specified data source: {list(sources)}")
             return sources
 
         if not self.llm.is_available():
