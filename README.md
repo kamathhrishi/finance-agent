@@ -1,6 +1,6 @@
-# StrataLens AI
+# Finance Agent
 
-Stratalens AI is an equity research platform. Ask questions and get answers from 10-K filings, earnings calls, and news.
+Finance agent is an equity research platform. Ask questions and get answers from 10-K filings, earnings calls, and news.
 
 **Live Platform:** [www.stratalens.ai](https://www.stratalens.ai)
 
@@ -243,6 +243,7 @@ MIT License - see LICENSE file for details
 ## Contact
 
 For questions or access requests: hrishi@stratalens.ai
+
 
 
 
