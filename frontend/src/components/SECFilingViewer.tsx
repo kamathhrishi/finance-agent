@@ -9,6 +9,7 @@ import { config } from '../lib/config'
 interface SECFilingChunk {
   chunk_text: string
   chunk_id?: string
+  chunk_length?: number
   sec_section?: string
   relevance_score?: number
   char_offset?: number
@@ -287,6 +288,7 @@ export default function SECFilingViewer({
               relevant_chunks: relevantChunks.map(chunk => ({
                 chunk_text: chunk.chunk_text,
                 chunk_id: chunk.chunk_id,
+                chunk_length: chunk.chunk_length,
                 sec_section: chunk.sec_section,
                 relevance_score: chunk.relevance_score,
                 char_offset: chunk.char_offset,
@@ -410,7 +412,7 @@ export default function SECFilingViewer({
                 {isMarkdown && (
                   <>
                     <span className="text-slate-500">•</span>
-                    <span className="text-emerald-400">Structured</span>
+                    <span className="text-emerald-400">Parsed</span>
                   </>
                 )}
               </div>
@@ -515,7 +517,7 @@ export default function SECFilingViewer({
       {/* ── Footer ── */}
       <div className="bg-slate-50 border-t border-slate-200 px-5 py-2 flex items-center justify-between text-xs text-slate-400 shrink-0">
         <span>SEC EDGAR • {ticker} {filingType} FY{fiscalYear}</span>
-        <span>{isMarkdown ? 'Structured Markdown' : 'Plain Text'} • SEC EDGAR Database</span>
+        <span>{isMarkdown ? 'Parsed' : 'Plain Text'} • SEC EDGAR Database</span>
       </div>
 
       <style>{`

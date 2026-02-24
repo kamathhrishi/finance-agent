@@ -105,12 +105,13 @@ def setup_static_routes(app: FastAPI):
         file_path = f"{FRONTEND_DIR}/assets/{path}"
         if os.path.exists(file_path):
             # Determine content type based on extension
+            no_cache = {"Cache-Control": "no-cache, must-revalidate"}
             if path.endswith(".js"):
-                return FileResponse(file_path, media_type="application/javascript")
+                return FileResponse(file_path, media_type="application/javascript", headers=no_cache)
             elif path.endswith(".css"):
-                return FileResponse(file_path, media_type="text/css")
+                return FileResponse(file_path, media_type="text/css", headers=no_cache)
             else:
-                return FileResponse(file_path)
+                return FileResponse(file_path, headers=no_cache)
         return Response(status_code=404)
 
 

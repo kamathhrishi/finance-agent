@@ -91,11 +91,11 @@ const transcriptChatData = [
 ]
 
 const exampleQueries = [
-  "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
   "What is $NVDA's competitive moat in AI chips?",
   "Compare $MSFT and $GOOGL cloud segment growth",
   "$META AI capex commentary in last 3 quarters",
   "Comment on $ORCL balance sheet and their usage of debt?",
+  "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
 ]
 
 // Tech company tickers for the scrolling banner
@@ -236,8 +236,8 @@ export default function LandingPage() {
 
               {/* Headline - Serif for authority */}
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold text-[#0a1628] mb-6 leading-[1.15]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Institutional-Grade{' '}
-                <span className="block">Research Intelligence</span>
+                Research faster.{' '}
+                <span className="block">From primary sources.</span>
               </h1>
 
               {/* Subheadline */}

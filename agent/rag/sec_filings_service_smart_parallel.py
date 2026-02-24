@@ -310,6 +310,7 @@ class SmartParallelSECFilingsService:
         accumulated_chunks = []
         current_answer = None
         seen_chunk_ids = set()
+        next_chunk_idx = 1  # Global [10K-i] counter across iterations
 
         # ═══════════════════════════════════════════════════════════════════
         # ITERATIVE LOOP
@@ -357,26 +358,32 @@ class SmartParallelSECFilingsService:
 
             # ═══════════════════════════════════════════════════════════════
             # PHASE 2: ANSWER GENERATION
+            # Pass only new_chunks but start numbering from next_chunk_idx
+            # so [10K-i] markers are globally sequential across iterations.
+            # Previous answer's citations (e.g. [10K-2]) remain valid.
             # ═══════════════════════════════════════════════════════════════
-            chunks_for_generation = new_chunks if current_answer else accumulated_chunks
-
+            chunks_to_show = new_chunks[:20]
             current_answer = await self._generate_smart_answer(
                 question=query,
                 sub_questions=sub_questions,
-                chunks=chunks_for_generation,
+                chunks=chunks_to_show,
                 previous_answer=current_answer,
-                iteration=iteration_num
+                iteration=iteration_num,
+                chunk_start_idx=next_chunk_idx
             )
+            next_chunk_idx += len(chunks_to_show)
 
             rag_logger.info(f"   ✅ Answer generated ({len(current_answer)} chars)")
 
             # ═══════════════════════════════════════════════════════════════
             # PHASE 3: EVALUATION
+            # Evaluate against all accumulated chunks so references to
+            # earlier-iteration chunks are not penalised.
             # ═══════════════════════════════════════════════════════════════
             evaluation = await self._evaluate_answer_quality(
                 question=query,
                 answer=current_answer,
-                chunks=retrieved_chunks
+                chunks=accumulated_chunks
             )
 
             quality_score = evaluation.get('quality_score', 0.0)
@@ -581,16 +588,13 @@ Now analyze the original question and create RAG-friendly sub-questions."""
                     chunks = self._retrieve_tables_sync(query, all_tables, ticker=ticker, fiscal_year=fiscal_year, top_k=5)
                 else:
                     # Text retrieval with reranking
-                    # Generate embedding for this specific sub-question if embedding_function is provided
                     if embedding_function is not None:
                         try:
                             sub_question_embedding = embedding_function([query])[0]
-                            rag_logger.debug(f"🔤 Generated embedding for sub-question: '{query[:50]}...'")
                         except Exception as e:
                             rag_logger.warning(f"⚠️ Failed to generate embedding for sub-question, using fallback: {e}")
                             sub_question_embedding = query_embedding
                     else:
-                        # Fallback to original query embedding (old behavior)
                         sub_question_embedding = query_embedding
 
                     chunks = self._retrieve_text_sync(query, sub_question_embedding, ticker, fiscal_year, top_k)
@@ -634,7 +638,9 @@ Now analyze the original question and create RAG-friendly sub-questions."""
 
         return all_chunks
 
-    def _retrieve_tables_sync(self, query: str, all_tables: List[Dict], ticker: str = None, fiscal_year: int = None, top_k: int = 5) -> List[Dict]:
+    def _retrieve_tables_sync(self, query: str, all_tables: List[Dict], ticker: str = None,
+                              fiscal_year: int = None, top_k: int = 5,
+                              query_embedding=None) -> List[Dict]:
         """Synchronous table retrieval with LLM selection."""
         if not all_tables:
             return []
@@ -684,11 +690,17 @@ Return JSON with table indices (1-indexed), selecting up to {top_k} tables:
                     chunks.append({
                         'id': table.get('id', f'table_{idx}'),
                         'content': table.get('content', ''),
+                        'chunk_text': table.get('chunk_text', table.get('content', '')),
                         'type': 'table',
+                        'chunk_type': 'table',
                         'path_string': table.get('path_string', ''),
+                        'sec_section': table.get('sec_section', ''),
                         'sec_section_title': table.get('sec_section_title', 'Financial Data'),
-                        'ticker': table.get('ticker') or ticker,  # Use table's ticker or fallback to search ticker
-                        'fiscal_year': table.get('fiscal_year') or fiscal_year,  # Use table's or fallback
+                        'ticker': table.get('ticker') or ticker,
+                        'fiscal_year': table.get('fiscal_year') or fiscal_year,
+                        'char_offset': table.get('char_offset'),
+                        'chunk_length': table.get('chunk_length'),
+                        'source_type': '10-K',
                         'similarity': 1.0
                     })
 
@@ -736,11 +748,13 @@ Return JSON with table indices (1-indexed), selecting up to {top_k} tables:
                 for chunk, score in zip(text_chunks, scores):
                     chunk['similarity'] = float(score)
                     chunk['content'] = chunk.get('chunk_text', '')  # Normalize field name
+                    chunk['type'] = chunk.get('chunk_type', 'text')  # Normalize type field
 
                 text_chunks.sort(key=lambda x: x.get('similarity', 0), reverse=True)
             else:
                 for chunk in text_chunks:
                     chunk['content'] = chunk.get('chunk_text', '')  # Normalize field name
+                    chunk['type'] = chunk.get('chunk_type', 'text')  # Normalize type field
 
             return text_chunks[:top_k]
 
@@ -862,13 +876,20 @@ IMPORTANT: Select 1-3 sections maximum. Be selective."""
             return []  # Return empty to search all sections
 
     async def _get_all_tables_for_ticker(self, ticker: str, fiscal_year: int = None) -> List[Dict]:
-        """Get all available tables for a ticker."""
+        """Get all available tables for a ticker.
+
+        Prefers ten_k_chunks table rows (structured ingestion, has char_offset for highlighting).
+        Falls back to ten_k_tables (old format, no char_offset) only when ten_k_chunks has none.
+        """
         try:
-            tables = await self.database_manager.get_all_tables_for_ticker_async(
-                ticker=ticker,
-                fiscal_year=fiscal_year
-            )
-            return tables if tables else []
+            # Prefer ten_k_chunks table chunks — they have char_offset/chunk_length for precise highlighting
+            structured_chunks = self.database_manager.get_all_table_chunks(ticker=ticker, fiscal_year=fiscal_year)
+            if structured_chunks:
+                rag_logger.info(f"📊 Using {len(structured_chunks)} structured table chunks from ten_k_chunks for {ticker} FY{fiscal_year}")
+                return structured_chunks
+            # Fallback: ten_k_tables (old ingestion, no char_offset)
+            rag_logger.info(f"📊 No structured chunks for {ticker} FY{fiscal_year} — falling back to ten_k_tables")
+            return await self.database_manager.get_all_tables_for_ticker_async(ticker=ticker, fiscal_year=fiscal_year)
         except Exception as e:
             rag_logger.error(f"Failed to get tables: {e}")
             return []
@@ -879,34 +900,39 @@ IMPORTANT: Select 1-3 sections maximum. Be selective."""
         sub_questions: List[str],
         chunks: List[Dict],
         previous_answer: Optional[str],
-        iteration: int
+        iteration: int,
+        chunk_start_idx: int = 1
     ) -> str:
         """Generate answer using retrieved chunks."""
-        # Build context from chunks
+        # Build context using globally sequential [10K-i] markers
         context_parts = []
-        for i, chunk in enumerate(chunks[:20], 1):  # Limit chunks
-            chunk_type = chunk.get('type', 'unknown').upper()
-            path = chunk.get('path_string', 'Document')
-            content = chunk.get('content', '')[:2000]  # Limit content length
-            context_parts.append(f"[Source {i}] [{chunk_type}] {path}\n{content}")
+        for i, chunk in enumerate(chunks, chunk_start_idx):
+            chunk_type = (chunk.get('type') or chunk.get('chunk_type') or 'text').upper()
+            section = chunk.get('sec_section_title', chunk.get('path_string', 'SEC Filing'))
+            fy = chunk.get('fiscal_year', '')
+            fy_label = f" FY{fy}" if fy else ""
+            # Tables are never truncated — financial statements need full data
+            raw_content = chunk.get('content', '')
+            content = raw_content if chunk_type == 'TABLE' else raw_content[:2000]
+            context_parts.append(f"SOURCE [10K-{i}] [{chunk_type}]{fy_label} {section}\n{content}")
 
         context = "\n---\n".join(context_parts)
 
         if previous_answer:
-            prompt = f"""Do not use emojis. Refine the answer based on new information.
+            prompt = f"""Do not use emojis. Refine the answer using newly retrieved sources.
 
 QUESTION: {question}
 
 SUB-QUESTIONS:
 {chr(10).join(f'- {sq}' for sq in sub_questions)}
 
-PREVIOUS ANSWER:
+PREVIOUS ANSWER (citations [10K-1]...[10K-{chunk_start_idx - 1}] remain valid):
 {previous_answer}
 
-NEW INFORMATION:
+NEW SOURCES ({f'[10K-{chunk_start_idx}]' if context_parts else 'none'}...[10K-{chunk_start_idx + len(context_parts) - 1}]):
 {context}
 
-Integrate new data, cite sources [Source X], provide precise numbers."""
+Integrate new data. Use exact markers [10K-N]. Provide precise numbers."""
         else:
             prompt = f"""Do not use emojis. Answer the question using the retrieved data.
 
@@ -918,7 +944,7 @@ SUB-QUESTIONS:
 RETRIEVED DATA:
 {context}
 
-Cite sources [Source X], provide precise numbers, note any missing info."""
+Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, note any missing info."""
 
         try:
             messages = [
@@ -1038,7 +1064,8 @@ Return JSON with 1-3 NEW searches:
         for i, chunk in enumerate(chunks[:15], 1):
             chunk_type = chunk.get('type', 'unknown').upper()
             section = chunk.get('sec_section_title', 'SEC Filing')
-            content = chunk.get('content', '')[:1500]
+            raw_content = chunk.get('content', '')
+            content = raw_content if chunk_type == 'TABLE' else raw_content[:1500]
             fy = chunk.get('fiscal_year', '')
             fy_label = f" FY{fy}" if fy else ""
             # Use [10K-1], [10K-2] to match citation markers sent to frontend
@@ -1050,6 +1077,10 @@ Return JSON with 1-3 NEW searches:
         """Get citations from chunks."""
         citations = []
         for i, chunk in enumerate(chunks[:15], 1):
+            # chunk_text is the canonical field; 'content' is an alias used by table chunks
+            full_content = chunk.get('chunk_text') or chunk.get('content', '')
+            # Build a stable chunk_id so the frontend can scroll to the exact mark
+            chunk_id = chunk.get('id') or chunk.get('citation') or f"chunk-{i}"
             citations.append({
                 'source_number': i,
                 'type': '10-K',  # Explicitly mark as 10-K citation
@@ -1057,10 +1088,12 @@ Return JSON with 1-3 NEW searches:
                 'fiscal_year': chunk.get('fiscal_year', ''),
                 'section': chunk.get('sec_section_title', chunk.get('section', 'SEC Filing')),
                 'path': chunk.get('path_string', 'Document'),
-                'chunk_text': chunk.get('content', '')[:500],  # Include chunk text for frontend
+                'chunk_text': full_content[:500],  # Include chunk text for frontend (truncated)
                 'chunk_type': chunk.get('type', 'text'),  # table or text
                 'marker': f"[10K-{i}]",  # Citation marker
-                'preview': chunk.get('content', '')[:200],
+                'preview': full_content[:200],
                 'char_offset': chunk.get('char_offset'),  # Character offset for precise highlighting
+                'chunk_length': chunk.get('chunk_length') or len(full_content),
+                'chunk_id': chunk_id,  # Stable ID for per-chunk scroll targeting in the viewer
             })
         return citations

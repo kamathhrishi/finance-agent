@@ -707,6 +707,9 @@ class RAGAgent:
                         "quarter": chunk.get('quarter'),
                         "chunk_text": (chunk.get('chunk_text') or '')[:400],
                         "chunk_index": orig_idx,
+                        "chunk_id": str(chunk.get('id') or f"tc_{chunk.get('ticker','')}_{chunk.get('year','')}_{orig_idx}"),
+                        "char_offset": chunk.get('char_offset'),
+                        "chunk_length": chunk.get('chunk_length'),
                     })
 
         else:
@@ -766,6 +769,9 @@ class RAGAgent:
                         "quarter": chunk.get('quarter'),
                         "chunk_text": (chunk.get('chunk_text') or '')[:400],
                         "chunk_index": orig_idx,
+                        "chunk_id": str(chunk.get('id') or f"tc_{chunk.get('ticker','')}_{chunk.get('year','')}_{orig_idx}"),
+                        "char_offset": chunk.get('char_offset'),
+                        "chunk_length": chunk.get('chunk_length'),
                     })
 
         search_time = time.time() - search_start
@@ -1899,6 +1905,11 @@ class RAGAgent:
                         if chunks:
                             ctx.ten_k_results.extend(chunks)
                             rag_logger.info(f"✅ Found {len(chunks)} 10-K chunks for {ticker} via parallel search")
+                        # Capture the service's internally-generated answer (already has LLM table selection + citations)
+                        sec_answer = event_data.get('answer', '')
+                        if sec_answer and sec_answer.strip():
+                            ctx.ten_k_service_answer = getattr(ctx, 'ten_k_service_answer', '') + '\n\n' + sec_answer if getattr(ctx, 'ten_k_service_answer', '') else sec_answer
+                            rag_logger.info(f"✅ Captured SEC service answer ({len(sec_answer)} chars) for {ticker}")
                     elif ctx.stream:
                         if event_type == 'planning_start':
                             yield {'type': 'reasoning', 'message': f"Looking at {ticker}'s annual report...", 'step': '10k_planning', 'event_name': '10k_planning_start', 'data': {'ticker': ticker, 'phase': 'planning'}}
@@ -2031,7 +2042,12 @@ class RAGAgent:
         else:
             news_citations = []
         if ctx.ten_k_results:
+            # Always use format_10k_context so [10K-N] markers in the final answer match
+            # the [10K-1]..[10K-15] citation cards sent to the frontend.
+            # (ten_k_service_answer uses globally sequential numbers across iterations which
+            # diverge from get_10k_citations numbering after the first 20 chunks.)
             ctx.ten_k_context_str = self.sec_service.format_10k_context(ctx.ten_k_results)
+            rag_logger.info(f"📄 Using formatted raw chunks as context ({len(ctx.ten_k_context_str)} chars)")
             ten_k_citations = self.sec_service.get_10k_citations(ctx.ten_k_results)
             rag_logger.info(f"📄 Initial 10-K search returned {len(ten_k_citations)} citations")
         else:

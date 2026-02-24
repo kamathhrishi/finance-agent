@@ -62,21 +62,60 @@ async def _fetch_transcript_from_bucket(bucket_key: str) -> str:
 
 
 def _inject_highlights(text: str, chunks: list[dict]) -> str:
-    """Wrap relevant chunk text in <span class="highlighted-chunk"> tags."""
+    """Inject highlights using char_offset (primary) or text search (fallback)."""
     if not chunks:
         return text
-    sorted_chunks = sorted(chunks, key=lambda x: len(x.get("chunk_text", "")), reverse=True)
-    for i, chunk in enumerate(sorted_chunks):
-        chunk_text = re.sub(r'\s+', ' ', (chunk.get("chunk_text") or "").strip())
-        if len(chunk_text) < 10:
+
+    MIN_CHARS = 1200
+    LOOK_AHEAD = 400
+
+    # Build spans list: (start, end, chunk_id)
+    spans: list[tuple[int, int, str]] = []
+    for i, chunk in enumerate(chunks):
+        chunk_id = str(chunk.get("chunk_id") or f"chunk-{i}")
+        char_offset = chunk.get("char_offset")
+        chunk_length = chunk.get("chunk_length")
+        chunk_text = (chunk.get("chunk_text") or "").strip()
+
+        if isinstance(char_offset, int) and isinstance(chunk_length, int) and chunk_length > 0:
+            effective_len = max(chunk_length, MIN_CHARS)
+            end = min(char_offset + effective_len + LOOK_AHEAD, len(text))
+            if 0 <= char_offset < len(text):
+                spans.append((char_offset, end, chunk_id))
+                continue
+
+        # Fallback: text search
+        if len(chunk_text) >= 20:
+            anchor = chunk_text[:150]
+            idx = text.find(anchor)
+            if idx == -1:
+                tokens = re.split(r"\s+", anchor)
+                if len(tokens) >= 3:
+                    m = re.search(r"\s+".join(re.escape(t) for t in tokens if t), text)
+                    if m:
+                        idx = m.start()
+            if idx != -1:
+                end = min(idx + max(len(chunk_text), MIN_CHARS), len(text))
+                spans.append((idx, end, chunk_id))
+
+    # Insert marks in reverse order to preserve offsets
+    spans.sort(key=lambda x: x[0], reverse=True)
+    last_start = len(text) + 1
+    for start, end, chunk_id in spans:
+        if start >= last_start:
             continue
-        replacement = (
-            f'<span class="highlighted-chunk chunk-{i}" '
-            f'data-chunk-id="{chunk.get("chunk_id", "")}">'
-            f'{chunk_text}</span>'
+        end = min(end, last_start)
+        if end <= start:
+            continue
+        region = text[start:end]
+        marked = (
+            f'<mark class="highlighted-chunk" data-chunk-id="{chunk_id}">'
+            + region
+            + "</mark>"
         )
-        pattern = re.escape(chunk_text)
-        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE, count=1)
+        text = text[:start] + marked + text[end:]
+        last_start = start
+
     return text
 
 

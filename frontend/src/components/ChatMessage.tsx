@@ -479,8 +479,15 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
       company: source.company || source.ticker || '',
       ticker: source.ticker || '',
       quarter: formattedQuarter,
+      primaryChunkId: source.chunk_id,
       relevantChunks: source.chunk_text
-        ? [{ chunk_text: source.chunk_text, chunk_id: source.chunk_id, relevance_score: source.relevance_score || 0.8 }]
+        ? [{
+            chunk_text: source.chunk_text,
+            chunk_id: source.chunk_id,
+            relevance_score: source.relevance_score || 0.8,
+            char_offset: source.char_offset,
+            chunk_length: source.chunk_length,
+          }]
         : getRelevantChunks(source.ticker || '', formattedQuarter),
     })
   }
@@ -493,6 +500,15 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
     const quarter = typeof source.quarter === 'number'
       ? source.quarter
       : source.quarter ? parseInt(source.quarter, 10) : undefined
+    // Send only the clicked citation's chunk so only that section is highlighted
+    const singleChunk = source.chunk_text ? [{
+      chunk_text: source.chunk_text,
+      chunk_id: source.chunk_id,
+      chunk_length: source.chunk_length,
+      sec_section: source.section,
+      relevance_score: source.relevance_score || 0.8,
+      char_offset: source.char_offset,
+    }] : []
     onOpenDocument({
       type: 'sec-filing',
       ticker: source.ticker || '',
@@ -500,35 +516,9 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
       fiscalYear,
       quarter,
       filingDate: source.filing_date,
-      relevantChunks: source.chunk_text ? [{
-        chunk_text: source.chunk_text,
-        chunk_id: source.chunk_id,
-        sec_section: source.section,
-        relevance_score: source.relevance_score || 0.8,
-        char_offset: source.char_offset,
-      }] : getSECFilingRelevantChunks(source.ticker || '', fiscalYear, source.type || '10-K'),
+      relevantChunks: singleChunk,
       primaryChunkId: source.chunk_id,
     })
-  }
-
-  // Get relevant chunks for SEC filing highlighting
-  const getSECFilingRelevantChunks = (ticker: string, fiscalYear: string | number, filingType: string) => {
-    if (!message.sources) return []
-    return message.sources
-      .filter(s => {
-        const sourceType = getCitationType(s)
-        if (sourceType !== '10k') return false
-        const sourceFY = String(s.fiscal_year)
-        const targetFY = String(fiscalYear)
-        return s.ticker === ticker && sourceFY === targetFY && s.type === filingType
-      })
-      .map(s => ({
-        chunk_text: s.chunk_text || '',
-        chunk_id: s.chunk_id,
-        sec_section: s.section,
-        relevance_score: s.relevance_score || 0.8,
-        char_offset: s.char_offset,
-      }))
   }
 
   return (

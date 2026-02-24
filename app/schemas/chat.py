@@ -19,6 +19,8 @@ class ChatCitation(BaseModel):
     ticker: Optional[str] = Field(None, description="Ticker symbol (alias for company)")
     chunk_id: Optional[str] = Field(None, description="Unique identifier for the text chunk")
     chunk_text: Optional[str] = Field(None, description="Relevant text chunk or title")
+    chunk_length: Optional[int] = Field(None, description="Length of the original chunk text")
+    char_offset: Optional[int] = Field(None, description="Character offset of chunk in source document")
     relevance_score: Optional[float] = Field(None, description="Similarity score (0-1)")
     source_file: Optional[str] = Field(None, description="Original source file name or URL")
     transcript_available: Optional[bool] = Field(False, description="Whether complete transcript is available")

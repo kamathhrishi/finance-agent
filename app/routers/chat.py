@@ -327,12 +327,19 @@ async def stream_chat_message_v2(
 
                     yield f"data: {json.dumps(event)}\n\n"
 
-                    # For token events, add small delay to ensure browser receives them in real-time
-                    # Without this, tokens arrive too fast and get buffered
+                    # Flush delay by event type:
+                    # - tokens: 10ms cap for smooth streaming
+                    # - reasoning/progress: 80ms so each event is sent as a separate packet
+                    #   (without this, rapid-fire events from fast LLMs get TCP-batched together)
+                    # - everything else: minimal yield for context switching
                     if event_type == 'token':
-                        await asyncio.sleep(0.01)  # 10ms delay = ~100 tokens/sec for smooth streaming
+                        await asyncio.sleep(0.01)
+                    elif event_type in ('reasoning', 'progress', '10k_planning', '10k_retrieval',
+                                        '10k_evaluation', 'iteration_start', 'iteration_followup',
+                                        'iteration_search', 'iteration_transcript_search',
+                                        'iteration_news_search'):
+                        await asyncio.sleep(0.08)
                     else:
-                        # Minimal yield to allow context switching for other events
                         await asyncio.sleep(0)
                 
                 # Record usage if successful
@@ -1673,8 +1680,9 @@ async def send_message_to_conversation(
                     ticker = citation_entry.get('ticker', 'Unknown')
                     fiscal_year = citation_entry.get('fiscal_year', 'Unknown')
                     section = citation_entry.get('section', 'Unknown Section')
-                    chunk_text = f"FY{fiscal_year} 10-K Filing - {section}"
-                    if citation_entry.get('chunk_type') == 'table':
+                    # Use real chunk content for highlighting anchor; fall back to synthetic label
+                    chunk_text = citation_entry.get('chunk_text') or f"FY{fiscal_year} 10-K Filing - {section}"
+                    if not citation_entry.get('chunk_text') and citation_entry.get('chunk_type') == 'table':
                         chunk_text += " (Financial Table)"
                     
                     citations.append(ChatCitation(
@@ -1682,6 +1690,8 @@ async def send_message_to_conversation(
                         quarter=f'FY{fiscal_year}',
                         chunk_id=citation_entry.get('marker', f'10k_{i}'),
                         chunk_text=chunk_text,
+                        chunk_length=citation_entry.get('chunk_length'),
+                        char_offset=citation_entry.get('char_offset'),
                         relevance_score=citation_entry.get('similarity', 0.0),
                         source_file=citation_entry.get('path', ''),
                         transcript_available=False,
@@ -2071,5 +2081,4 @@ async def get_chat_analytics(
             success=False,
             error=str(e)
         )
-
 

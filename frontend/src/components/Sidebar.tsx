@@ -238,14 +238,14 @@ export default function Sidebar({
         <div className="p-3 border-t border-slate-200/60 hidden lg:block">
           <button
             onClick={onToggle}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
           >
             {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             ) : (
               <>
-                <ChevronLeft className="w-4 h-4" />
-                <span className="text-sm">Collapse</span>
+                <ChevronLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Collapse</span>
               </>
             )}
           </button>

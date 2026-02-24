@@ -295,7 +295,7 @@ export function useChat(): UseChatReturn {
             const newSources: Source[] = citationsData.map((c: any) => ({
               // Common
               title: c.title,
-              type: c.type,
+              type: c.type || c.citation_type,
               marker: c.marker,
 
               // Transcript fields
@@ -305,6 +305,7 @@ export function useChat(): UseChatReturn {
               year: c.year,
               chunk_text: c.chunk_text,
               chunk_id: c.chunk_id,
+              chunk_length: c.chunk_length,
               relevance_score: c.relevance_score,
               transcript_available: c.transcript_available,
 
@@ -313,6 +314,8 @@ export function useChat(): UseChatReturn {
               section: c.section,
               chunk_type: c.chunk_type,
               path: c.path,
+              filing_date: c.filing_date,
+              char_offset: c.char_offset,
 
               // News fields
               url: c.url,

@@ -710,8 +710,14 @@ Return ONLY valid JSON with this structure:
         requested_year = int(years[0]) if years else None
         for ticker in tickers:
             if requested_year is not None:
-                year_to_use = requested_year
-                rag_logger.info(f"📄 10-K search: {ticker} FY{year_to_use} (user-requested year)")
+                # Verify data actually exists for the requested year; if not, fall back to latest available
+                latest_available = self._get_latest_10k_fiscal_year(ticker)
+                if latest_available and requested_year > latest_available:
+                    rag_logger.info(f"📄 10-K search: {ticker} FY{requested_year} not available, using latest FY{latest_available}")
+                    year_to_use = latest_available
+                else:
+                    year_to_use = requested_year
+                    rag_logger.info(f"📄 10-K search: {ticker} FY{year_to_use} (user-requested year)")
             else:
                 year_to_use = self._get_latest_10k_fiscal_year(ticker)
                 if year_to_use:

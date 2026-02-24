@@ -65,7 +65,14 @@ export default function ChatPage() {
 
   const isEmpty = messages.length === 0
 
-  const activePanelWidth = documentPanel.open ? DOCUMENT_PANEL_WIDTH : 0
+  // When sidebar is collapsed + panel open, give document panel ~50% of viewport
+  const SIDEBAR_COLLAPSED_W = 60
+  const SIDEBAR_EXPANDED_W = 220
+  const activePanelWidth = documentPanel.open
+    ? (sidebarCollapsed
+        ? Math.floor((window.innerWidth - SIDEBAR_COLLAPSED_W) / 2)
+        : DOCUMENT_PANEL_WIDTH)
+    : 0
 
   return (
     <div className="min-h-screen bg-[#faf9f7]">
@@ -83,7 +90,7 @@ export default function ChatPage() {
       <div
         className="min-h-screen flex flex-col transition-all duration-300"
         style={{
-          paddingLeft: sidebarCollapsed ? '60px' : '220px',
+          paddingLeft: sidebarCollapsed ? `${SIDEBAR_COLLAPSED_W}px` : `${SIDEBAR_EXPANDED_W}px`,
           paddingRight: `${activePanelWidth}px`,
         }}
       >
@@ -189,7 +196,7 @@ export default function ChatPage() {
         <div
           className="fixed bottom-0 bg-gradient-to-t from-[#faf9f7] via-[#faf9f7] to-transparent pt-6 pb-4 transition-all duration-300"
           style={{
-            left: sidebarCollapsed ? '60px' : '200px',
+            left: sidebarCollapsed ? `${SIDEBAR_COLLAPSED_W}px` : `${SIDEBAR_EXPANDED_W}px`,
             right: `${activePanelWidth}px`,
           }}
         >
@@ -213,6 +220,7 @@ export default function ChatPage() {
         isOpen={documentPanel.open}
         onClose={handleCloseDocument}
         content={documentPanel.content}
+        width={activePanelWidth || undefined}
       />
 
       {/* About Modal */}

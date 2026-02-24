@@ -1,0 +1,3458 @@
+[
+  {
+    "ticker": "AAOI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018
+    ],
+    "chunks_stored": 3305,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ACHR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2097,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ACIW",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018
+    ],
+    "chunks_stored": 2942,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ACLS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2209,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ACMR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2018,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4084,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AD",
+    "error": "No CIKs found for ticker: ['AD']",
+    "success": false
+  },
+  {
+    "ticker": "ADEA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2020,
+      2021
+    ],
+    "chunks_stored": 2759,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ADUS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3166,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AGYS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2021,
+      2022,
+      2023,
+      2024,
+      2019,
+      2020
+    ],
+    "chunks_stored": 2379,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AIR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2823,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AJRD",
+    "error": "No CIKs found for ticker: ['AJRD']",
+    "success": false
+  },
+  {
+    "ticker": "ALGM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2585,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ALMFF",
+    "error": "No CIKs found for ticker: ['ALMFF']",
+    "success": false
+  },
+  {
+    "ticker": "ALRM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4636,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ALTR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 4194,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AMBA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3395,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AMED",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3739,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AMEH",
+    "error": "No CIKs found for ticker: ['AMEH']",
+    "success": false
+  },
+  {
+    "ticker": "APPF",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2724,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ARW",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024,
+      2018,
+      2020,
+      2019,
+      2021,
+      2022
+    ],
+    "chunks_stored": 2889,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ATEC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3070,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ATKR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2025,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3564,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ATRO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2860,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AUR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1590,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AVDX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2271,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AVPT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2816,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AVT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2344,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AVYA",
+    "error": "No CIKs found for ticker: ['AVYA']",
+    "success": false
+  },
+  {
+    "ticker": "AVYAW",
+    "error": "No CIKs found for ticker: ['AVYAW']",
+    "success": false
+  },
+  {
+    "ticker": "AXNX",
+    "error": "No CIKs found for ticker: ['AXNX']",
+    "success": false
+  },
+  {
+    "ticker": "AYI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 3418,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "AYX",
+    "error": "No CIKs found for ticker: ['AYX']",
+    "success": false
+  },
+  {
+    "ticker": "AZZ",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2671,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BATRA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024
+    ],
+    "chunks_stored": 855,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BATRK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024
+    ],
+    "chunks_stored": 855,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BDC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3149,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BELFA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2891,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BELFB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2891,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BHE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2021,
+      2022,
+      2023,
+      2024,
+      2020
+    ],
+    "chunks_stored": 2671,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BILL",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 3538,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BIO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2855,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BKD",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3883,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BL",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3367,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BLKB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3732,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BMI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 1934,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BNGI",
+    "error": "No CIKs found for ticker: ['BNGI']",
+    "success": false
+  },
+  {
+    "ticker": "BOX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 3327,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BRKR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 4172,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "BRKS",
+    "error": "No CIKs found for ticker: ['BRKS']",
+    "success": false
+  },
+  {
+    "ticker": "BTRS",
+    "error": "No CIKs found for ticker: ['BTRS']",
+    "success": false
+  },
+  {
+    "ticker": "BTRSW",
+    "error": "No CIKs found for ticker: ['BTRSW']",
+    "success": false
+  },
+  {
+    "ticker": "BWSN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4029,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CALX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2022,
+      2023,
+      2024,
+      2021
+    ],
+    "chunks_stored": 2583,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CARG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 4124,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CART",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024
+    ],
+    "chunks_stored": 1382,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CBU",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2018,
+      2019,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4811,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CCC",
+    "error": "No CIKs found for ticker: ['CCC']",
+    "success": false
+  },
+  {
+    "ticker": "CCCS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2020,
+      2021
+    ],
+    "chunks_stored": 2856,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CCMP",
+    "error": "No CIKs found for ticker: ['CCMP']",
+    "success": false
+  },
+  {
+    "ticker": "CDK",
+    "error": "No CIKs found for ticker: ['CDK']",
+    "success": false
+  },
+  {
+    "ticker": "CGNX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2439,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CHE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2018,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2963,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CLDR",
+    "error": "No CIKs found for ticker: ['CLDR']",
+    "success": false
+  },
+  {
+    "ticker": "CLGX",
+    "error": "No CIKs found for ticker: ['CLGX']",
+    "success": false
+  },
+  {
+    "ticker": "CLPE",
+    "error": "No CIKs found for ticker: ['CLPE']",
+    "success": false
+  },
+  {
+    "ticker": "CLSK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2025,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3576,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CMD",
+    "error": "No CIKs found for ticker: ['CMD']",
+    "success": false
+  },
+  {
+    "ticker": "CNK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 4105,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CNXC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2463,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "COLB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4157,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "COMM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 4157,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "COMP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2168,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CORZ",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2382,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CRUS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2614,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CSGS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 2935,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CTNI",
+    "error": "No CIKs found for ticker: ['CTNI']",
+    "success": false
+  },
+  {
+    "ticker": "CVLT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2429,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "CVT",
+    "error": "No CIKs found for ticker: ['CVT']",
+    "success": false
+  },
+  {
+    "ticker": "CWEN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4108,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DAVE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2021
+    ],
+    "chunks_stored": 1973,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DBD",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3339,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DBX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3624,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DCT",
+    "error": "No CIKs found for ticker: ['DCT']",
+    "success": false
+  },
+  {
+    "ticker": "DIOD",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 3352,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DJT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024,
+      2021,
+      2022
+    ],
+    "chunks_stored": 1730,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DLB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2025,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3129,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DNB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3147,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DOCN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2162,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DOCU",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3404,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DOX",
+    "filing_type": "10-K",
+    "years_processed": [],
+    "chunks_stored": 0,
+    "errors": [],
+    "success": false
+  },
+  {
+    "ticker": "DUOL",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1833,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "DXC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4281,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ENPH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3984,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ENS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3684,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ENV",
+    "error": "No CIKs found for ticker: ['ENV']",
+    "success": false
+  },
+  {
+    "ticker": "EOSE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2775,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "EPAM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3498,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ESE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2025,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2294,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ESTC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4022,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ETSY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4528,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "EXLS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4423,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FCELB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2025,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 5389,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FEYE",
+    "error": "No CIKs found for ticker: ['FEYE']",
+    "success": false
+  },
+  {
+    "ticker": "FIBK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4014,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FLIR",
+    "error": "No CIKs found for ticker: ['FLIR']",
+    "success": false
+  },
+  {
+    "ticker": "FORM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2856,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FOUR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2891,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FROG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2020
+    ],
+    "chunks_stored": 2661,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FRSH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2021
+    ],
+    "chunks_stored": 2133,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "FYBR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2021,
+      2019,
+      2020,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3949,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "GBTG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2024,
+      2023
+    ],
+    "chunks_stored": 3027,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "GKOS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3080,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "GLUU",
+    "error": "No CIKs found for ticker: ['GLUU']",
+    "success": false
+  },
+  {
+    "ticker": "GRUB",
+    "error": "No CIKs found for ticker: ['GRUB']",
+    "success": false
+  },
+  {
+    "ticker": "GSAT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3423,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "GTLB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2124,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "GTM",
+    "error": "No CIKs found for ticker: ['GTM']",
+    "success": false
+  },
+  {
+    "ticker": "HAON",
+    "error": "No CIKs found for ticker: ['HAON']",
+    "success": false
+  },
+  {
+    "ticker": "HAYW",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2011,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "HCP",
+    "error": "No CIKs found for ticker: ['HCP']",
+    "success": false
+  },
+  {
+    "ticker": "HRC",
+    "error": "No CIKs found for ticker: ['HRC']",
+    "success": false
+  },
+  {
+    "ticker": "HXL",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 2963,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "IAC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3516,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ICUI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3896,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "IDCC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3444,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "IHRTB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4101,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "IIVIP",
+    "error": "No CIKs found for ticker: ['IIVIP']",
+    "success": false
+  },
+  {
+    "ticker": "IPG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4149,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "IPGP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3190,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ITGR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3517,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ITRI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3172,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "JCOM",
+    "error": "No CIKs found for ticker: ['JCOM']",
+    "success": false
+  },
+  {
+    "ticker": "JOBY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2020,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2054,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "KN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2677,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LASR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2589,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LBRDA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4007,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LBRDK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4007,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LBRDP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4007,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LFST",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2187,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LFUS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3513,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LHCG",
+    "error": "No CIKs found for ticker: ['LHCG']",
+    "success": false
+  },
+  {
+    "ticker": "LIF",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1726,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LLYVA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 5215,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LLYVK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 5215,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LSTR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2475,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LSXMA",
+    "error": "No CIKs found for ticker: ['LSXMA']",
+    "success": false
+  },
+  {
+    "ticker": "LSXMB",
+    "error": "No CIKs found for ticker: ['LSXMB']",
+    "success": false
+  },
+  {
+    "ticker": "LSXMK",
+    "error": "No CIKs found for ticker: ['LSXMK']",
+    "success": false
+  },
+  {
+    "ticker": "LUMN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4702,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "LYFT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4051,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MANH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 2359,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MANT",
+    "error": "No CIKs found for ticker: ['MANT']",
+    "success": false
+  },
+  {
+    "ticker": "MASI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4462,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MAXR",
+    "error": "No CIKs found for ticker: ['MAXR']",
+    "success": false
+  },
+  {
+    "ticker": "MCFE",
+    "error": "No CIKs found for ticker: ['MCFE']",
+    "success": false
+  },
+  {
+    "ticker": "MDLA",
+    "error": "No CIKs found for ticker: ['MDLA']",
+    "success": false
+  },
+  {
+    "ticker": "MIR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3701,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MMSI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3582,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MRCY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2692,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MSGE",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 1417,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MSGS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 3776,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "MSP",
+    "error": "No CIKs found for ticker: ['MSP']",
+    "success": false
+  },
+  {
+    "ticker": "MTCH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3747,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NARI",
+    "error": "No CIKs found for ticker: ['NARI']",
+    "success": false
+  },
+  {
+    "ticker": "NATI",
+    "error": "No CIKs found for ticker: ['NATI']",
+    "success": false
+  },
+  {
+    "ticker": "NAVN",
+    "error": "No CIKs found for ticker: ['NAVN']",
+    "success": false
+  },
+  {
+    "ticker": "NCNO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1977,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NCR",
+    "error": "No CIKs found for ticker: ['NCR']",
+    "success": false
+  },
+  {
+    "ticker": "NCRRP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4610,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NEWR",
+    "error": "No CIKs found for ticker: ['NEWR']",
+    "success": false
+  },
+  {
+    "ticker": "NHC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2874,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1622,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NOVT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3929,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NSIT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3152,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NTCT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3133,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NTSK",
+    "error": "No CIKs found for ticker: ['NTSK']",
+    "success": false
+  },
+  {
+    "ticker": "NUVA",
+    "error": "No CIKs found for ticker: ['NUVA']",
+    "success": false
+  },
+  {
+    "ticker": "NVST",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3659,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NVTS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 1990,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "NXST",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 4201,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "OLED",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 2945,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ONDS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018
+    ],
+    "chunks_stored": 3431,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "OPCH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2504,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ORA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 6439,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "OSH",
+    "error": "No CIKs found for ticker: ['OSH']",
+    "success": false
+  },
+  {
+    "ticker": "OSIS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 3373,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "OSTBP",
+    "error": "No CIKs found for ticker: ['OSTBP']",
+    "success": false
+  },
+  {
+    "ticker": "OSTKO",
+    "error": "No CIKs found for ticker: ['OSTKO']",
+    "success": false
+  },
+  {
+    "ticker": "PATH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2251,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PAYC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 2854,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PAYO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2105,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PCTY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2915,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PEGA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2794,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PFPT",
+    "error": "No CIKs found for ticker: ['PFPT']",
+    "success": false
+  },
+  {
+    "ticker": "PI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3101,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PLAB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2597,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PLAN",
+    "error": "No CIKs found for ticker: ['PLAN']",
+    "success": false
+  },
+  {
+    "ticker": "PLUG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4780,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PLUS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2020,
+      2019,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3070,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PLXS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2983,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "POSH",
+    "error": "No CIKs found for ticker: ['POSH']",
+    "success": false
+  },
+  {
+    "ticker": "POWI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2803,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "POWL",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2078,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "POWWP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2024,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "chunks_stored": 2395,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "PRFT",
+    "error": "No CIKs found for ticker: ['PRFT']",
+    "success": false
+  },
+  {
+    "ticker": "PRSP",
+    "error": "No CIKs found for ticker: ['PRSP']",
+    "success": false
+  },
+  {
+    "ticker": "PWSC",
+    "error": "No CIKs found for ticker: ['PWSC']",
+    "success": false
+  },
+  {
+    "ticker": "PYCR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2053,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "QLYS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024,
+      2020,
+      2021,
+      2022,
+      2018,
+      2019
+    ],
+    "chunks_stored": 3252,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "QRVO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2672,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "QTWO",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4379,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "R",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3757,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RAZFF",
+    "error": "No CIKs found for ticker: ['RAZFF']",
+    "success": false
+  },
+  {
+    "ticker": "RELY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2160,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RGEN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 3650,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RGTI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2021
+    ],
+    "chunks_stored": 2248,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RIOT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3538,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RNG",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018
+    ],
+    "chunks_stored": 4160,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RUM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2024,
+      2021,
+      2022,
+      2023
+    ],
+    "chunks_stored": 1694,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RUN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3924,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "RZZRY",
+    "error": "No CIKs found for ticker: ['RZZRY']",
+    "success": false
+  },
+  {
+    "ticker": "S",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2238,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SAIC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3090,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SANM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2777,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SCPL",
+    "error": "No CIKs found for ticker: ['SCPL']",
+    "success": false
+  },
+  {
+    "ticker": "SEM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4121,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SIRI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3176,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SLAB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2024,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "chunks_stored": 2780,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SMAR",
+    "error": "No CIKs found for ticker: ['SMAR']",
+    "success": false
+  },
+  {
+    "ticker": "SMTC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2018
+    ],
+    "chunks_stored": 3373,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SNAP",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 4842,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SNDKV",
+    "error": "No CIKs found for ticker: ['SNDKV']",
+    "success": false
+  },
+  {
+    "ticker": "SOLSV",
+    "error": "No CIKs found for ticker: ['SOLSV']",
+    "success": false
+  },
+  {
+    "ticker": "SOUN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2024,
+      2022,
+      2023
+    ],
+    "chunks_stored": 1972,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SPR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4446,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SPSC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 2341,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ST",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 5129,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "STMP",
+    "error": "No CIKs found for ticker: ['STMP']",
+    "success": false
+  },
+  {
+    "ticker": "SVMK",
+    "error": "No CIKs found for ticker: ['SVMK']",
+    "success": false
+  },
+  {
+    "ticker": "SWCH",
+    "error": "No CIKs found for ticker: ['SWCH']",
+    "success": false
+  },
+  {
+    "ticker": "SWI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3774,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SWKS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 2497,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "SYNA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2025,
+      2022,
+      2023,
+      2024,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3148,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TDC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3015,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TEM",
+    "filing_type": "10-K",
+    "years_processed": [
+      2024
+    ],
+    "chunks_stored": 863,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TENB",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3336,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TFX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3539,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TGI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 3386,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TGNA",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2878,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TMDX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3437,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TTAN",
+    "filing_type": "10-K",
+    "years_processed": [
+      2024
+    ],
+    "chunks_stored": 614,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "TTMI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021
+    ],
+    "chunks_stored": 3537,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "UCTT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2023,
+      2018,
+      2019,
+      2020,
+      2021,
+      2024
+    ],
+    "chunks_stored": 2735,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VERX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2800,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VIAV",
+    "filing_type": "10-K",
+    "years_processed": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "chunks_stored": 4204,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VICR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2023,
+      2024,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022
+    ],
+    "chunks_stored": 2617,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VISN",
+    "error": "No CIKs found for ticker: ['VISN']",
+    "success": false
+  },
+  {
+    "ticker": "VLDR",
+    "error": "No CIKs found for ticker: ['VLDR']",
+    "success": false
+  },
+  {
+    "ticker": "VLDRW",
+    "error": "No CIKs found for ticker: ['VLDRW']",
+    "success": false
+  },
+  {
+    "ticker": "VNT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2143,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VRNS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3356,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VSAT",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024,
+      2018,
+      2019,
+      2020
+    ],
+    "chunks_stored": 4370,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VSEC",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2275,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VSH",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4273,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VSNT",
+    "error": "No CIKs found for ticker: ['VSNT']",
+    "success": false
+  },
+  {
+    "ticker": "VSNTV",
+    "error": "No CIKs found for ticker: ['VSNTV']",
+    "success": false
+  },
+  {
+    "ticker": "VVX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2677,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "VYGVF",
+    "error": "No CIKs found for ticker: ['VYGVF']",
+    "success": false
+  },
+  {
+    "ticker": "VZIO",
+    "error": "No CIKs found for ticker: ['VZIO']",
+    "success": false
+  },
+  {
+    "ticker": "WEX",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 4579,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "WGS",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2812,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "WIRE",
+    "error": "No CIKs found for ticker: ['WIRE']",
+    "success": false
+  },
+  {
+    "ticker": "WK",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2935,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "WWE",
+    "error": "No CIKs found for ticker: ['WWE']",
+    "success": false
+  },
+  {
+    "ticker": "XMTR",
+    "filing_type": "10-K",
+    "years_processed": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2040,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "XRAY",
+    "filing_type": "10-K",
+    "years_processed": [
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 3705,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "YOU",
+    "filing_type": "10-K",
+    "years_processed": [
+      2022,
+      2021,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2240,
+    "errors": [],
+    "success": true
+  },
+  {
+    "ticker": "ZI",
+    "filing_type": "10-K",
+    "years_processed": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "chunks_stored": 2922,
+    "errors": [],
+    "success": true
+  }
+]

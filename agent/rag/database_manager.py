@@ -966,7 +966,7 @@ class DatabaseManager:
                     query = """
                     SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                            sec_section, sec_section_title, path_string, chunk_index,
-                           char_offset,
+                           char_offset, chunk_length,
                            1 - (embedding <=> $1::vector) as similarity
                     FROM ten_k_chunks
                     WHERE UPPER(ticker) = $2 AND fiscal_year = $3
@@ -984,7 +984,7 @@ class DatabaseManager:
                     query = """
                     SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                            sec_section, sec_section_title, path_string, chunk_index,
-                           char_offset,
+                           char_offset, chunk_length,
                            1 - (embedding <=> $1::vector) as similarity
                     FROM ten_k_chunks
                     WHERE UPPER(ticker) = $2
@@ -1025,6 +1025,7 @@ class DatabaseManager:
                             'sec_section_title': row['sec_section_title'],
                             'path_string': row['path_string'],
                             'char_offset': row['char_offset'],
+                            'chunk_length': row['chunk_length'],
                             'source_type': '10-K'  # Mark as 10-K source
                         }
                         chunks.append(chunk)
@@ -1066,7 +1067,8 @@ class DatabaseManager:
                     upper_tickers = [t.upper() for t in tickers]
                     query = """
                     WITH ranked AS (
-                        SELECT chunk_text, ticker, year, quarter, chunk_index, metadata,
+                        SELECT id, chunk_text, ticker, year, quarter, chunk_index, metadata,
+                               char_offset, chunk_length,
                                1 - (embedding <=> $1::vector) as similarity,
                                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY embedding <=> $1::vector) as rn
                         FROM transcript_chunks
@@ -1083,7 +1085,8 @@ class DatabaseManager:
                 else:
                     query = """
                     WITH ranked AS (
-                        SELECT chunk_text, ticker, year, quarter, chunk_index, metadata,
+                        SELECT id, chunk_text, ticker, year, quarter, chunk_index, metadata,
+                               char_offset, chunk_length,
                                1 - (embedding <=> $1::vector) as similarity,
                                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY embedding <=> $1::vector) as rn
                         FROM transcript_chunks
@@ -1110,6 +1113,7 @@ class DatabaseManager:
                         metadata = {}
 
                     chunk = {
+                        'id': row['id'],
                         'chunk_text': row['chunk_text'],
                         'similarity': float(row['similarity']),
                         'metadata': metadata,
@@ -1117,6 +1121,8 @@ class DatabaseManager:
                         'quarter': row['quarter'],
                         'ticker': ticker,
                         'chunk_index': row['chunk_index'],
+                        'char_offset': row['char_offset'],
+                        'chunk_length': row['chunk_length'],
                     }
                     results.setdefault(ticker, []).append(chunk)
 
@@ -1154,7 +1160,7 @@ class DatabaseManager:
                     WITH ranked AS (
                         SELECT chunk_text, ticker, fiscal_year, chunk_index, metadata,
                                sec_section, sec_section_title, path_string, chunk_type,
-                               char_offset,
+                               char_offset, chunk_length,
                                1 - (embedding <=> $1::vector) as similarity,
                                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY embedding <=> $1::vector) as rn
                         FROM ten_k_chunks
@@ -1173,7 +1179,7 @@ class DatabaseManager:
                     WITH ranked AS (
                         SELECT chunk_text, ticker, fiscal_year, chunk_index, metadata,
                                sec_section, sec_section_title, path_string, chunk_type,
-                               char_offset,
+                               char_offset, chunk_length,
                                1 - (embedding <=> $1::vector) as similarity,
                                ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY embedding <=> $1::vector) as rn
                         FROM ten_k_chunks
@@ -1211,6 +1217,7 @@ class DatabaseManager:
                         'path_string': row['path_string'],
                         'chunk_type': row['chunk_type'],
                         'char_offset': row['char_offset'],
+                        'chunk_length': row['chunk_length'],
                     }
                     results.setdefault(ticker, []).append(chunk)
 
@@ -1237,7 +1244,7 @@ class DatabaseManager:
             base_select = """
                 SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                        sec_section, sec_section_title, path_string, chunk_index,
-                       char_offset,
+                       char_offset, chunk_length,
                        1 - (embedding <=> %s::vector) as similarity
                 FROM ten_k_chunks
             """
@@ -1306,6 +1313,7 @@ class DatabaseManager:
                         'sec_section_title': row['sec_section_title'],
                         'path_string': row['path_string'],
                         'char_offset': row['char_offset'],
+                        'chunk_length': row['chunk_length'],
                         'source_type': '10-K'  # Mark as 10-K source
                     }
                     chunks.append(chunk)
@@ -1315,6 +1323,73 @@ class DatabaseManager:
 
         except Exception as e:
             rag_logger.error(f"❌ 10-K search failed: {e}")
+            return []
+
+    def get_all_table_chunks(self, ticker: str, fiscal_year: int = None) -> List[Dict[str, Any]]:
+        """Fetch ALL table chunks for a ticker/year (no similarity filter).
+
+        Used as a drop-in replacement for ten_k_tables when that table is empty.
+        Returns chunks in the same dict format expected by _retrieve_tables_sync LLM selection.
+        """
+        try:
+            ticker = ticker.upper()
+            rag_logger.info(f"📊 Fetching all table chunks for {ticker} FY{fiscal_year}")
+
+            conn = self._get_db_connection()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+            conditions = ["UPPER(ticker) = %s", "chunk_type = 'table'"]
+            params = [ticker]
+            if fiscal_year:
+                conditions.append("fiscal_year = %s")
+                params.append(fiscal_year)
+
+            query = f"""
+                SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
+                       sec_section, sec_section_title, path_string, chunk_index,
+                       char_offset, chunk_length
+                FROM ten_k_chunks
+                WHERE {' AND '.join(conditions)}
+                ORDER BY chunk_index
+            """
+            cursor.execute(query, tuple(params))
+            results = cursor.fetchall()
+            self._return_db_connection(conn)
+
+            chunks = []
+            for row in results:
+                metadata = row['metadata']
+                if isinstance(metadata, str):
+                    try:
+                        metadata = json.loads(metadata)
+                    except Exception:
+                        metadata = {}
+                elif metadata is None:
+                    metadata = {}
+                chunks.append({
+                    'id': f"tc_{row['ticker']}_{row['fiscal_year']}_{row['chunk_index']}",
+                    'chunk_text': row['chunk_text'],
+                    'content': row['chunk_text'],
+                    'metadata': metadata,
+                    'citation': f"10K_{row['ticker']}_FY{row['fiscal_year']}_{row['chunk_index']}",
+                    'ticker': row['ticker'],
+                    'fiscal_year': row['fiscal_year'],
+                    'chunk_type': row['chunk_type'],
+                    'type': 'table',
+                    'sec_section': row['sec_section'],
+                    'sec_section_title': row['sec_section_title'],
+                    'path_string': row['path_string'],
+                    'char_offset': row['char_offset'],
+                    'chunk_length': row['chunk_length'],
+                    'source_type': '10-K',
+                    'similarity': 1.0,
+                })
+
+            rag_logger.info(f"📊 Fetched {len(chunks)} table chunks for {ticker}")
+            return chunks
+
+        except Exception as e:
+            rag_logger.error(f"❌ get_all_table_chunks failed: {e}")
             return []
 
     def __del__(self):

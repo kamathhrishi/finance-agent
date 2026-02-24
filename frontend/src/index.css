@@ -145,6 +145,22 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Transcript / SEC filing chunk highlights */
+mark.highlighted-chunk {
+  background: rgba(59, 130, 246, 0.18) !important;
+  border-left: 3px solid rgb(59, 130, 246);
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: help;
+  display: inline;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+mark.highlighted-chunk:hover {
+  background: rgba(59, 130, 246, 0.32) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
 /* Utility classes */
 .text-balance {
   text-wrap: balance;

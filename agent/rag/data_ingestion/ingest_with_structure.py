@@ -13,6 +13,7 @@ Usage:
 
 import argparse
 import bisect
+import gc
 import json
 import logging
 import os
@@ -297,65 +298,118 @@ def create_structured_chunks(
     """
     Split markdown_text into overlapping chunks annotated with heading context.
 
+    Tables are kept as atomic chunks (never split mid-row).
+    Text chunks stop at table boundaries.
+    chunk_length = exact byte count so char_offset + chunk_length == slice end.
+
     Each chunk dict:
-        content, char_offset, parent_heading, heading_path,
+        content, char_offset, chunk_length, parent_heading, heading_path,
         sec_section, sec_section_title, chunk_type
     """
     flat = flatten_headings(structure)
     offsets = [h[0] for h in flat]  # sorted list of heading char offsets
 
+    # Pre-scan markdown for table block spans so we never split mid-table
+    table_spans: List[Tuple[int, int]] = []
+    pos = 0
+    in_table = False
+    table_start = 0
+    for line in markdown_text.splitlines(keepends=True):
+        is_table_line = line.lstrip().startswith('|')
+        if is_table_line and not in_table:
+            in_table = True
+            table_start = pos
+        if not is_table_line and in_table:
+            table_spans.append((table_start, pos))
+            in_table = False
+        pos += len(line)
+    if in_table:
+        table_spans.append((table_start, pos))
+
     chunks: List[Dict] = []
     text_len = len(markdown_text)
     start = 0
     chunk_idx = 0
+    table_idx = 0
 
     while start < text_len:
-        end = min(start + chunk_size, text_len)
+        # Advance table index past spans we've already passed
+        while table_idx < len(table_spans) and table_spans[table_idx][1] <= start:
+            table_idx += 1
 
-        # Don't cut inside a word
+        # If we're inside a table block, emit the whole table as one chunk
+        if table_idx < len(table_spans):
+            t_start, t_end = table_spans[table_idx]
+            if t_start <= start < t_end:
+                chunk_text = markdown_text[t_start:t_end]  # no strip — preserves offsets
+                if not chunk_text.strip():
+                    start = t_end
+                    continue
+                idx = bisect.bisect_right(offsets, t_start) - 1
+                parent_heading = flat[idx][1] if idx >= 0 else None
+                heading_path = flat[idx][2] if idx >= 0 else []
+                sec_section, sec_section_title = identify_section(heading_path)
+                path_string = ' > '.join(heading_path) if heading_path else ''
+                chunks.append({
+                    'content': chunk_text,
+                    'char_offset': t_start,
+                    'chunk_length': t_end - t_start,
+                    'parent_heading': parent_heading,
+                    'heading_path': heading_path,
+                    'sec_section': sec_section,
+                    'sec_section_title': sec_section_title,
+                    'chunk_type': 'table',
+                    'path_string': path_string,
+                    'chunk_index': chunk_idx,
+                })
+                start = t_end
+                chunk_idx += 1
+                continue
+
+        end = min(start + chunk_size, text_len)
+        # Stop before the next table so text chunks never bleed into tables
+        if table_idx < len(table_spans):
+            t_start, _t_end = table_spans[table_idx]
+            if start < t_start < end:
+                end = t_start
+
+        # Snap to newline boundary (don't cut mid-word)
         if end < text_len:
             newline = markdown_text.rfind('\n', start, end)
             if newline > start + chunk_size // 2:
                 end = newline
 
-        chunk_text = markdown_text[start:end].strip()
-        if not chunk_text:
+        chunk_text = markdown_text[start:end]  # no strip — preserves offsets
+        if not chunk_text.strip():
             start = end + 1
             continue
 
-        # Find active heading at chunk start
         idx = bisect.bisect_right(offsets, start) - 1
-        if idx >= 0:
-            parent_heading = flat[idx][1]
-            heading_path = flat[idx][2]
-        else:
-            parent_heading = None
-            heading_path = []
-
+        parent_heading = flat[idx][1] if idx >= 0 else None
+        heading_path = flat[idx][2] if idx >= 0 else []
         sec_section, sec_section_title = identify_section(heading_path)
-
-        # Detect table chunks
-        lines = chunk_text.split('\n')
-        table_lines = sum(1 for l in lines if l.strip().startswith('|'))
-        chunk_type = 'table' if table_lines > len(lines) * 0.3 else 'text'
-
-        # Build path string (for backwards compat with path_string column)
         path_string = ' > '.join(heading_path) if heading_path else ''
 
         chunks.append({
             'content': chunk_text,
             'char_offset': start,
+            'chunk_length': end - start,
             'parent_heading': parent_heading,
             'heading_path': heading_path,
             'sec_section': sec_section,
             'sec_section_title': sec_section_title,
-            'chunk_type': chunk_type,
+            'chunk_type': 'text',
             'path_string': path_string,
             'chunk_index': chunk_idx,
         })
 
-        # Advance with overlap
-        start = end - overlap if end < text_len else text_len
+        # Apply overlap only when the chunk was large enough to warrant it.
+        # If end-start < overlap (e.g. truncated by a nearby table boundary),
+        # just advance to end — otherwise we'd creep forward 1 char at a time.
+        if end < text_len:
+            start = end - overlap if (end - start) > overlap else end
+        else:
+            start = text_len
         chunk_idx += 1
 
     logger.info(f"  Created {len(chunks)} chunks from {text_len:,} char markdown")
@@ -502,6 +556,7 @@ def store_structured_chunks(
                 'filing_type': filing_type,
                 'heading_path': chunk['heading_path'],
                 'char_offset': chunk['char_offset'],
+                'chunk_length': chunk.get('chunk_length'),
             }
 
             # Convert embedding to pgvector format
@@ -523,6 +578,7 @@ def store_structured_chunks(
                 chunk['parent_heading'],    # parent_heading
                 chunk['heading_path'],      # heading_path (array)
                 chunk['char_offset'],       # char_offset
+                chunk.get('chunk_length'),  # chunk_length
             ))
 
         if rows:
@@ -534,12 +590,12 @@ def store_structured_chunks(
                     ticker, fiscal_year, filing_type,
                     chunk_index, citation, chunk_type,
                     sec_section, sec_section_title, path_string,
-                    parent_heading, heading_path, char_offset
+                    parent_heading, heading_path, char_offset, chunk_length
                 )
                 VALUES %s
                 """,
                 rows,
-                template="(%s, %s::vector, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s)"
+                template="(%s, %s::vector, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::text[], %s, %s)"
             )
 
         conn.commit()
@@ -599,8 +655,8 @@ def run_structured_ingestion(
             submission_type=[filing_type]
         )
 
-        documents = list(portfolio.document_type(filing_type))
-        logger.info(f"✅ Found {len(documents)} filing(s)")
+        documents = portfolio.document_type(filing_type)
+        logger.info(f"✅ Starting document iteration...")
 
         for doc in documents:
             try:
@@ -635,13 +691,13 @@ def run_structured_ingestion(
                 if not force:
                     check_cur = conn.cursor()
                     check_cur.execute(
-                        "SELECT document_markdown IS NOT NULL FROM complete_sec_filings WHERE UPPER(ticker)=%s AND fiscal_year=%s AND filing_type=%s LIMIT 1",
+                        "SELECT bucket_key IS NOT NULL FROM complete_sec_filings WHERE UPPER(ticker)=%s AND fiscal_year=%s AND filing_type=%s LIMIT 1",
                         (ticker, fiscal_year, filing_type.upper())
                     )
                     row = check_cur.fetchone()
                     check_cur.close()
                     if row and row[0]:
-                        logger.info(f"  ⏭️  FY{fiscal_year} already has markdown, skipping (use --force to overwrite)")
+                        logger.info(f"  ⏭️  FY{fiscal_year} already ingested, skipping (use --force to overwrite)")
                         continue
 
                 logger.info(f"  📊 FY{fiscal_year}: markdown={len(markdown_text):,} chars, text={len(plain_text):,} chars")
@@ -703,7 +759,10 @@ def run_structured_ingestion(
             except Exception as e:
                 logger.error(f"  ❌ Error processing document: {e}", exc_info=True)
                 errors.append(str(e))
-                continue
+            finally:
+                # Free the parsed document and large strings immediately
+                del doc
+                gc.collect()
 
     finally:
         conn.close()
@@ -749,7 +808,9 @@ if __name__ == '__main__':
     )
     parser.add_argument('--ticker', default=None, help='Single company ticker symbol')
     parser.add_argument('--tickers', nargs='+', help='Multiple ticker symbols for batch mode')
-    parser.add_argument('--tickers-json', help='Path to JSON file with large-cap ticker list')
+    parser.add_argument('--tickers-json', help='Path to JSON file with ticker list')
+    parser.add_argument('--market-caps', nargs='+', default=['Large Cap'],
+                        help='Market cap tiers to include from --tickers-json (default: "Large Cap")')
     parser.add_argument('--year-start', type=int, default=2019)
     parser.add_argument('--year-end', type=int, default=2025)
     parser.add_argument('--filing-type', default='10-K')
@@ -762,7 +823,8 @@ if __name__ == '__main__':
     if args.tickers_json:
         with open(args.tickers_json) as f:
             jdata = json.load(f)
-        tickers = [c['ticker'] for c in jdata['companies'] if c.get('market_cap') == 'Large Cap']
+        target_caps = set(args.market_caps)
+        tickers = [c['ticker'] for c in jdata['companies'] if c.get('market_cap') in target_caps]
         # Remove known non-primary tickers
         _drop = {
             'BOE', 'BOEI', 'DISCB', 'DISCK', 'FOX', 'NWS', 'PRSI', 'SQD', 'RSMDF',
@@ -770,7 +832,7 @@ if __name__ == '__main__':
             'STRD', 'STRK', 'QRTEP', 'SABRP', 'LBRDB', 'XYZ', 'PSKY', 'UPSN',
         }
         tickers = [t for t in tickers if t not in _drop]
-        logger.info(f"Loaded {len(tickers)} large-cap tickers from {args.tickers_json}")
+        logger.info(f"Loaded {len(tickers)} tickers ({', '.join(target_caps)}) from {args.tickers_json}")
     elif args.tickers:
         tickers = [t.upper() for t in args.tickers]
     elif args.ticker:

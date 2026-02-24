@@ -12,6 +12,7 @@ interface SECFilingPanelContent {
   relevantChunks?: Array<{
     chunk_text: string
     chunk_id?: string
+    chunk_length?: number
     sec_section?: string
     relevance_score?: number
     char_offset?: number
@@ -24,10 +25,13 @@ interface TranscriptPanelContent {
   company: string
   ticker: string
   quarter: string
+  primaryChunkId?: string
   relevantChunks?: Array<{
     chunk_text: string
     chunk_id?: string
     relevance_score?: number
+    char_offset?: number
+    chunk_length?: number
   }>
 }
 
@@ -37,11 +41,13 @@ interface DocumentPanelProps {
   isOpen: boolean
   onClose: () => void
   content: DocumentPanelContent | null
+  width?: number
 }
 
 const PANEL_WIDTH = 680
 
-export default function DocumentPanel({ isOpen, onClose, content }: DocumentPanelProps) {
+export default function DocumentPanel({ isOpen, onClose, content, width }: DocumentPanelProps) {
+  const effectiveWidth = width ?? PANEL_WIDTH
   return (
     <AnimatePresence>
       {isOpen && content && (
@@ -51,7 +57,7 @@ export default function DocumentPanel({ isOpen, onClose, content }: DocumentPane
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 260 }}
           className="fixed top-0 right-0 h-full z-40 shadow-2xl border-l border-slate-200 flex flex-col"
-          style={{ width: PANEL_WIDTH }}
+          style={{ width: effectiveWidth }}
         >
           {content.type === 'sec-filing' ? (
             <SECFilingViewer
@@ -76,6 +82,7 @@ export default function DocumentPanel({ isOpen, onClose, content }: DocumentPane
               ticker={content.ticker}
               quarter={content.quarter}
               relevantChunks={content.relevantChunks || []}
+              primaryChunkId={content.primaryChunkId}
               panelMode={true}
             />
           )}

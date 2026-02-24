@@ -7,6 +7,8 @@ interface TranscriptChunk {
   chunk_text: string
   chunk_id?: string
   relevance_score?: number
+  char_offset?: number
+  chunk_length?: number
 }
 
 interface TranscriptModalProps {
@@ -16,12 +18,14 @@ interface TranscriptModalProps {
   ticker: string
   quarter: string
   relevantChunks: TranscriptChunk[]
+  primaryChunkId?: string
   panelMode?: boolean  // When true, renders as embedded panel content (no overlay)
 }
 
 interface TranscriptData {
   success: boolean
   transcript_text: string
+  highlighted_transcript?: string
   metadata?: {
     date?: string
     title?: string
@@ -110,6 +114,19 @@ function formatTranscriptWithSpeakers(transcriptText: string, relevantChunks: Tr
   return formattedText
 }
 
+// Bold speaker names in already-processed HTML (handles optional leading <mark> tags)
+function boldSpeakerNames(html: string): string {
+  const commonWords = new Set(['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'all', 'this', 'that'])
+  return html.replace(
+    /(^|\n)((?:<[^>]+>)*)([A-Z][A-Za-z\s\-.]{2,50}):\s/gm,
+    (full, lineStart, htmlPrefix, name) => {
+      const clean = name.trim()
+      if (clean.length < 3 || /\d/.test(clean) || commonWords.has(clean.toLowerCase())) return full
+      return `${lineStart}${htmlPrefix}<strong class="font-semibold text-slate-900">${clean}</strong>: `
+    }
+  )
+}
+
 // Highlight relevant chunks in the transcript
 function highlightRelevantChunks(formattedText: string, relevantChunks: TranscriptChunk[]): string {
   let highlightedText = formattedText
@@ -165,6 +182,7 @@ export default function TranscriptModal({
   ticker,
   quarter,
   relevantChunks,
+  primaryChunkId,
   panelMode = false,
 }: TranscriptModalProps) {
   const [transcript, setTranscript] = useState<TranscriptData | null>(null)
@@ -190,7 +208,22 @@ export default function TranscriptModal({
 
       try {
         const response = await fetch(
-          `${config.apiBaseUrl}/transcript/${ticker}/${parsed.year}/${parsed.quarterNum}`
+          `${config.apiBaseUrl}/transcript/with-highlights`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ticker,
+              year: parsed.year,
+              quarter: parsed.quarterNum,
+              relevant_chunks: relevantChunks.map(c => ({
+                chunk_text: c.chunk_text,
+                chunk_id: c.chunk_id,
+                char_offset: c.char_offset,
+                chunk_length: c.chunk_length,
+              })),
+            }),
+          }
         )
 
         if (!response.ok) {
@@ -228,20 +261,27 @@ export default function TranscriptModal({
     }
   }, [isOpen, onClose])
 
-  // Scroll to first highlight and count highlights after render
+  // Scroll to primary chunk (or first highlight) and count highlights after render
   useEffect(() => {
     if (!loading && transcript && contentRef.current) {
       setTimeout(() => {
         const highlights = contentRef.current?.querySelectorAll('.highlighted-chunk')
         setHighlightCount(highlights?.length || 0)
 
-        const firstHighlight = document.getElementById('first-highlight')
-        if (firstHighlight) {
-          firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Prefer scrolling to the specific clicked chunk
+        let target: Element | null = null
+        if (primaryChunkId) {
+          target = contentRef.current?.querySelector(`mark[data-chunk-id="${primaryChunkId}"]`) || null
+        }
+        if (!target) {
+          target = contentRef.current?.querySelector('.highlighted-chunk') || null
+        }
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
       }, 100)
     }
-  }, [loading, transcript])
+  }, [loading, transcript, primaryChunkId])
 
   // Download transcript
   const handleDownload = useCallback(() => {
@@ -256,9 +296,12 @@ export default function TranscriptModal({
     URL.revokeObjectURL(url)
   }, [transcript, ticker, quarter])
 
-  // Process transcript with formatting and highlighting
-  const processedTranscript = transcript?.transcript_text
-    ? formatTranscriptWithSpeakers(transcript.transcript_text, relevantChunks)
+  // Use server-highlighted transcript (char_offset-based marks) if available,
+  // otherwise fall back to client-side speaker formatting without chunk highlighting
+  const processedTranscript = transcript
+    ? (transcript.highlighted_transcript
+        ? `<div class="whitespace-pre-wrap text-slate-700 leading-relaxed text-[14px]">${boldSpeakerNames(transcript.highlighted_transcript)}</div>`
+        : formatTranscriptWithSpeakers(transcript.transcript_text, []))
     : ''
 
   const parsed = parseQuarter(quarter)
@@ -312,23 +355,20 @@ export default function TranscriptModal({
               )}
             </div>
 
-            {/* Highlight summary banner */}
-            {!loading && !error && highlightCount > 0 && (
-              <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
-                <div className="flex items-center gap-2">
-                  <Highlighter className="w-4 h-4 text-blue-600" />
-                  <span className="font-semibold text-blue-800">
-                    {highlightCount} Relevant Section{highlightCount !== 1 ? 's' : ''} Found
-                  </span>
-                </div>
-                <p className="text-sm text-blue-700 mt-1">
-                  Highlighted sections show the passages cited in the AI response. Scroll down or click highlights for details.
-                </p>
-              </div>
-            )}
 
             {/* Content */}
             <div ref={contentRef} className="flex-1 overflow-y-auto px-6 py-4">
+              <style>{`
+                .transcript-body mark.highlighted-chunk {
+                  background: linear-gradient(135deg, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.12) 100%);
+                  padding: 2px 4px; border-radius: 3px; border-left: 3px solid rgb(59,130,246);
+                  cursor: help; transition: all 0.15s ease; display: inline; color: inherit;
+                }
+                .transcript-body mark.highlighted-chunk:hover {
+                  background: linear-gradient(135deg, rgba(59,130,246,0.35) 0%, rgba(59,130,246,0.22) 100%);
+                  box-shadow: 0 2px 8px rgba(59,130,246,0.18);
+                }
+              `}</style>
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="w-8 h-8 border-3 border-[#0083f1] border-t-transparent rounded-full animate-spin" />
@@ -346,7 +386,7 @@ export default function TranscriptModal({
                 </div>
               ) : (
                 <div
-                  className="prose prose-slate max-w-none"
+                  className="transcript-body"
                   dangerouslySetInnerHTML={{ __html: processedTranscript }}
                 />
               )}
