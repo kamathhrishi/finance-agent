@@ -91,7 +91,7 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **s
 - **Real-Time News** - Latest market developments via Tavily search
 - **Financial Screener** - Natural language queries over company fundamentals [in development]
 
-Unlike generic LLMs that rely on web content, StrataLens uses the same authoritative documents that professional analysts depend on.
+Unlike generic LLMs that rely on web content, Finance Agent uses the same authoritative documents that professional analysts depend on.
 
 ## Tech Stack
 
@@ -103,7 +103,7 @@ Unlike generic LLMs that rely on web content, StrataLens uses the same authorita
 ## Project Structure
 
 ```
-stratalens_ai/
+finance_agent/
 ├── agent/                  # AI agent & RAG system         → see agent/README.md
 │   ├── __init__.py        # Public API: Agent, RAGAgent, create_agent()
 │   ├── agent_config.py    # Iteration/quality threshold settings
@@ -138,7 +138,7 @@ stratalens_ai/
 ```bash
 # Clone repository
 git clone https://github.com/kamathhrishi/stratalensai.git
-cd stratalens_ai
+cd finance_agent
 
 # Install dependencies
 pip install -r requirements.txt
@@ -222,7 +222,7 @@ Data is split between PostgreSQL (embeddings, metadata) and Railway S3 (full fil
 
 ## Development Status
 
-**Production (stratalens.ai):**
+**Production (Finance Agent):**
 - Earnings transcript chat with RAG
 - SEC 10-K filings (2024-25)
 - Real-time streaming responses

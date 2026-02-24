@@ -1,6 +1,6 @@
 # Agent System
 
-Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **semantic data source routing**, **research planning**, and **iterative self-improvement** for financial Q&A. This powers the chat and analysis features on stratalens.ai.
+Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **semantic data source routing**, **research planning**, and **iterative self-improvement** for financial Q&A. This powers the chat and analysis features on Finance Agent.
 
 ## Table of Contents
 
