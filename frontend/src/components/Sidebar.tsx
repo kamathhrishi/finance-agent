@@ -6,6 +6,8 @@ import {
   Building2,
   Filter,
   LineChart,
+  Briefcase,
+  Lock,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -13,7 +15,6 @@ import {
   Info,
   Plus,
   Clock,
-  Briefcase,
 } from 'lucide-react'
 import StrataLensLogo from './StrataLensLogo'
 import AboutModal from './AboutModal'
@@ -27,6 +28,7 @@ interface SidebarItem {
   icon: React.ReactNode
   path: string
   authRequired: boolean
+  disabled?: boolean
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -43,6 +45,7 @@ const sidebarItems: SidebarItem[] = [
     icon: <Building2 className="w-5 h-5" />,
     path: '/companies',
     authRequired: false,
+    disabled: true,
   },
   {
     id: 'screener',
@@ -50,6 +53,7 @@ const sidebarItems: SidebarItem[] = [
     icon: <Filter className="w-5 h-5" />,
     path: '/screener',
     authRequired: false,
+    disabled: true,
   },
   {
     id: 'portfolio',
@@ -57,6 +61,7 @@ const sidebarItems: SidebarItem[] = [
     icon: <Briefcase className="w-5 h-5" />,
     path: '/portfolio',
     authRequired: false,
+    disabled: true,
   },
   {
     id: 'charting',
@@ -64,6 +69,7 @@ const sidebarItems: SidebarItem[] = [
     icon: <LineChart className="w-5 h-5" />,
     path: '/charting',
     authRequired: true,
+    disabled: true,
   },
 ]
 
@@ -135,12 +141,14 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="p-3 space-y-1">
-        {sidebarItems.map((item) => (
+        {sidebarItems.map((item) => {
+          const isDisabled = !!item.disabled
+          return (
           <Link
             key={item.id}
-            to={item.authRequired ? '#' : item.path}
+            to={isDisabled || item.authRequired ? '#' : item.path}
             onClick={(e) => {
-              if (item.authRequired) {
+              if (isDisabled || item.authRequired) {
                 e.preventDefault()
                 // TODO: Show auth modal
               }
@@ -149,7 +157,7 @@ export default function Sidebar({
               flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative
               ${isActive(item.path)
                 ? 'bg-slate-100 text-[#0a1628] font-medium'
-                : item.authRequired
+                : (item.authRequired || isDisabled)
                   ? 'text-slate-400 hover:bg-slate-50 cursor-not-allowed'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-[#0a1628]'
               }
@@ -162,6 +170,9 @@ export default function Sidebar({
             {!isCollapsed && (
               <>
                 <span className="flex-1">{item.label}</span>
+                {(item.authRequired || isDisabled) && (
+                  <Lock className="w-3.5 h-3.5 opacity-50" />
+                )}
               </>
             )}
 
@@ -169,10 +180,11 @@ export default function Sidebar({
             {isCollapsed && (
               <div className="absolute left-full ml-2 px-2 py-1 bg-[#0a1628] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
                 {item.label}
+                {(item.authRequired || isDisabled) && ' (Disabled)'}
               </div>
             )}
           </Link>
-        ))}
+        )})}
       </nav>
 
       {/* Conversation History - show on chat page when signed in and auth enabled */}

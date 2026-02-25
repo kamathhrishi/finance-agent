@@ -455,6 +455,17 @@ Return ONLY valid JSON with this structure:
         for ref in time_refs:
             ref_lower = ref.lower() if isinstance(ref, str) else ""
 
+            # Explicit calendar date (e.g., "July 19, 2024" or "19 July 2024") → extract year
+            if isinstance(ref, str):
+                date_year = self._extract_year_from_date(ref)
+                if date_year:
+                    years.append(date_year)
+                    year_quarters = [f"{date_year}_q{q}" for q in [4, 3, 2, 1]]
+                    quarters.extend(year_quarters)
+                    context = "multiple"
+                    # Continue to next ref to avoid double-handling
+                    continue
+
             # Latest/recent
             if ref_lower in ['latest', 'most recent', 'current']:
                 latest = self._resolve_latest(tickers, available_data)
@@ -562,6 +573,19 @@ Return ONLY valid JSON with this structure:
             'years': years,
             'context': context
         }
+
+    def _extract_year_from_date(self, text: str) -> Optional[int]:
+        """
+        Extract a 4-digit year from an explicit calendar date string.
+        Accepts formats like "July 19, 2024", "19 July 2024", "2024-07-19".
+        """
+        import re
+
+        # ISO-like date
+        m = re.search(r'\b(19|20)\d{2}\b', text)
+        if m:
+            return int(m.group(0))
+        return None
 
     def _resolve_latest(
         self,

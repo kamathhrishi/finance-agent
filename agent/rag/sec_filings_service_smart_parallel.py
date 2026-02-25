@@ -965,7 +965,7 @@ Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, 
         chunks: List[Dict]
     ) -> Dict:
         """Evaluate answer quality and identify gaps."""
-        prompt = f"""Do not use emojis. Evaluate this financial analysis answer.
+        prompt = f"""Do not use emojis. Evaluate this financial analysis answer. Be strict about scope.
 
 QUESTION: {question}
 
@@ -975,6 +975,7 @@ ANSWER:
 Evaluate:
 1. Does it answer the question completely?
 2. Are numbers/data cited from sources?
+3. Does it stay on-scope (no unrelated metrics or periods)?
 3. What information is missing?
 
 Return JSON:

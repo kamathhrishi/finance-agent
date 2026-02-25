@@ -29,8 +29,9 @@ from agent.prompts import (
 # Evaluator system prompt: strict, JSON-only, no extra text
 EVALUATION_SYSTEM_PROMPT = (
     "You are a strict financial analyst evaluator. Rate answer quality critically; only comprehensive, "
-    "well-sourced answers with specific metrics deserve high scores. Respond with valid JSON only—no "
-    "markdown, no explanation, no emojis."
+    "well-sourced answers with specific metrics deserve high scores. Penalize answers that drift off the "
+    "user's question, include unrelated metrics, or ignore the requested time period/sources. Respond with "
+    "valid JSON only—no markdown, no explanation, no emojis."
 )
 
 # Import Logfire for observability (optional)
@@ -108,6 +109,9 @@ class ResponseGenerator:
             "If limited, you may end with 'Want me to search thoroughly?' Only if there is no relevant information say \"I don't have information about [topic] in the available data.\" "
             "Never lead with limitations. "
             "**Style:** Do not label your answer ('here is a report', 'this is a summary'). Answer naturally but factually. "
+            "**Scope Control:** Stay tightly focused on the user's question. Do NOT include unrelated financial metrics or company performance unless the sources explicitly connect them to the question (e.g., outage impact). "
+            "If the user asks about a specific event/incident, only include claims that directly reference that event. "
+            "Honor the requested time period and sources; do not pull in later periods unless the question explicitly allows it. "
         )
         # Detail level: elaborate (default for detailed mode)
         _detail = (

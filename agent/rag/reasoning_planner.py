@@ -240,6 +240,8 @@ CRITICAL INSTRUCTIONS:
 - "last quarter" → time_refs: ["last 1 quarters"]  ✅ (normalize to "last N quarters" format)
 - **10-K / annual report for a specific year:** "10-K from 2020", "2020 10-K", "analyze 10k from 2019" → time_refs: ["2020"] or ["2019"] (the 4-digit year only). We have 10-K data from 2019 onward.
 - **10-K multi-year or year range:** "performance from 2020 to 2024", "10-K 2020-2024", "compile ABNB 2020 to 2024 based on 10k" → time_refs: ["2020 to 2024"] (one phrase with start and end year so we can search each year's 10-K). Same for "2020-2024", "between 2020 and 2024".
+- **Explicit calendar date:** If the question includes a specific date (e.g., "July 19, 2024" or "19 July 2024"), include BOTH the exact date string AND the year:
+  time_refs: ["July 19, 2024", "2024"] (or ["19 July 2024", "2024"]).
 
 **If question does NOT specify time period:**
 - Use: time_refs: ["latest"]  ✅ (EXACTLY the word "latest", nothing else!)

@@ -2131,9 +2131,13 @@ class RAGAgent:
             limit_message = generate_user_friendly_limit_message(ctx.question_analysis['limits_exceeded'])
             if limit_message:
                 ctx.best_answer = limit_message + ctx.best_answer
-        # Use combined_citations to include ALL sources (transcripts + 10-K + news), not just best_citations
+        # Include ALL sources (initial + iterative follow-ups) across transcripts, 10-K, and news
+        combined = ctx.combined_citations if hasattr(ctx, 'combined_citations') and ctx.combined_citations else []
+        best = ctx.best_citations if hasattr(ctx, 'best_citations') and ctx.best_citations else []
+        accumulated = ctx.accumulated_citations if hasattr(ctx, 'accumulated_citations') and ctx.accumulated_citations else []
+        citations_to_dedupe = combined + best + accumulated
+
         # Use accumulated_chunks to include ALL chunks that contributed to context, not just best_chunks
-        citations_to_dedupe = ctx.combined_citations if hasattr(ctx, 'combined_citations') and ctx.combined_citations else ctx.best_citations
         chunks_to_dedupe = ctx.accumulated_chunks if hasattr(ctx, 'accumulated_chunks') and ctx.accumulated_chunks else ctx.best_chunks
         unique_citations, unique_chunks = deduplicate_citations_and_chunks(citations_to_dedupe, chunks_to_dedupe, rag_logger)
         response_data = {

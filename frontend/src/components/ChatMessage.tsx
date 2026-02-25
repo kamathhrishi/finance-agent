@@ -15,8 +15,22 @@ interface ChatMessageProps {
 
 // Citation type detection
 function getCitationType(source: Source): 'transcript' | '10k' | 'news' {
-  if (source.type === 'news' || source.url?.includes('http')) return 'news'
-  if (source.type === '10-K' || source.section || source.fiscal_year) return '10k'
+  const rawType = String(source.type || '').toLowerCase()
+  const marker = source.marker || ''
+
+  if (rawType.includes('news') || marker.startsWith('[N') || source.url?.includes('http')) return 'news'
+
+  if (
+    rawType.includes('10k') ||
+    rawType.includes('10-k') ||
+    rawType.includes('10_k') ||
+    marker.startsWith('[10K') ||
+    source.section ||
+    source.fiscal_year
+  ) {
+    return '10k'
+  }
+
   return 'transcript'
 }
 
