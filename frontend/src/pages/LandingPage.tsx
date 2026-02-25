@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import StrataLensLogo from '../components/StrataLensLogo'
 import AboutModal from '../components/AboutModal'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
@@ -105,7 +104,6 @@ const techTickers = [
   'SQ', 'PLTR', 'SNOW', 'CRWD', 'PANW', 'MU', 'AMAT', 'LRCX', 'KLAC', 'MRVL'
 ]
 
-const AUTH_DISABLED = import.meta.env.VITE_AUTH_DISABLED === 'true'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -173,40 +171,12 @@ export default function LandingPage() {
             >
               About
             </button>
-            {AUTH_DISABLED ? (
-              <button
-                onClick={() => navigate('/chat')}
-                className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
-              >
-                Open Platform
-              </button>
-            ) : (
-              <>
-                <SignedOut>
-                  <button
-                    onClick={() => navigate('/sign-in')}
-                    className="text-slate-500 text-sm font-medium hover:text-[#0a1628] transition-colors px-2 py-1"
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => navigate('/sign-up')}
-                    className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
-                  >
-                    Get Started
-                  </button>
-                </SignedOut>
-                <SignedIn>
-                  <button
-                    onClick={() => navigate('/chat')}
-                    className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
-                  >
-                    Open Platform
-                  </button>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
-              </>
-            )}
+            <button
+              onClick={() => navigate('/chat')}
+              className="px-5 py-2.5 bg-[#0a1628] text-white text-sm font-medium rounded-lg hover:bg-[#1e293b] transition-colors"
+            >
+              Open Platform
+            </button>
           </div>
         </div>
       </nav>

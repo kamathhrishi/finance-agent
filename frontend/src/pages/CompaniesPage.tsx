@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { Search, Building2 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
@@ -23,7 +23,7 @@ function formatMarketCap(value?: number): string {
 }
 
 export default function CompaniesPage() {
-  const { isSignedIn, getToken } = useAuth()
+  const { canAccess, getOptionalToken } = useAuthStatus()
   const navigate = useNavigate()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [query, setQuery] = useState('')
@@ -83,9 +83,10 @@ export default function CompaniesPage() {
     setIsLoading(true)
     setSearched(true)
     try {
-      const token = await getToken()
-      if (!token) return
-      const data = await searchCompanies(query, token)
+      const token = await getOptionalToken()
+      const data = token
+        ? await searchCompanies(query, token)
+        : await searchCompaniesPublic(query, 50)
       setResults(data.companies || [])
     } catch (err) {
       console.error('Search failed:', err)
@@ -100,8 +101,8 @@ export default function CompaniesPage() {
     navigate(`/companies/${company.symbol}`)
   }
 
-  if (!isSignedIn) {
-    return <Navigate to="/sign-in" replace />
+  if (!canAccess) {
+    return <Navigate to="/" replace />
   }
 
   return (

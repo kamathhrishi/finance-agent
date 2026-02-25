@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
   Briefcase,
@@ -37,7 +37,7 @@ function formatPrice(price: number | undefined): string {
 }
 
 export default function PortfolioPage() {
-  const { isSignedIn, getToken } = useAuth()
+  const { canAccess, getOptionalToken } = useAuthStatus()
   const navigate = useNavigate()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState<'holdings' | 'watchlist'>('holdings')
@@ -58,8 +58,7 @@ export default function PortfolioPage() {
     setLoading(true)
     setError(null)
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
       const data = await fetchPortfolioSummary(token)
       setPortfolio(data)
     } catch (err) {
@@ -70,15 +69,14 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
-    if (isSignedIn) {
+    if (canAccess) {
       loadPortfolio()
     }
-  }, [isSignedIn])
+  }, [canAccess])
 
   const handleDelete = async (symbol: string, type: 'holdings' | 'watchlist') => {
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
 
       if (type === 'holdings') {
         await deleteHolding(symbol, token)
@@ -110,8 +108,7 @@ export default function PortfolioPage() {
 
   const handleAddCompany = async (company: any) => {
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
 
       if (activeTab === 'holdings') {
         await addHolding(company.symbol, company.companyName, token)
@@ -133,8 +130,8 @@ export default function PortfolioPage() {
     }
   }
 
-  if (!isSignedIn) {
-    return <Navigate to="/sign-in" replace />
+  if (!canAccess) {
+    return <Navigate to="/" replace />
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuthStatus } from './useAuthStatus'
 import {
   streamChat,
   generateMessageId,
@@ -28,7 +28,7 @@ interface UseChatReturn {
 }
 
 export function useChat(): UseChatReturn {
-  const { getToken, isSignedIn } = useAuth()
+  const { authEnabled, isSignedIn, getOptionalToken } = useAuthStatus()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,15 +38,15 @@ export function useChat(): UseChatReturn {
 
   // Fetch conversations on mount if signed in
   useEffect(() => {
-    if (isSignedIn) {
+    if (authEnabled && isSignedIn) {
       refreshConversations()
     }
-  }, [isSignedIn])
+  }, [authEnabled, isSignedIn, refreshConversations])
 
   const refreshConversations = useCallback(async () => {
-    if (!isSignedIn) return
+    if (!authEnabled || !isSignedIn) return
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
       if (token) {
         const convs = await fetchConversations(token)
         setConversations(convs)
@@ -54,15 +54,15 @@ export function useChat(): UseChatReturn {
     } catch (err) {
       console.error('Failed to fetch conversations:', err)
     }
-  }, [isSignedIn, getToken])
+  }, [authEnabled, isSignedIn, getOptionalToken])
 
   const loadConversation = useCallback(async (conversationId: string) => {
-    if (!isSignedIn) return
+    if (!authEnabled || !isSignedIn) return
     setIsLoading(true)
     setError(null)
     setMessages([])  // Clear immediately for clean transition
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
       if (token) {
         const conversation = await fetchConversation(conversationId, token)
         setCurrentConversationId(conversationId)
@@ -88,7 +88,7 @@ export function useChat(): UseChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isSignedIn, getToken])
+  }, [authEnabled, isSignedIn, getOptionalToken])
 
   const startNewConversation = useCallback(() => {
     setCurrentConversationId(null)
@@ -106,9 +106,7 @@ export function useChat(): UseChatReturn {
 
     // Get auth token if signed in
     let authToken: string | null = null
-    if (isSignedIn) {
-      authToken = await getToken()
-    }
+    authToken = await getOptionalToken()
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -173,7 +171,7 @@ export function useChat(): UseChatReturn {
       )
 
       // Refresh conversations list after sending a message
-      if (isSignedIn) {
+      if (authEnabled && isSignedIn) {
         refreshConversations()
       }
     } catch (err) {
@@ -196,7 +194,7 @@ export function useChat(): UseChatReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, isSignedIn, getToken, currentConversationId, refreshConversations])
+  }, [isLoading, authEnabled, isSignedIn, getOptionalToken, currentConversationId, refreshConversations])
 
   const handleSSEEvent = useCallback(
     (

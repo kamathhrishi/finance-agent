@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -151,7 +151,7 @@ function CitationsSection({ sources }: { sources: Source[] }) {
 }
 
 export default function ScreenerPage() {
-  const { getToken } = useAuth()
+  const { getOptionalToken } = useAuthStatus()
   const navigate = useNavigate()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [query, setQuery] = useState('')
@@ -189,7 +189,11 @@ export default function ScreenerPage() {
     abortControllerRef.current = new AbortController()
 
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
+      const authHeaders: Record<string, string> = {}
+      if (token) {
+        authHeaders.Authorization = `Bearer ${token}`
+      }
 
       const params = new URLSearchParams({
         question: query,
@@ -200,9 +204,7 @@ export default function ScreenerPage() {
 
       const response = await fetch(
         `${config.apiBaseUrl}/screener/smart/stream?${params}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: authHeaders,
         signal: abortControllerRef.current.signal,
       })
 
@@ -331,13 +333,16 @@ export default function ScreenerPage() {
     setSortState({ column, direction: newDirection })
 
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
       const response = await fetch(`${config.apiBaseUrl}/screener/query/sort`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           column,
           direction: newDirection,
@@ -370,13 +375,16 @@ export default function ScreenerPage() {
     setCurrentPage(newPage)
 
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
       const response = await fetch(`${config.apiBaseUrl}/screener/query/paginate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           question: query,
           page: newPage,
@@ -406,12 +414,14 @@ export default function ScreenerPage() {
   const cancelQuery = async () => {
     abortControllerRef.current?.abort()
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
       await fetch(`${config.apiBaseUrl}/screener/cancel`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       })
     } catch (e) {
       // Ignore cancel errors

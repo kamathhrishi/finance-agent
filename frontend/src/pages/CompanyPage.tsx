@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import {
   Building2,
   TrendingUp,
@@ -92,7 +92,7 @@ interface SECFilingEntry {
 
 export default function CompanyPage() {
   const { symbol } = useParams<{ symbol: string }>()
-  const { isSignedIn, getToken } = useAuth()
+  const { canAccess, getOptionalToken } = useAuthStatus()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Data states
@@ -126,8 +126,7 @@ export default function CompanyPage() {
     setLoading(true)
     setError(null)
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
 
       const profileData = await fetchCompanyProfile(symbol, token)
       if (profileData.success) {
@@ -140,15 +139,14 @@ export default function CompanyPage() {
     } finally {
       setLoading(false)
     }
-  }, [symbol, getToken])
+  }, [symbol, getOptionalToken])
 
   // Phase 2: Load financials, segments, transcripts in parallel (non-blocking)
   const loadDetails = useCallback(async () => {
     if (!symbol) return
     setDetailsLoading(true)
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
 
       const [incomeRes, balanceRes, cashRes, prodSegRes, geoSegRes, transcriptRes, secFilingsRes] =
         await Promise.allSettled([
@@ -173,14 +171,14 @@ export default function CompanyPage() {
     } finally {
       setDetailsLoading(false)
     }
-  }, [symbol, getToken])
+  }, [symbol, getOptionalToken])
 
   useEffect(() => {
-    if (isSignedIn) {
+    if (canAccess) {
       loadProfile()
       loadDetails()
     }
-  }, [isSignedIn, loadProfile, loadDetails])
+  }, [canAccess, loadProfile, loadDetails])
 
   const handleAddToPortfolio = async (type: 'holdings' | 'watchlist') => {
     if (!symbol || !company) return
@@ -222,8 +220,7 @@ export default function CompanyPage() {
 
     setTranscriptLoading(key)
     try {
-      const token = await getToken()
-      if (!token) return
+      const token = await getOptionalToken()
       const data = await fetchTranscript(symbol!, year, quarter, token)
       setTranscriptTexts((prev) => ({ ...prev, [key]: data.transcript_text || data.transcript || '' }))
     } catch {
@@ -233,8 +230,8 @@ export default function CompanyPage() {
     }
   }
 
-  if (!isSignedIn) {
-    return <Navigate to="/sign-in" replace />
+  if (!canAccess) {
+    return <Navigate to="/" replace />
   }
 
   // ── Derive display values from company data ──

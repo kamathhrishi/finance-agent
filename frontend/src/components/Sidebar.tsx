@@ -6,7 +6,6 @@ import {
   Building2,
   Filter,
   LineChart,
-  Lock,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -163,9 +162,6 @@ export default function Sidebar({
             {!isCollapsed && (
               <>
                 <span className="flex-1">{item.label}</span>
-                {item.authRequired && (
-                  <Lock className="w-3.5 h-3.5 opacity-50" />
-                )}
               </>
             )}
 
@@ -173,7 +169,6 @@ export default function Sidebar({
             {isCollapsed && (
               <div className="absolute left-full ml-2 px-2 py-1 bg-[#0a1628] text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
                 {item.label}
-                {item.authRequired && ' (Sign in required)'}
               </div>
             )}
           </Link>
