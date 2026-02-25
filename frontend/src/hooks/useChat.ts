@@ -36,13 +36,6 @@ export function useChat(): UseChatReturn {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
 
-  // Fetch conversations on mount if signed in
-  useEffect(() => {
-    if (authEnabled && isSignedIn) {
-      refreshConversations()
-    }
-  }, [authEnabled, isSignedIn, refreshConversations])
-
   const refreshConversations = useCallback(async () => {
     if (!authEnabled || !isSignedIn) return
     try {
@@ -55,6 +48,13 @@ export function useChat(): UseChatReturn {
       console.error('Failed to fetch conversations:', err)
     }
   }, [authEnabled, isSignedIn, getOptionalToken])
+
+  // Fetch conversations on mount if signed in
+  useEffect(() => {
+    if (authEnabled && isSignedIn) {
+      refreshConversations()
+    }
+  }, [authEnabled, isSignedIn, refreshConversations])
 
   const loadConversation = useCallback(async (conversationId: string) => {
     if (!authEnabled || !isSignedIn) return

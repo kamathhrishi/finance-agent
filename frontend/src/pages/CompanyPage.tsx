@@ -184,7 +184,7 @@ export default function CompanyPage() {
     if (!symbol || !company) return
     setAddingToPortfolio(true)
     try {
-      const token = await getToken()
+      const token = await getOptionalToken()
       if (!token) return
 
       const companyName = String(company.companyName || '')
