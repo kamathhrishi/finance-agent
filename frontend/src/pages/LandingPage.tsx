@@ -94,7 +94,7 @@ const exampleQueries = [
   "Compare $MSFT and $GOOGL cloud segment growth",
   "$META AI capex commentary in last 3 quarters",
   "Comment on $ORCL balance sheet and their usage of debt?",
-  "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
+  "Analyze $PLTR’s 2024 and 2025 10-K filings and earnings transcripts, and explain why growth has been high but margins have been thin",
 ]
 
 // Tech company tickers for the scrolling banner
