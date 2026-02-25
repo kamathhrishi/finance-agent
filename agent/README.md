@@ -30,7 +30,7 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **s
 
  ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
  │ Question │───►│ Question Analyzer │───►│  Semantic Data Routing   │
- └──────────┘    │   (Cerebras LLM)  │    │                          │
+ └──────────┘    │  (LLM via config) │    │                          │
                  │                   │    │  • Earnings Transcripts  │
                  │ Extracts:         │    │  • SEC 10-K Filings      │
                  │ • Tickers         │    │  • Real-Time News        │
@@ -98,14 +98,22 @@ The agent executes a **6-stage pipeline** for each question:
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ STAGE 2: QUESTION ANALYSIS & PLANNING (Cerebras LLM)                     │
-│ Single LLM call that performs:                                           │
+│ STAGE 2: COMBINED REASONING + ANALYSIS (LLM via config)                  │
+│ Single LLM call (ReasoningPlanner) that performs:                        │
 │ • Extract company tickers ($AAPL, $MSFT)                                 │
-│ • Detect time periods (Q4 2024, last 3 quarters, latest)                 │
+│ • Detect time refs (Q4 2024, last 3 quarters, latest)                    │
 │ • Semantic routing → Choose data source based on INTENT                  │
-│ • Detect answer_mode (direct/standard/detailed/deep_search)              │
-│ • Generate semantically-grounded search query                            │
+│ • Detect answer_mode (direct|standard|detailed)                          │
+│ • Explain research approach (2-3 sentences)                              │
 │ • Validate question (reject off-topic/invalid)                           │
+│ • Preserve exact temporal phrases (no resolution here)                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ STAGE 2.1: SEARCH PLANNING (SearchPlanner)                               │
+│ • Resolve time refs → specific quarters (per company)                    │
+│ • Build declarative searches for transcripts / 10-K / news               │
+│ • Returns a search plan + reasoning string (streamed to frontend)        │
 │                                                                           │
 │ Quarter Resolution (company-specific database queries):                  │
 │ • "latest" → get_last_n_quarters_for_company(ticker, 1)                  │
@@ -113,16 +121,6 @@ The agent executes a **6-stage pipeline** for each question:
 │ • Uses DB query: SELECT DISTINCT year, quarter FROM transcript_chunks    │
 │   WHERE ticker = %s ORDER BY year DESC, quarter DESC                     │
 │ • Each company gets its own most recent quarters (not global)            │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│ STAGE 2.1: RESEARCH REASONING (Cerebras LLM)                             │
-│ • Separate LLM call generates transparent research reasoning             │
-│ • Example: "The user is asking about Azure revenue, so I need to find    │
-│   quarterly growth rates, management commentary on cloud competition..." │
-│ • Explains what metrics/data points to search for                        │
-│ • Used later for evaluation (did we find what we planned to find?)       │
-│ • Streamed to frontend as 'reasoning' event                              │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -172,7 +170,7 @@ The agent executes a **6-stage pipeline** for each question:
 │ • standard: 3 iterations, 80% threshold - balanced analysis              │
 │ • detailed: 4 iterations, 90% threshold - comprehensive research         │
 │ • deep_search: 10 iterations, 95% threshold - exhaustive search          │
-│   (only triggers on explicit request: "search thoroughly", "dig deep")   │
+│   (reserved; not emitted by current combined reasoning stage)            │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -194,11 +192,11 @@ The main agent orchestrates access to **three specialized data source tools**:
 2. **SEC 10-K Filings Agent** (`sec_filings_service_smart_parallel.py`) - Specialized retrieval agent for SEC 10-K annual filings
 3. **Tavily News Search** (`tavily_service.py`) - Real-time web search for breaking news
 
-The Question Analyzer automatically selects which tool(s) to use based on question intent. The SEC agent is a full retrieval agent (not just search) with its own iterative improvement loop optimized for structured SEC filings.
+The combined ReasoningPlanner + SearchPlanner selects which tool(s) to use based on question intent. The SEC agent is a full retrieval agent (not just search) with its own iterative improvement loop optimized for structured SEC filings.
 
 ### How It Works
 
-The Question Analyzer uses Cerebras LLM to understand what type of information would **best answer** the question:
+The question analysis uses the configured LLM provider to understand what type of information would **best answer** the question:
 
 ```
 QUESTION INTENT → DATA SOURCE DECISION
@@ -269,7 +267,7 @@ The LLM considers:
 
 ## Question Planning & Reasoning
 
-**New Feature**: Before searching, the agent generates a reasoning statement explaining its research approach.
+Before searching, the agent generates a reasoning statement explaining its research approach.
 
 ### Purpose
 
@@ -297,17 +295,18 @@ commentary from executives."
 ### Implementation
 
 ```python
-# From prompts.py
-QUESTION_PLANNING_SYSTEM_PROMPT = """You are a financial research analyst
-who thinks through questions before searching. You explain your reasoning
-process in a natural, verbose way - like thinking out loud about how to
-approach a research question."""
-
-# Generates 3-5 sentence reasoning explaining:
-# - What the user is really trying to understand
-# - What specific metrics/data points needed
-# - What to focus the search on
-# - How to approach given available data
+# From agent/rag/reasoning_planner.py (ReasoningPlanner)
+{
+  "reasoning": "2-3 sentence research approach",
+  "tickers": ["AAPL", "MSFT"],
+  "time_refs": ["last 3 quarters"],
+  "topic": "cloud revenue growth",
+  "question_type": "multiple_companies",
+  "data_sources": ["earnings_transcripts", "news"],
+  "answer_mode": "standard",
+  "is_valid": true,
+  "confidence": 0.95
+}
 ```
 
 ---
@@ -373,7 +372,7 @@ The agent performs iterative self-improvement until the answer meets quality thr
 | `direct` | 2 | 70% | Quick factual lookups |
 | `standard` | 3 | 80% | Default balanced analysis |
 | `detailed` | 4 | 90% | Comprehensive research |
-| `deep_search` | 10 | 95% | Explicit user request only |
+| `deep_search` | 10 | 95% | Reserved (not emitted by combined reasoning stage) |
 
 ---
 
@@ -623,8 +622,8 @@ The agent streams real-time progress events to the frontend:
 ### Environment Variables
 
 ```bash
-OPENAI_API_KEY=...           # Response generation (fallback)
-CEREBRAS_API_KEY=...         # Question analysis, routing, planning
+OPENAI_API_KEY=...           # LLM provider key (OpenAI)
+CEREBRAS_API_KEY=...         # LLM provider key (Cerebras)
 TAVILY_API_KEY=...           # Real-time news search
 DATABASE_URL=postgresql://...# Main database
 PG_VECTOR=postgresql://...   # Vector search database
@@ -642,6 +641,8 @@ LOGFIRE_TOKEN=...            # Observability (optional)
 }
 ```
 
+Note: `agent_config.py` is currently not wired into the runtime flow. Configuration is sourced from `rag/config.py` and environment variables.
+
 ### RAG Config (`rag/config.py`)
 
 ```python
@@ -656,8 +657,10 @@ LOGFIRE_TOKEN=...            # Observability (optional)
 
     # Models
     "cerebras_model": "qwen-3-235b-a22b-instruct-2507",
-    "openai_model": "gpt-4.1-mini-2025-04-14",
+    "openai_model": "gpt-5-nano-2025-08-07",
+    "evaluation_model": "qwen-3-235b-a22b-instruct-2507",
     "embedding_model": "all-MiniLM-L6-v2",
+    "llm_provider": "cerebras",  # or "openai" | "auto"
 }
 ```
 
@@ -698,13 +701,7 @@ ANSWER_MODE_CONFIG = {
 }
 ```
 
-**Important:** `deep_search` mode only triggers when user explicitly requests:
-- "search thoroughly"
-- "dig deep"
-- "exhaustive search"
-- "find everything"
-
-The agent will also nudge users with "Want me to search thoroughly?" or "Should I dig deeper?" when appropriate.
+**Important:** The combined reasoning stage currently outputs `direct|standard|detailed` only. `deep_search` is reserved for future expansion or explicit overrides in upstream logic. The agent may still nudge users with "Want me to search thoroughly?" when appropriate.
 
 ---
 
@@ -756,7 +753,7 @@ async for event in agent.execute_rag_flow(
 | `agent_config.py` | Agent configuration and iteration settings |
 | `prompts.py` | Centralized LLM prompt templates (including planning) |
 | `rag/rag_agent.py` | Orchestration engine with pipeline stages |
-| `rag/question_analyzer.py` | LLM-based semantic routing (Cerebras) |
+| `rag/question_analyzer.py` | LLM-based semantic routing (provider via config) |
 
 ### Data Sources (Tools)
 

@@ -27,8 +27,8 @@ Set **one** of:
 | Env var | Values | Effect |
 |--------|--------|--------|
 | `RAG_LLM_PROVIDER` | `openai` | Use OpenAI only |
-| `RAG_LLM_PROVIDER` | `cerebras` | Use Cerebras only |
-| `RAG_LLM_PROVIDER` | `auto` (default) | Use Cerebras if `CEREBRAS_API_KEY` is set, else OpenAI |
+| `RAG_LLM_PROVIDER` | `cerebras` (default) | Use Cerebras only |
+| `RAG_LLM_PROVIDER` | `auto` | Use Cerebras if `CEREBRAS_API_KEY` is set, else OpenAI |
 
 Optional overrides:
 

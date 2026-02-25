@@ -18,7 +18,7 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **s
 
  ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
  │ Question │───►│ Question Analyzer │───►│  Semantic Data Routing   │
- └──────────┘    │   (Cerebras LLM)  │    │                          │
+ └──────────┘    │  (LLM via config) │    │                          │
                  │                   │    │  • Earnings Transcripts  │
                  │ Extracts:         │    │  • SEC 10-K Filings      │
                  │ • Tickers         │    │  • Real-Time News        │
@@ -86,7 +86,7 @@ Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **s
 
 ## Features
 
-- **Earnings Transcripts** (2022-2025) - Word-for-word executive commentary from earnings calls
+- **Earnings Transcripts** (2020-2025) - Word-for-word executive commentary from earnings calls
 - **SEC 10-K Filings** (2024-25) - Official annual reports via specialized retrieval agent (10-Q/8-K coming soon)
 - **Real-Time News** - Latest market developments via Tavily search
 - **Financial Screener** - Natural language queries over company fundamentals [in development]
