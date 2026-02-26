@@ -1877,24 +1877,24 @@ class RAGAgent:
         rag_logger.info(f"📄 Search plan includes 10-K - searching SEC filings...")
         rag_logger.info(f"📄 10-K searches: {len(ctx.search_plan.ten_k)}")
 
-        # Iterate through 10-K searches (multi-year and/or multi-company; plan already capped in search_planner)
-        for ten_k_search in ctx.search_plan.ten_k:
+        # Run all 10-K searches in parallel
+        async def _run_single_10k_search(ten_k_search):
             ticker = normalize_ticker(ten_k_search.ticker)
             fiscal_year = ten_k_search.year
             query = ten_k_search.query
-
             rag_logger.info(f"📄 Searching 10-K for {ticker} (year={fiscal_year}, query='{query[:50]}...')")
-
             query_embedding = await self.search_engine.encode_query_async(query)
-
+            chunks = []
+            sec_answer = ''
+            stream_events = []
             try:
                 async for event in self.sec_service.execute_smart_parallel_search_async(
-                    query=query,  # Use query from SearchPlan
+                    query=query,
                     query_embedding=query_embedding,
                     ticker=ticker,
                     fiscal_year=fiscal_year,
                     max_iterations=5,
-                    confidence_threshold=0.9,
+                    confidence_threshold=0.8,
                     event_yielder=ctx.stream,
                     embedding_function=self.search_engine.embedding_model.encode
                 ):
@@ -1902,35 +1902,40 @@ class RAGAgent:
                     event_data = event.get('data', {})
                     if event_type == 'search_complete':
                         chunks = event_data.get('chunks', [])
-                        if chunks:
-                            ctx.ten_k_results.extend(chunks)
-                            rag_logger.info(f"✅ Found {len(chunks)} 10-K chunks for {ticker} via parallel search")
-                        # Capture the service's internally-generated answer (already has LLM table selection + citations)
                         sec_answer = event_data.get('answer', '')
-                        if sec_answer and sec_answer.strip():
-                            ctx.ten_k_service_answer = getattr(ctx, 'ten_k_service_answer', '') + '\n\n' + sec_answer if getattr(ctx, 'ten_k_service_answer', '') else sec_answer
-                            rag_logger.info(f"✅ Captured SEC service answer ({len(sec_answer)} chars) for {ticker}")
+                        rag_logger.info(f"✅ Found {len(chunks)} 10-K chunks for {ticker} via parallel search")
                     elif ctx.stream:
-                        if event_type == 'planning_start':
-                            yield {'type': 'reasoning', 'message': f"Looking at {ticker}'s annual report...", 'step': '10k_planning', 'event_name': '10k_planning_start', 'data': {'ticker': ticker, 'phase': 'planning'}}
-                        elif event_type == 'planning_complete':
-                            sub_questions = event_data.get('sub_questions', [])
-                            if sub_questions:
-                                questions_text = "\n".join([f"- {q}" for q in sub_questions[:4]])
-                                yield {'type': 'reasoning', 'message': f"To answer this, I need to find:\n{questions_text}", 'step': '10k_planning', 'event_name': '10k_sub_questions', 'data': {'sub_questions': sub_questions}}
-                        elif event_type == 'retrieval_complete':
-                            new_chunks = event_data.get('new_chunks', 0)
-                            if new_chunks > 0:
-                                yield {'type': 'reasoning', 'message': f"Found {new_chunks} relevant sections in the filing", 'step': '10k_retrieval', 'event_name': '10k_retrieval_progress', 'data': event_data}
-                        elif event_type == 'evaluation_complete':
-                            quality = event_data.get('quality_score', 0)
-                            missing = event_data.get('missing_info', [])
-                            if quality >= 0.9:
-                                yield {'type': 'reasoning', 'message': "I have enough information to answer this question", 'step': '10k_evaluation', 'event_name': '10k_evaluation_complete', 'data': event_data}
-                            elif missing:
-                                yield {'type': 'reasoning', 'message': f"Still looking for: {missing[0] if missing else 'more details'}...", 'step': '10k_evaluation', 'event_name': '10k_evaluation_progress', 'data': event_data}
+                        stream_events.append((ticker, event_type, event_data))
             except Exception as e:
                 rag_logger.warning(f"⚠️ Failed to search 10-K for {ticker}: {e}")
+            return chunks, sec_answer, stream_events
+
+        all_results = await asyncio.gather(*[_run_single_10k_search(s) for s in ctx.search_plan.ten_k])
+
+        for chunks, sec_answer, stream_events in all_results:
+            if chunks:
+                ctx.ten_k_results.extend(chunks)
+            if sec_answer and sec_answer.strip():
+                ctx.ten_k_service_answer = getattr(ctx, 'ten_k_service_answer', '') + '\n\n' + sec_answer if getattr(ctx, 'ten_k_service_answer', '') else sec_answer
+            for ticker, event_type, event_data in stream_events:
+                if event_type == 'planning_start':
+                    yield {'type': 'reasoning', 'message': f"Looking at {ticker}'s annual report...", 'step': '10k_planning', 'event_name': '10k_planning_start', 'data': {'ticker': ticker, 'phase': 'planning'}}
+                elif event_type == 'planning_complete':
+                    sub_questions = event_data.get('sub_questions', [])
+                    if sub_questions:
+                        questions_text = "\n".join([f"- {q}" for q in sub_questions[:4]])
+                        yield {'type': 'reasoning', 'message': f"To answer this, I need to find:\n{questions_text}", 'step': '10k_planning', 'event_name': '10k_sub_questions', 'data': {'sub_questions': sub_questions}}
+                elif event_type == 'retrieval_complete':
+                    new_chunks = event_data.get('new_chunks', 0)
+                    if new_chunks > 0:
+                        yield {'type': 'reasoning', 'message': f"Found {new_chunks} relevant sections in the filing", 'step': '10k_retrieval', 'event_name': '10k_retrieval_progress', 'data': event_data}
+                elif event_type == 'evaluation_complete':
+                    quality = event_data.get('quality_score', 0)
+                    missing = event_data.get('missing_info', [])
+                    if quality >= 0.8:
+                        yield {'type': 'reasoning', 'message': "I have enough information to answer this question", 'step': '10k_evaluation', 'event_name': '10k_evaluation_complete', 'data': event_data}
+                    elif missing:
+                        yield {'type': 'reasoning', 'message': f"Still looking for: {missing[0] if missing else 'more details'}...", 'step': '10k_evaluation', 'event_name': '10k_evaluation_progress', 'data': event_data}
 
         # Collect tickers that were searched
         searched_tickers = [normalize_ticker(s.ticker) for s in ctx.search_plan.ten_k]

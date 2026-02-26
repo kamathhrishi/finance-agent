@@ -196,6 +196,64 @@ class SmartParallelSECFilingsService:
             retryable=False
         )
 
+    async def _make_llm_call_async(self, messages: List[Dict], temperature: float = 0.1,
+                                   max_tokens: int = 2000, expect_json: bool = False) -> str:
+        """Async version of _make_llm_call — uses asyncio.sleep so retries don't block the event loop."""
+        self.current_session['api_calls'] = self.current_session.get('api_calls', 0) + 1
+
+        max_retries = 3
+        last_error = None
+
+        for attempt in range(max_retries):
+            if self.cerebras_available:
+                try:
+                    response = self.cerebras_client.chat.completions.create(
+                        model=self.cerebras_model,
+                        messages=messages,
+                        temperature=temperature,
+                        max_tokens=max_tokens
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    last_error = e
+                    if is_retryable_error(e) and attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 2
+                        rag_logger.warning(f"Cerebras call failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                    rag_logger.warning(f"Cerebras call failed: {e}, falling back to Gemini")
+
+            if self.gemini_available:
+                try:
+                    import google.generativeai as genai
+                    model = genai.GenerativeModel(self.gemini_model)
+                    prompt = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                    response = model.generate_content(prompt)
+                    return response.text
+                except Exception as e:
+                    last_error = e
+                    if is_retryable_error(e) and attempt < max_retries - 1:
+                        wait_time = (attempt + 1) * 2
+                        rag_logger.warning(f"Gemini call failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                    rag_logger.error(f"Gemini call failed: {e}")
+
+            if not self.cerebras_available and not self.gemini_available:
+                break
+
+        if last_error:
+            raise LLMError(
+                user_message=get_user_friendly_message(last_error),
+                technical_message=str(last_error),
+                retryable=is_retryable_error(last_error)
+            )
+        raise LLMError(
+            user_message="Unable to process your request. Please try again.",
+            technical_message="No LLM client available",
+            retryable=False
+        )
+
     def _parse_json_with_retry(self, response_text: str, max_retries: int = 5,
                                 default_result: Dict = None) -> Dict:
         """Parse JSON from LLM response with retry and cleanup."""
@@ -235,7 +293,7 @@ class SmartParallelSECFilingsService:
         ticker: str,
         fiscal_year: int = None,
         max_iterations: int = 5,
-        confidence_threshold: float = 0.9,
+        confidence_threshold: float = 0.8,
         event_yielder=None,
         embedding_function=None
     ) -> AsyncGenerator[Dict[str, Any], None]:
@@ -467,15 +525,22 @@ class SmartParallelSECFilingsService:
 
 QUESTION: {question}
 
-Create a strategic search plan with SUB-QUESTIONS that will retrieve SPECIFIC DATA from the 10-K filing.
+Create a strategic search plan to retrieve SPECIFIC DATA from the 10-K filing.
 
-CRITICAL: Sub-questions must be RAG-FRIENDLY:
-- GOOD: "What is Apple's total revenue, cost of revenue, and gross profit?"
-- GOOD: "What are the operating expense categories and amounts in Apple's income statement?"
-- BAD: "What are standard income statement line items?" (too generic, not retrievable)
-- BAD: "How are income statements categorized?" (conceptual, not data retrieval)
+SEARCH QUERIES must be short semantic keyword phrases — NOT full sentences or questions.
+These are used as embedding search queries against a vector database of 10-K chunks.
 
-Each sub-question should target SPECIFIC FACTS that can be found in the 10-K filing.
+CRITICAL RULES for search_plan queries:
+- GOOD: "total revenue cost of revenue gross profit income statement"
+- GOOD: "long-term debt short-term debt borrowings balance sheet"
+- GOOD: "operating expenses research development selling general administrative"
+- BAD: "What is Apple's total revenue?" (do not use question form, do not include company name)
+- BAD: "Microsoft long-term debt" (do not include company name or year - document is already scoped)
+- BAD: "Show all income statement line items" (too vague)
+
+The document is already scoped to the correct company and year - do NOT include company names, ticker symbols, or years in queries. Use only financial concept keywords.
+
+Queries should be dense keyword phrases that semantically match the relevant section/table in a 10-K.
 
 SEARCH TYPES:
 - "table": For quantitative data (revenue, COGS, assets, ratios, metrics, line items)
@@ -488,28 +553,28 @@ Return ONLY valid JSON:
         "complexity_assessment": "simple|medium|complex"
     }},
     "sub_questions": [
-        "Specific data-retrieval sub-question 1 (include company name if in original question)",
+        "Specific data-retrieval sub-question 1",
         "Specific data-retrieval sub-question 2"
     ],
     "search_plan": [
-        {{"query": "specific search terms for 10-K retrieval", "type": "table|text", "priority": 1}}
+        {{"query": "dense financial keyword phrase without company name or year", "type": "table|text", "priority": 1}}
     ]
 }}
 
 EXAMPLES:
 
 Question: "Show me all line items from Apple's income statement"
-Good sub-questions:
-- "What is Apple's total revenue, cost of revenue, and gross profit?"
-- "What are Apple's operating expenses broken down by category?"
-- "What is Apple's income before taxes, provision for taxes, and net income?"
+search_plan queries:
+- "revenue cost of revenue gross profit income statement"
+- "operating expenses research development selling general administrative"
+- "income before taxes net income earnings per share"
 
 Question: "What is Microsoft's debt-to-equity ratio?"
-Good sub-questions:
-- "What is Microsoft's total debt and total equity from the balance sheet?"
-- "What are Microsoft's long-term and short-term debt amounts?"
+search_plan queries:
+- "total debt long-term short-term borrowings balance sheet"
+- "stockholders equity total equity"
 
-Now analyze the original question and create RAG-friendly sub-questions."""
+Now analyze the original question and create the search plan."""
 
         try:
             messages = [
@@ -517,14 +582,17 @@ Now analyze the original question and create RAG-friendly sub-questions."""
                 {"role": "user", "content": prompt}
             ]
 
-            response = self._make_llm_call(messages, temperature=0.2, max_tokens=2000)
+            response = await self._make_llm_call_async(messages, temperature=0.2, max_tokens=2000)
 
+            # Derive a keyword fallback by stripping question words
+            import re as _re
+            keyword_fallback = _re.sub(r'\b(what|how|why|when|where|who|is|are|was|were|did|do|does|the|a|an)\b', '', question, flags=_re.IGNORECASE).strip()
             result = self._parse_json_with_retry(response, default_result={
                 'analysis': {'complexity_assessment': 'medium'},
                 'sub_questions': [question],
                 'search_plan': [
-                    {'query': question, 'type': 'table', 'priority': 1},
-                    {'query': question, 'type': 'text', 'priority': 2}
+                    {'query': keyword_fallback, 'type': 'table', 'priority': 1},
+                    {'query': keyword_fallback, 'type': 'text', 'priority': 2}
                 ]
             })
 
@@ -948,11 +1016,11 @@ Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, 
 
         try:
             messages = [
-                {"role": "system", "content": "Expert financial analyst. Do not use emojis. Cite sources, be precise."},
+                {"role": "system", "content": "Expert financial analyst. Do not use emojis. Cite sources, be precise. CRITICAL: If the retrieved data is from a different fiscal year than what the question asks for, state this prominently at the top of your answer (e.g. 'Note: Available data is from FY2023 — FY2024 data was not retrieved.'). Never silently answer from a wrong period."},
                 {"role": "user", "content": prompt}
             ]
 
-            return self._make_llm_call(messages, temperature=0.1, max_tokens=4000)
+            return await self._make_llm_call_async(messages, temperature=0.1, max_tokens=4000)
 
         except Exception as e:
             rag_logger.error(f"Answer generation failed: {e}")
@@ -992,7 +1060,7 @@ Return JSON:
                 {"role": "user", "content": prompt}
             ]
 
-            response = self._make_llm_call(messages, temperature=0.1, max_tokens=1000)
+            response = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=1000)
             result = self._parse_json_with_retry(response, default_result={
                 'quality_score': 0.7,
                 'issues': [],
@@ -1016,7 +1084,7 @@ Return JSON:
         quality_score = evaluation.get('quality_score', 0.0)
         missing_info = evaluation.get('missing_info', [])
 
-        if quality_score >= 0.90 or not missing_info:
+        if quality_score >= 0.80 or not missing_info:
             return []
 
         executed_queries = [item.get('query', '') for item in current_search_plan]
@@ -1044,7 +1112,7 @@ Return JSON with 1-3 NEW searches:
                 {"role": "user", "content": prompt}
             ]
 
-            response = self._make_llm_call(messages, temperature=0.2, max_tokens=500)
+            response = await self._make_llm_call_async(messages, temperature=0.2, max_tokens=500)
             result = self._parse_json_with_retry(response, default_result={'new_searches': []})
 
             return result.get('new_searches', [])

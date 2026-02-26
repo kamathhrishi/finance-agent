@@ -222,9 +222,14 @@ class SearchPlanner:
             )
 
         if '10k' in data_sources:
+            # For 'latest' context, years were derived from transcript quarters — NOT 10-K data.
+            # Pass empty years so _generate_10k_searches uses _get_latest_10k_fiscal_year()
+            # which correctly queries ten_k_chunks (e.g. FY2025 for PLTR, not FY2024 from transcripts).
+            resolved_context = resolved_time.get('context', 'latest')
+            ten_k_years = resolved_time.get('years', []) if resolved_context != 'latest' else []
             ten_k_searches = self._generate_10k_searches(
                 tickers,
-                resolved_time.get('years', []),
+                ten_k_years,
                 topic,
                 question_type,
                 available_data=available_data

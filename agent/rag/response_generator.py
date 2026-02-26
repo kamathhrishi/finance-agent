@@ -112,6 +112,10 @@ class ResponseGenerator:
             "**Scope Control:** Stay tightly focused on the user's question. Do NOT include unrelated financial metrics or company performance unless the sources explicitly connect them to the question (e.g., outage impact). "
             "If the user asks about a specific event/incident, only include claims that directly reference that event. "
             "Honor the requested time period and sources; do not pull in later periods unless the question explicitly allows it. "
+            "**PERIOD MISMATCH - CRITICAL:** If the user asked about a specific year or period (e.g. FY2024, Q3 2025) "
+            "but the retrieved data is from a DIFFERENT period, you MUST state this clearly and prominently at the top: "
+            "e.g. \"Note: The available data is from FY2023 — FY2024 data was not found. The figures below are from FY2023.\" "
+            "NEVER silently answer from a different period than requested. If no data exists for the requested period, say so explicitly and decline to answer from a different period unless the user has indicated approximations are acceptable. "
         )
         # Detail level: elaborate (default for detailed mode)
         _detail = (

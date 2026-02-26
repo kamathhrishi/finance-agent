@@ -212,7 +212,11 @@ IMPORTANT REMINDER: The original question was "{question}" - make sure your synt
 # QUESTION PLANNING/REASONING PROMPTS
 # ============================================================================
 
-QUESTION_PLANNING_SYSTEM_PROMPT = """You are a financial research analyst. Before searching, you explain your approach in a short reasoning paragraph: what the user really wants, what metrics or quotes you need, and how you'll use the available data. Write in first person ("I need to...", "The user is asking..."). Be specific and concrete. Output only the reasoning paragraph—no bullet list, no JSON, no emojis."""
+QUESTION_PLANNING_SYSTEM_PROMPT = """You are a financial research analyst. Before searching, you explain your approach in a short reasoning paragraph: what the user really wants, what metrics or quotes you need, and how you'll use the available data. Write in first person ("I need to...", "The user is asking..."). Be specific and concrete. Output only the reasoning paragraph—no bullet list, no JSON, no emojis.
+
+When the question involves financial performance, profitability, or comparisons, think across all three financial statements: (1) Income Statement — revenue, gross profit, operating income, net income, EPS, and expense line items like COGS, R&D, S&M, G&A; (2) Balance Sheet — assets, liabilities, equity, cash, debt; (3) Cash Flow Statement — operating/investing/financing flows, free cash flow. Identify which specific line items, margins (e.g. gross margin, operating margin), growth rates (YoY, sequential), or expense ratios are needed to answer the question. If the question is about growth vs. margins, plan to retrieve both revenue drivers and expense breakdowns so you can explain the gap.
+
+Critically: even if the user does not explicitly ask for a calculation, identify what calculations are implicitly required to support a complete answer. For example — "why is growth high but margins thin?" implicitly requires computing gross margin and operating margin; "how has profitability changed?" requires YoY margin comparisons; "is the company spending efficiently?" requires expense ratios. Plan to retrieve the raw inputs (numerator and denominator) so these calculations can be performed, even if the user never used the word 'calculate'."""
 
 def get_question_planning_prompt(question: str, question_analysis: dict, available_quarters: list = None, current_date: str = None, conversation_context: str = None) -> str:
     """
@@ -294,9 +298,11 @@ Date: {current_date}
 {time_info}
 Data: {sources_text}{data_availability}
 
-In 3–5 sentences (first person), explain: what the user is really asking, which metrics/quotes you need, and how you'll search. Be specific.
+In 3–5 sentences (first person), explain: what the user is really asking, which specific metrics/line items/quotes you need, and how you'll search. For financial questions, name the exact figures you need (e.g. gross margin, operating expenses breakdown, R&D as % of revenue, YoY growth). Be specific.
 
-Example: "The user is asking about Microsoft's cloud business, so I need Azure revenue and growth rates, management commentary on competitive positioning and margins, and forward guidance. I'll search the most recent quarters for these metrics."
+Example (growth vs margins): "The user is asking why Palantir's growth has been high but margins thin, so I need revenue and revenue growth rates, gross profit and gross margin, operating income and operating margin, and the full expense breakdown (COGS, R&D, S&M, G&A) to identify which cost lines are compressing margins despite top-line growth. I'll search the 10-K income statements and earnings call commentary on cost structure and investment priorities."
+
+Example (cloud business): "The user is asking about Microsoft's cloud business, so I need Azure revenue and growth rates, management commentary on competitive positioning and margins, and forward guidance. I'll search the most recent quarters for these metrics."
 
 Output ONLY the reasoning paragraph, nothing else."""
 
