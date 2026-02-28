@@ -383,7 +383,7 @@ class ResponseGenerator:
     # STAGE 2: SINGLE-TICKER RESPONSE GENERATION
     # ═════════════════════════════════════════════════════════════════════
 
-    def generate_openai_response(self, question: str, context_chunks: List[str], chunk_objects: List[Dict[str, Any]] = None, return_details: bool = False, ticker: str = None, year: int = None, quarter: int = None, stream_callback=None, news_context: str = None, ten_k_context: str = None, previous_answer: str = None, conversation_context: str = None, retry_callback=None, answer_mode: str = None) -> str:
+    def generate_openai_response(self, question: str, context_chunks: List[str], chunk_objects: List[Dict[str, Any]] = None, return_details: bool = False, ticker: str = None, year: int = None, quarter: int = None, stream_callback=None, news_context: str = None, ten_k_context: str = None, transcript_context: str = None, previous_answer: str = None, conversation_context: str = None, retry_callback=None, answer_mode: str = None) -> str:
         """Generate response using OpenAI API based only on retrieved chunks with citations.
 
         If multiple quarters are detected, automatically uses parallel quarter processing
@@ -456,7 +456,7 @@ class ResponseGenerator:
         rag_logger.info(f"📝 Preparing context from {len(context_chunks)} chunks...")
         rag_logger.info(f"🎯 Using ALL {len(context_chunks)} selected chunks for answer generation")
 
-        if not context_chunks and not news_context and not ten_k_context:
+        if not context_chunks and not news_context and not ten_k_context and not transcript_context:
             # Explicitly show no data when there are no chunks
             context = "[NO DATA FOUND - No earnings transcripts, 10-K filings, or news articles were found for this query]"
             rag_logger.warning(f"⚠️ No context available - setting explicit no-data message")
@@ -540,6 +540,11 @@ class ResponseGenerator:
         if ten_k_context:
             ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this data as appropriate for answering the question, combining with other available sources when relevant."
 
+        # Add transcript service answer if available (with [TC-N] citation markers)
+        transcript_section = ""
+        if transcript_context:
+            transcript_section = f"\n\n{transcript_context}\n\nNote: The above is analysis from earnings call transcripts with [TC-N] citation markers. Use these [TC-N] citations directly in your answer when referencing this data."
+
         # Add previous answer if available (for iterative improvement)
         previous_answer_section = ""
         if previous_answer:
@@ -592,12 +597,24 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
 9. **Multi-year 10-K data**: When the context includes data from multiple fiscal years (e.g. FY2020, FY2021, FY2022), structure your answer by year where appropriate (e.g. "In FY2020 ... In FY2021 ...") and cite the relevant [10K-N] for each period.
 10. **Source Attribution**: Reflect the sources you actually used. If you used both, mention both; if you only used one type, that's fine too."""
 
+        # Only include transcript-specific citation instructions when transcript_context is present
+        transcript_sources_instruction = ""
+        if transcript_context:
+            transcript_sources_instruction = """
+7. **Earnings Transcript Analysis Available**: You have access to a pre-analyzed earnings transcript context with [TC-N] citation markers.
+   - Use EXACT markers [TC-1], [TC-2], etc. (WITH brackets) when referencing transcript data
+   - These markers correspond to specific transcript passages from earnings calls
+   - Cite them clearly: e.g. "According to the earnings call ([TC-1])" or "Management noted ([TC-2])"
+8. **Source Attribution**: Cite [TC-N] markers for transcript data and other markers ([N1], [10K-1]) for their respective sources."""
+
         # Determine what data sources are available for prompt text
         available_sources = []
         if news_context:
             available_sources.append("news sources")
         if ten_k_context:
             available_sources.append("10-K SEC filings")
+        if transcript_context:
+            available_sources.append("earnings transcript analysis")
         if available_sources:
             data_sources_text = f" {', '.join(available_sources)} are available - use whichever sources are most relevant for answering the question."
         else:
@@ -605,7 +622,7 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
 
         # When there is no transcript/10-K/news context, we do not auto-search news; we ask the LLM
         # to state that no data was found and to nudge the user: "Would you like me to search the news instead?"
-        no_structured_context = (not context_chunks) and not news_context and not ten_k_context
+        no_structured_context = (not context_chunks) and not news_context and not ten_k_context and not transcript_context
 
         # Mode-aware prompt construction
         _mode = answer_mode or "detailed"
@@ -643,14 +660,14 @@ Answer from {source_description} only. No emojis.{data_sources_text}{previous_an
 
 DATA CONTEXT: {quarters_info}
 {data_limitation_note}
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 
 Source information:
 {context}
 
 Question: {question}
 
-Instructions: Answer in 2-4 sentences with the specific number(s) or fact(s) requested. Use **bold** for key figures. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone.{news_sources_instruction}{ten_k_sources_instruction} Attribute naturally (e.g. "According to {company_name}'s Q1 2025 earnings call [13]..."). Present findings first; if incomplete, add a short note and optionally "Want me to search thoroughly?" Never say "chunks"—refer to company documents. Use a markdown table for multiple numbers. Do not label the format ("here is a direct answer").
+Instructions: Answer in 2-4 sentences with the specific number(s) or fact(s) requested. Use **bold** for key figures. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Attribute naturally (e.g. "According to {company_name}'s Q1 2025 earnings call [13]..."). Present findings first; if incomplete, add a short note. Never say "chunks"—refer to company documents. Use a markdown table for multiple numbers. Do not label the format ("here is a direct answer"). End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
 {no_context_note}
 
 Answer in markdown. Be factual and grounded in provided sources only."""
@@ -675,14 +692,14 @@ Answer concisely from {source_description}.{data_sources_text}{previous_answer_s
 
 DATA CONTEXT: {quarters_info}
 {data_limitation_note}
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 
 Source information:
 {context}
 
 Question: {question}
 
-Instructions: 3-5 sentences with key facts and figures. **Bold** key metrics. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone.{news_sources_instruction}{ten_k_sources_instruction} Present findings first; if incomplete, note briefly and optionally nudge ("Want me to search thoroughly?"). Use tables only for 3+ data points. End with a short follow-up nudge ("Want more detail on X?").
+Instructions: 3-5 sentences with key facts and figures. **Bold** key metrics. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Present findings first; if incomplete, note briefly. Use tables only for 3+ data points. End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
 {no_context_note}
 
 Answer in markdown. Be conversational but factually grounded in provided sources only."""
@@ -709,14 +726,14 @@ Provide a comprehensive answer from {source_description}.{data_sources_text}{pre
 
 DATA CONTEXT: {quarters_info}
 {data_limitation_note}
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 
 Source information:
 {context}
 
 Question: {question}
 
-Instructions: Start with a 2-3 sentence summary; use ## headers by topic; use all relevant data and tables for comparisons. Be direct and conversational—avoid jargon and clichés ("Analyst Assessment", "Bottom Line"). CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone. EVERY fact needs a citation.{news_sources_instruction}{ten_k_sources_instruction} Reference {company_name} and period (e.g. "In Q1 2025 [13]..."). Present findings first; if incomplete, acknowledge briefly and optionally nudge. Never say "chunks." End with 2-3 takeaways and a follow-up ("Want to explore X?").
+Instructions: Start with a 2-3 sentence summary; use ## headers by topic; use all relevant data and tables for comparisons. Be direct and conversational—avoid jargon and clichés ("Analyst Assessment", "Bottom Line"). CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations. EVERY fact needs a citation.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Reference {company_name} and period (e.g. "In Q1 2025 [13]..."). Present findings first; if incomplete, acknowledge briefly. Never say "chunks." End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
 {no_context_note}
 
 Answer in markdown. Thorough but approachable. Factually grounded in provided sources only."""
@@ -1063,7 +1080,7 @@ Answer in markdown. Thorough but approachable. Factually grounded in provided so
     # STAGE 3: MULTI-TICKER RESPONSE GENERATION
     # ═════════════════════════════════════════════════════════════════════
 
-    def generate_multi_ticker_response(self, question: str, all_chunks: List[Dict[str, Any]], individual_results: List[Dict[str, Any]], show_details: bool = False, comprehensive: bool = True, stream_callback=None, news_context: str = None, ten_k_context: str = None, previous_answer: str = None, conversation_context: str = None, retry_callback=None, answer_mode: str = None) -> str:
+    def generate_multi_ticker_response(self, question: str, all_chunks: List[Dict[str, Any]], individual_results: List[Dict[str, Any]], show_details: bool = False, comprehensive: bool = True, stream_callback=None, news_context: str = None, ten_k_context: str = None, transcript_context: str = None, previous_answer: str = None, conversation_context: str = None, retry_callback=None, answer_mode: str = None) -> str:
         """Generate response using all chunks with company labels for multi-ticker questions.
         conversation_context: Optional formatted string of recent conversation for stateful follow-up questions.
         """
@@ -1106,6 +1123,11 @@ Answer in markdown. Thorough but approachable. Factually grounded in provided so
         if ten_k_context:
             ten_k_section = f"\n\n{ten_k_context}\n\nNote: The above 10-K SEC filing data provides comprehensive annual financial information, including balance sheets, income statements, cash flow statements, and detailed business disclosures. Use this data as appropriate for answering the question, combining with other available sources when relevant."
 
+        # Add transcript service answer if available (with [TC-N] citation markers)
+        transcript_section = ""
+        if transcript_context:
+            transcript_section = f"\n\n{transcript_context}\n\nNote: The above is analysis from earnings call transcripts with [TC-N] citation markers. Use these [TC-N] citations directly in your answer when referencing this data."
+
         # Add previous answer if available (for iterative improvement)
         previous_answer_section = ""
         if previous_answer:
@@ -1145,12 +1167,14 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
             available_sources.append("news sources")
         if ten_k_context:
             available_sources.append("10-K SEC filings")
+        if transcript_context:
+            available_sources.append("earnings transcript analysis")
         if available_sources:
             data_sources_text = f" {', '.join(available_sources)} are available - use whichever sources are most relevant for answering the question."
         else:
             data_sources_text = ""
 
-        no_structured_context_multi = (not all_chunks) and not news_context and not ten_k_context
+        no_structured_context_multi = (not all_chunks) and not news_context and not ten_k_context and not transcript_context
         no_context_instruction = '\n19. **No structured data available**: Clearly state that the information is not available in the company filings. End with a short nudge: "Would you like me to search the news instead?"' if no_structured_context_multi else ''
 
         # Use answer_mode if provided, fall back to comprehensive flag
@@ -1159,7 +1183,7 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
         if _mode == "direct":
             prompt = f"""You are a financial analyst. Do not use emojis in your responses. Answer the following question based on the provided company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
 {context}
 
@@ -1169,17 +1193,24 @@ INSTRUCTIONS:
 1. Answer in 2-4 sentences with the key figure(s) for each company.
 2. Use **bold** for key figures. Reference companies by name.
 3. When comparing numbers across companies, use a markdown table.
-4. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news
+4. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news — ALWAYS WITH BRACKETS, NEVER bare numbers alone
 {additional_sources_instruction}
 5. NEVER use the word "chunks" - reference official documents naturally.
 6. NEVER label or describe the format of your answer. Just answer naturally.
 {no_context_instruction}
 
+End with:
+
+**You might also ask:**
+- [Specific follow-up question 1]
+- [Specific follow-up question 2]
+- [Specific follow-up question 3]
+
 Answer in **markdown format**."""
         elif _mode == "detailed":
             prompt = f"""You are a senior equity research analyst. Analyze the following company data and answer the question comprehensively.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
 {context}
 
@@ -1205,7 +1236,7 @@ INSTRUCTIONS:
 
 **ATTRIBUTION & SOURCES:**
 13. Reference companies by name with proper attribution (e.g., "Apple disclosed in its FY2024 10-K...", "According to Microsoft's Q1 2025 earnings call...")
-14. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news
+14. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news — ALWAYS WITH BRACKETS, NEVER bare numbers alone
 {additional_sources_instruction}
 15. Always mention the specific period (e.g., "In FY2024...", "During Q1 2025...")
 
@@ -1217,11 +1248,18 @@ INSTRUCTIONS:
 20. NEVER label or describe the format of your answer (e.g., do NOT say "here is a research report" or "this is a comparative analysis"). Just answer naturally.
 {no_context_instruction}
 
+End with:
+
+**You might also ask:**
+- [Specific follow-up question 1]
+- [Specific follow-up question 2]
+- [Specific follow-up question 3]
+
 Answer in **markdown format** with actionable insights across all companies."""
         else:  # standard
             prompt = f"""You are a financial analyst. Do not use emojis in your responses. Answer the question based on the following company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
-{news_section}{ten_k_section}
+{news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
 {context}
 
@@ -1239,7 +1277,15 @@ INSTRUCTIONS:
 8. NEVER use the word "chunks" - reference official documents naturally
 9. Use markdown: **bold** for emphasis, bullet points for lists, tables for comparisons
 10. NEVER label or describe the format of your answer. Just answer naturally.
+11. CITATION FORMAT: ALWAYS use brackets — write [1] or [10K-1], NEVER bare numbers alone
 {no_context_instruction}
+
+End with:
+
+**You might also ask:**
+- [Specific follow-up question 1]
+- [Specific follow-up question 2]
+- [Specific follow-up question 3]
 
 Answer in **markdown format**."""
 

@@ -78,25 +78,32 @@ function preprocessCitationMarkers(text: string, sources: Source[]): string {
   // Build a lookup: marker -> actual source marker (for scroll target)
   const markerMap = new Map<string, string>()
   const all10K = sources.every(s => getCitationType(s) === '10k')
+  const allTranscript = sources.every(s => getCitationType(s) === 'transcript')
   for (const s of sources) {
     if (s.marker) {
       markerMap.set(s.marker, s.marker)
-      // Also map the no-hyphen variant, e.g. [10K1] -> [10K-1]
+      // Also map the no-hyphen variant, e.g. [10K1] -> [10K-1], [TC1] -> [TC-1]
       const normalized = s.marker.replace(/-/g, '')
       if (normalized !== s.marker) markerMap.set(normalized, s.marker)
     }
   }
-  // When all sources are 10-K, map plain [1], [2] to [10K-1], [10K-2] so old or alternate model output stays clickable
-  if (all10K && sources.length > 0) {
+  // When all sources are 10-K or transcript, also map plain [1], [2] so alternate model output stays clickable
+  if ((all10K || allTranscript) && sources.length > 0) {
     sources.forEach((s, idx) => {
-      if (s.marker) {
-        const num = idx + 1
-        markerMap.set(`[${num}]`, s.marker)
-      }
+      if (s.marker) markerMap.set(`[${idx + 1}]`, s.marker)
     })
   }
-  // Match [1], [N1], [10K1], [10K-1], [10Q1], etc.
-  return text.replace(/\[(\d+|N\d+|10[KQ]-?\d+)\]/g, (match) => {
+  // Expand comma-separated citation groups before the main regex:
+  // [TC-1, TC-2] → [TC-1][TC-2], [10K-1, 10K-2] → [10K-1][10K-2]
+  const expanded = text.replace(/\[([^\]]+,[^\]]+)\]/g, (match, inner) => {
+    const parts = inner.split(/,\s*/)
+    if (parts.every((p: string) => /^(TC-?\d+|10[KQ]-?\d+|N\d+|\d+)$/.test(p.trim()))) {
+      return parts.map((p: string) => `[${p.trim()}]`).join('')
+    }
+    return match
+  })
+  // Match [1], [N1], [TC-1], [TC1], [10K1], [10K-1], [10Q1], etc.
+  return expanded.replace(/\[(\d+|N\d+|TC-?\d+|10[KQ]-?\d+)\]/g, (match) => {
     const actual = markerMap.get(match)
     if (actual) {
       const targetInner = actual.slice(1, -1) // strip brackets from actual marker (scroll target)
@@ -616,7 +623,7 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
                         if (href?.startsWith('#cite-')) {
                           const marker = href.replace('#cite-', '')
                           // Extract just the number for display (e.g. "10K-1" -> "1", "N2" -> "2", "3" -> "3")
-                          const displayNum = marker.replace(/^(10[KQ]-?|N)/, '')
+                          const displayNum = marker.replace(/^(10[KQ]-?|TC-?|N)/, '')
                           return (
                             <button
                               onClick={() => handleCitationClick(marker)}

@@ -59,6 +59,16 @@ class RAGFlowContext:
     tickers_to_process: List[str] = field(default_factory=list)
     target_quarter: Optional[str] = None
 
+    # Stage 3 transcript service outputs
+    transcript_service_answer: Optional[str] = None   # raw answer with [TC-N] markers
+    transcript_context_str: Optional[str] = None       # formatted for response generator
+    skip_transcript_follow_up: bool = False
+
+    # Subagent architecture (unified across transcript + SEC)
+    transcript_per_ticker_results: List[Dict[str, Any]] = field(default_factory=list)
+    sec_service_results: List[Dict[str, Any]] = field(default_factory=list)
+    skip_improvement: bool = False  # True when single subagent → answer is final
+
     # After context prep
     combined_citations: List[Any] = field(default_factory=list)
 
@@ -93,6 +103,7 @@ class ImprovementState:
     best_chunks: List[Dict[str, Any]] = field(default_factory=list)
     evaluation_context: List[Dict[str, Any]] = field(default_factory=list)
     follow_up_questions_asked: List[str] = field(default_factory=list)
-    # news/10-K context can be extended during iterations (e.g. iteration news merge)
+    # news/10-K/transcript context can be extended during iterations
     news_context: Optional[str] = None
     ten_k_context: Optional[str] = None
+    transcript_context: Optional[str] = None

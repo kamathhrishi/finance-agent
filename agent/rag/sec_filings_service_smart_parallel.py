@@ -596,11 +596,24 @@ Now analyze the original question and create the search plan."""
                 ]
             })
 
+            sub_questions = result.get('sub_questions', [question])
+            search_plan = result.get('search_plan', [])
+            analysis = result.get('analysis', {})
+
+            rag_logger.info(f"🧠 INVESTIGATION PLAN:")
+            rag_logger.info(f"   Complexity: {analysis.get('complexity_assessment', 'unknown')}")
+            rag_logger.info(f"   Sub-questions ({len(sub_questions)}):")
+            for i, sq in enumerate(sub_questions, 1):
+                rag_logger.info(f"     {i}. {sq}")
+            rag_logger.info(f"   Search queries ({len(search_plan)}):")
+            for s in search_plan:
+                rag_logger.info(f"     [{s.get('type','?')}] p{s.get('priority','?')}: {s.get('query','?')}")
+
             return {
                 'success': True,
-                'sub_questions': result.get('sub_questions', [question]),
-                'search_plan': result.get('search_plan', []),
-                'analysis': result.get('analysis', {})
+                'sub_questions': sub_questions,
+                'search_plan': search_plan,
+                'analysis': analysis
             }
 
         except Exception as e:
@@ -1166,3 +1179,32 @@ Return JSON with 1-3 NEW searches:
                 'chunk_id': chunk_id,  # Stable ID for per-chunk scroll targeting in the viewer
             })
         return citations
+
+    @staticmethod
+    def _remap_sec_citations(
+        answer: str,
+        citations: List[Dict],
+        offset: int,
+    ) -> tuple:
+        """
+        Shift [10K-N] markers in answer text and citation dicts by `offset`.
+
+        Returns (remapped_answer, remapped_citations).
+        offset=0 → no-op (first ticker keeps its numbers).
+        """
+        if offset == 0:
+            return answer, citations
+
+        def _shift(m):
+            return f"[10K-{int(m.group(1)) + offset}]"
+
+        remapped_answer = re.sub(r'\[10K-(\d+)\]', _shift, answer)
+
+        remapped_citations = []
+        for c in citations:
+            nc = c.copy()
+            nc['source_number'] = c['source_number'] + offset
+            nc['marker'] = f"[10K-{c['source_number'] + offset}]"
+            remapped_citations.append(nc)
+
+        return remapped_answer, remapped_citations

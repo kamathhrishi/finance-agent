@@ -63,6 +63,7 @@ from .sec_filings_service_smart_parallel import (
     SmartParallelSECFilingsService as SECFilingsService,
 )
 from .tavily_service import TavilyService
+from .earnings_transcript_service import EarningsTranscriptService
 
 # Local: parent and agent packages
 from .. import prompts
@@ -138,6 +139,7 @@ class RAGAgent:
         self.response_generator = ResponseGenerator(self.config, self.openai_api_key)
         self.tavily_service = TavilyService()
         self.sec_service = SECFilingsService(self.database_manager, self.config)
+        self.transcript_service = EarningsTranscriptService(self.search_engine, self.config)
 
         # Thread pool for CPU-bound operations
         self.thread_pool = ThreadPoolExecutor(max_workers=4)
@@ -840,10 +842,62 @@ class RAGAgent:
         comprehensive = ctx.comprehensive
         news_context = ctx.news_context_str
         ten_k_context = ctx.ten_k_context_str
+        transcript_context = ctx.transcript_context_str
         all_citations = ctx.combined_citations
 
+        # Fast path: single subagent answer is final — skip response generator entirely
+        if getattr(ctx, 'skip_improvement', False) and ctx.transcript_service_answer:
+            rag_logger.info("⚡ skip_improvement=True: using single subagent answer directly")
+            state = ImprovementState(
+                accumulated_chunks=all_chunks.copy(),
+                accumulated_citations=all_citations.copy(),
+                best_answer=ctx.transcript_service_answer,
+                best_confidence=0.9,
+                best_citations=all_citations.copy(),
+                best_context_chunks=[c.get('chunk_text', '') for c in all_chunks],
+                best_chunks=all_chunks.copy(),
+                news_context=news_context,
+                ten_k_context=ten_k_context,
+                transcript_context=transcript_context,
+            )
+            return (state, None)
+
+        # Multi-agent path: synthesize per-subagent answers (news counted as a subagent)
+        has_news = bool(news_context)
+        total_subagents = (
+            len(ctx.transcript_per_ticker_results)
+            + len(ctx.sec_service_results)
+            + (1 if has_news else 0)
+        )
+        if total_subagents > 1 and (ctx.transcript_per_ticker_results or ctx.sec_service_results):
+            rag_logger.info(f"🔀 Multi-agent synthesis: {total_subagents} subagents")
+            all_subagent_results = [
+                {'type': 'transcript', 'ticker': r['ticker'], 'answer': r['answer'], 'citations': r['citations']}
+                for r in ctx.transcript_per_ticker_results
+            ] + [
+                {'type': '10k', 'ticker': r['ticker'], 'answer': r['answer'], 'citations': r['citations']}
+                for r in ctx.sec_service_results
+            ]
+            synthesis = await self.transcript_service.synthesize_subagents(
+                ctx.question, all_subagent_results, news_context
+            )
+            rag_logger.info(f"🔀 Synthesis complete ({len(synthesis)} chars)")
+            state = ImprovementState(
+                accumulated_chunks=all_chunks.copy(),
+                accumulated_citations=all_citations.copy(),
+                best_answer=synthesis,
+                best_confidence=0.85,
+                best_citations=all_citations.copy(),
+                best_context_chunks=[c.get('chunk_text', '') for c in all_chunks],
+                best_chunks=all_chunks.copy(),
+                news_context=news_context,
+                ten_k_context=ten_k_context,
+                transcript_context=transcript_context,
+            )
+            return (state, None)
+
         # No context at all → return early with empty-context answer (no improvement loop)
-        if not individual_results and not news_context and not ten_k_context:
+        if not individual_results and not news_context and not ten_k_context and not transcript_context:
             rag_logger.warning(
                 "⚠️ No transcript chunks found and no 10-K or news context - delegating to response generator with empty context"
             )
@@ -856,6 +910,7 @@ class RAGAgent:
                 stream_callback=None,
                 news_context=None,
                 ten_k_context=None,
+                transcript_context=None,
                 previous_answer=None,
                 conversation_context=conversation_context,
                 answer_mode=_answer_mode,
@@ -869,12 +924,14 @@ class RAGAgent:
             accumulated_citations=all_citations.copy(),
             news_context=news_context,
             ten_k_context=ten_k_context,
+            transcript_context=transcript_context,
         )
         _answer_mode = ctx.answer_mode.value if ctx.answer_mode else None
         if is_general_question or (is_multi_ticker and len(individual_results) > 1):
             state.best_answer = self.response_generator.generate_multi_ticker_response(
                 question, state.accumulated_chunks, individual_results, show_details, comprehensive,
                 stream_callback=None, news_context=news_context, ten_k_context=ten_k_context,
+                transcript_context=transcript_context,
                 conversation_context=conversation_context, retry_callback=sync_retry_callback,
                 answer_mode=_answer_mode
             )
@@ -883,6 +940,7 @@ class RAGAgent:
                 question, [c['chunk_text'] for c in state.accumulated_chunks], state.accumulated_chunks,
                 ticker=tickers_to_process[0] if tickers_to_process else None, stream_callback=None,
                 news_context=news_context, ten_k_context=ten_k_context,
+                transcript_context=transcript_context,
                 conversation_context=conversation_context, retry_callback=sync_retry_callback,
                 answer_mode=_answer_mode
             )
@@ -914,6 +972,11 @@ class RAGAgent:
         One improvement iteration: evaluate → maybe stop → search (transcript + news + follow-up) → if new chunks, generate.
         Reads from ctx; returns False if the loop should stop, True to continue.
         """
+        # Single subagent or synthesized answer is final — skip evaluation loop entirely
+        if getattr(ctx, 'skip_improvement', False):
+            rag_logger.info("⚡ skip_improvement=True — skipping improvement loop")
+            return False
+
         question = ctx.question
         question_analysis = ctx.question_analysis
         individual_results = ctx.individual_results
@@ -1029,7 +1092,7 @@ class RAGAgent:
             return False
 
         # 3) Optional: transcript follow-up search (evaluator-provided query); add new chunks to state
-        if needs_transcript_search and current_data_source not in ['10k', 'latest_news'] and transcript_search_query:
+        if needs_transcript_search and current_data_source not in ['10k', 'latest_news'] and transcript_search_query and not getattr(ctx, 'skip_transcript_follow_up', False):
             if event_yielder:
                 await event_yielder({'type': 'iteration_transcript_search', 'message': 'Searching earnings transcripts to enhance answer', 'step': 'iteration', 'data': {'iteration': iteration, 'query': transcript_search_query}})
                 await asyncio.sleep(0.01)
@@ -1084,7 +1147,7 @@ class RAGAgent:
         else:
             all_follow_up_questions = follow_up_questions
 
-        skip_followup_transcript = current_data_source in ['10k', 'latest_news']
+        skip_followup_transcript = current_data_source in ['10k', 'latest_news'] or getattr(ctx, 'skip_transcript_follow_up', False)
         if skip_followup_transcript:
             all_follow_up_questions = []
 
@@ -1134,6 +1197,7 @@ class RAGAgent:
                     refined_answer = self.response_generator.generate_multi_ticker_response(
                         question, iteration_new_chunks, individual_results, show_details, comprehensive,
                         stream_callback=None, news_context=state.news_context, ten_k_context=state.ten_k_context,
+                        transcript_context=state.transcript_context,
                         previous_answer=state.best_answer, conversation_context=conversation_context,
                         retry_callback=sync_retry_callback, answer_mode=_am
                     )
@@ -1142,6 +1206,7 @@ class RAGAgent:
                         question, [c['chunk_text'] for c in iteration_new_chunks], iteration_new_chunks,
                         ticker=tickers_to_process[0] if tickers_to_process else None, stream_callback=None,
                         news_context=state.news_context, ten_k_context=state.ten_k_context,
+                        transcript_context=state.transcript_context,
                         previous_answer=state.best_answer, conversation_context=conversation_context,
                         retry_callback=sync_retry_callback, answer_mode=_am
                     )
@@ -1248,6 +1313,7 @@ class RAGAgent:
                         final_answer = self.response_generator.generate_multi_ticker_response(
                             ctx.question, state.accumulated_chunks, ctx.individual_results, ctx.show_details, ctx.comprehensive,
                             stream_callback=stream_callback, news_context=state.news_context, ten_k_context=state.ten_k_context,
+                            transcript_context=state.transcript_context,
                             conversation_context=conversation_context, retry_callback=sync_retry_cb,
                             answer_mode=_am
                         )
@@ -1256,6 +1322,7 @@ class RAGAgent:
                             ctx.question, [c['chunk_text'] for c in state.accumulated_chunks], state.accumulated_chunks,
                             ticker=ctx.tickers_to_process[0] if ctx.tickers_to_process else None, stream_callback=stream_callback,
                             news_context=state.news_context, ten_k_context=state.ten_k_context,
+                            transcript_context=state.transcript_context,
                             conversation_context=conversation_context, retry_callback=sync_retry_cb,
                             answer_mode=_am
                         )
@@ -1908,15 +1975,28 @@ class RAGAgent:
                         stream_events.append((ticker, event_type, event_data))
             except Exception as e:
                 rag_logger.warning(f"⚠️ Failed to search 10-K for {ticker}: {e}")
-            return chunks, sec_answer, stream_events
+            return chunks, sec_answer, stream_events, ticker
 
         all_results = await asyncio.gather(*[_run_single_10k_search(s) for s in ctx.search_plan.ten_k])
 
-        for chunks, sec_answer, stream_events in all_results:
+        sec_citation_offset = 0
+        for chunks, sec_answer, stream_events, ticker in all_results:
             if chunks:
                 ctx.ten_k_results.extend(chunks)
-            if sec_answer and sec_answer.strip():
-                ctx.ten_k_service_answer = getattr(ctx, 'ten_k_service_answer', '') + '\n\n' + sec_answer if getattr(ctx, 'ten_k_service_answer', '') else sec_answer
+            if chunks and sec_answer and sec_answer.strip():
+                # Build remapped per-ticker SEC result for unified subagent architecture
+                raw_citations = self.sec_service.get_10k_citations(chunks)
+                remapped_answer, remapped_cits = SECFilingsService._remap_sec_citations(
+                    sec_answer, raw_citations, sec_citation_offset
+                )
+                ctx.sec_service_results.append({
+                    'type': '10k',
+                    'ticker': ticker,
+                    'answer': remapped_answer,
+                    'citations': remapped_cits,
+                    'chunks': chunks,
+                })
+                sec_citation_offset += len(raw_citations)
             for ticker, event_type, event_data in stream_events:
                 if event_type == 'planning_start':
                     yield {'type': 'reasoning', 'message': f"Looking at {ticker}'s annual report...", 'step': '10k_planning', 'event_name': '10k_planning_start', 'data': {'ticker': ticker, 'phase': 'planning'}}
@@ -2004,15 +2084,102 @@ class RAGAgent:
                     'step': 'search',
                     'data': {'chunks_found': 0, 'tickers_processed': 0, 'documents': _planned_trans}
                 }
+
+        # ── One transcript agent per ticker, running in parallel (mirrors _stage_10k_search) ──
         logger.info("=" * 80)
-        logger.info("🔍 STARTING SEARCH PHASE - DETAILED TIMING")
+        logger.info("🔍 STARTING TRANSCRIPT SERVICE (per-ticker parallel agents)")
         logger.info("=" * 80)
         search_phase_start = time.time()
-        await self._execute_search(ctx)
-        logger.info(f"🔍 SEARCH PHASE COMPLETED in {time.time() - search_phase_start:.3f}s")
+
+        async def _run_one_ticker(ts):
+            """Drive transcript_service for a single ticker; return result dict."""
+            result = {
+                'ticker': normalize_ticker(ts.ticker),
+                'answer': '',
+                'chunks': [],
+                'citations': [],
+                'sub_questions': [],
+            }
+            async for event in self.transcript_service.execute_search_async(
+                query=ctx.question,
+                question_analysis=ctx.question_analysis,
+                transcript_searches=[ts],
+            ):
+                if event.get('type') == 'search_complete':
+                    data = event.get('data', {})
+                    result['chunks'] = data.get('chunks', [])
+                    result['answer'] = data.get('answer', '')
+                    result['sub_questions'] = data.get('sub_questions', [])
+                    result['citations'] = self.transcript_service.get_citations(result['chunks'])
+            return result
+
+        ticker_results_raw = await asyncio.gather(
+            *[_run_one_ticker(ts) for ts in ctx.search_plan.earnings_transcripts]
+        )
+
+        # Filter tickers that returned nothing
+        valid_results = [r for r in ticker_results_raw if r['answer'] and r['chunks']]
+
+        # ── Remap [TC-N] citations across tickers so numbers are globally unique ──
+        all_sub_questions = []
+        all_chunks = []
+        all_citations = []
+        remapped_results = []   # for multi-ticker synthesis
+        offset = 0
+
+        for result in valid_results:
+            remapped_answer, remapped_cits = self.transcript_service._remap_citations(
+                result['answer'], result['citations'], offset
+            )
+            remapped_results.append({
+                'ticker': result['ticker'],
+                'answer': remapped_answer,
+                'citations': remapped_cits,
+                'chunks': result['chunks'],
+            })
+            all_chunks.extend(result['chunks'])
+            all_citations.extend(remapped_cits)
+            all_sub_questions.extend(result['sub_questions'])
+            offset += len(result['citations'])
+
+        ctx.all_chunks = all_chunks
+        ctx.all_citations = all_citations
+
+        # Store per-ticker results; _stage_prepare_context decides single vs multi path
+        ctx.transcript_per_ticker_results = remapped_results
+        ctx.skip_transcript_follow_up = True
+
+        # Stream planning reasoning to frontend (aggregate across all tickers)
+        if ctx.stream and all_sub_questions:
+            unique_sub_qs = list(dict.fromkeys(all_sub_questions))[:4]  # dedup, keep order
+            questions_text = "\n".join([f"- {q}" for q in unique_sub_qs])
+            yield {
+                'type': 'reasoning',
+                'message': f"To answer this, I need to find:\n{questions_text}",
+                'step': 'transcript_planning',
+                'data': {'sub_questions': unique_sub_qs},
+            }
+        if ctx.stream and ctx.all_chunks:
+            yield {
+                'type': 'reasoning',
+                'message': f"Found {len(ctx.all_chunks)} relevant transcript passages across {len(valid_results)} {'company' if len(valid_results) == 1 else 'companies'}",
+                'step': 'transcript_retrieval',
+                'data': {'chunks_found': len(ctx.all_chunks)},
+            }
+
+        ctx.search_time = time.time() - search_phase_start
+        logger.info(f"🔍 TRANSCRIPT AGENTS COMPLETED in {ctx.search_time:.3f}s — {len(valid_results)} ticker(s), {len(ctx.all_chunks)} chunks")
         logger.info("=" * 80)
+
+        # Populate fields used by downstream stages
+        ctx.individual_results = ctx.all_chunks
+        ctx.tickers_to_process = [r['ticker'] for r in valid_results]
+        ctx.is_multi_ticker = len(ctx.tickers_to_process) > 1
+        ctx.is_general_question = ctx.is_multi_ticker
+
         if LOGFIRE_AVAILABLE and logfire:
             logfire.info("rag.transcript_search", chunks_found=len(ctx.all_chunks), tickers=ctx.tickers_to_process, target_quarters=ctx.target_quarters, is_multi_ticker=ctx.is_multi_ticker, search_time_ms=int(ctx.search_time * 1000))
+
         if ctx.stream:
             transcripts = {}
             for chunk in ctx.all_chunks:
@@ -2046,23 +2213,81 @@ class RAGAgent:
             rag_logger.info(f"📰 Initial news search returned {len(news_citations)} citations")
         else:
             news_citations = []
-        if ctx.ten_k_results:
-            # Always use format_10k_context so [10K-N] markers in the final answer match
-            # the [10K-1]..[10K-15] citation cards sent to the frontend.
-            # (ten_k_service_answer uses globally sequential numbers across iterations which
-            # diverge from get_10k_citations numbering after the first 20 chunks.)
-            ctx.ten_k_context_str = self.sec_service.format_10k_context(ctx.ten_k_results)
-            rag_logger.info(f"📄 Using formatted raw chunks as context ({len(ctx.ten_k_context_str)} chars)")
-            ten_k_citations = self.sec_service.get_10k_citations(ctx.ten_k_results)
-            rag_logger.info(f"📄 Initial 10-K search returned {len(ten_k_citations)} citations")
+        # ── Unified subagent counting ───────────────────────────────────────
+        # Transcript subagents: one per ticker in transcript_per_ticker_results
+        # SEC subagents: one per ticker in sec_service_results
+        # News (Tavily): counts as a subagent — if present alongside others it triggers synthesis
+        has_news = bool(news_citations)
+        total_agents = len(ctx.transcript_per_ticker_results) + len(ctx.sec_service_results) + (1 if has_news else 0)
+
+        if total_agents == 1 and ctx.transcript_per_ticker_results:
+            # Fast path: single transcript subagent — answer is final, skip main agent
+            ctx.skip_improvement = True
+            result = ctx.transcript_per_ticker_results[0]
+            ctx.transcript_service_answer = result['answer']
+            ctx.all_citations = result['citations']
+            ctx.all_chunks = result['chunks']
+            ctx.transcript_context_str = f"=== EARNINGS TRANSCRIPT ANALYSIS ===\n{result['answer']}"
+            rag_logger.info(f"📝 Single transcript subagent — answer ready ({len(result['answer'])} chars)")
+        elif total_agents == 1 and ctx.sec_service_results:
+            # SEC single-agent: pass pre-analyzed answer as context to main agent for synthesis
+            ctx.skip_improvement = False
+            result = ctx.sec_service_results[0]
+            ctx.all_citations = result['citations']
+            ctx.all_chunks = result['chunks']
+            ctx.ten_k_context_str = f"=== SEC 10-K ANALYSIS ===\n{result['answer']}"
+            rag_logger.info(f"📄 Single SEC subagent — passing to main agent ({len(result['answer'])} chars)")
+        elif total_agents == 1 and has_news:
+            # News-only: no pre-generated answer, main agent generates from news context
+            ctx.skip_improvement = False
+            rag_logger.info("📰 News-only query — main agent generates answer from news context")
+        elif total_agents > 1:
+            # Multi-agent synthesis: transcript/SEC answers + optional news context
+            ctx.skip_improvement = False
+            all_subagent_chunks = []
+            all_subagent_citations = []
+            for r in ctx.transcript_per_ticker_results:
+                all_subagent_chunks.extend(r['chunks'])
+                all_subagent_citations.extend(r['citations'])
+            for r in ctx.sec_service_results:
+                all_subagent_chunks.extend(r['chunks'])
+                all_subagent_citations.extend(r['citations'])
+            ctx.all_chunks = all_subagent_chunks
+            ctx.all_citations = all_subagent_citations
+            if ctx.transcript_per_ticker_results:
+                combined_tc = "\n\n".join(
+                    f"=== {r['ticker']} (Earnings Transcripts) ===\n{r['answer']}"
+                    for r in ctx.transcript_per_ticker_results
+                )
+                ctx.transcript_context_str = combined_tc
+            if ctx.sec_service_results:
+                combined_10k = "\n\n".join(
+                    f"=== {r['ticker']} (10-K Filing) ===\n{r['answer']}"
+                    for r in ctx.sec_service_results
+                )
+                ctx.ten_k_context_str = combined_10k
+            n_tc = len(ctx.transcript_per_ticker_results)
+            n_10k = len(ctx.sec_service_results)
+            rag_logger.info(f"🔀 Multi-agent synthesis: {n_tc} transcript + {n_10k} SEC + {'news' if has_news else 'no news'}")
         else:
-            ten_k_citations = []
+            # No subagents at all (empty context)
+            ctx.skip_improvement = False
+            # Legacy fallback: raw 10-K chunks if SEC service didn't produce a result
+            if ctx.ten_k_results and not ctx.sec_service_results:
+                ctx.ten_k_context_str = self.sec_service.format_10k_context(ctx.ten_k_results)
+                rag_logger.info(f"📄 Using formatted raw 10-K chunks ({len(ctx.ten_k_context_str)} chars)")
+
+        # Build combined citations (subagent citations + news)
+        ten_k_citations = []
+        if ctx.ten_k_results and not ctx.sec_service_results:
+            ten_k_citations = self.sec_service.get_10k_citations(ctx.ten_k_results)
+
         ctx.combined_citations = ctx.all_citations.copy()
         for c in news_citations:
             ctx.combined_citations.append({"type": "news", "marker": f"[N{c['index']}]", "title": c["title"], "url": c["url"], "published_date": c.get("published_date", "")})
         for c in ten_k_citations:
             ctx.combined_citations.append(c)
-        rag_logger.info(f"📎 Final combined citations: {len(ctx.combined_citations)} total")
+        rag_logger.info(f"📎 Final combined citations: {len(ctx.combined_citations)} total (agents={total_agents}, skip_improvement={ctx.skip_improvement})")
 
     async def _stage_run_improvement(self, ctx: RAGFlowContext):
         """Stage 5: Run improvement. Calls _run_iterative_improvement (build initial answer + loop). Writes: improvement_results, then best_answer, best_confidence, best_citations, etc. Yields: progress, tokens, iteration events."""

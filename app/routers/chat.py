@@ -303,8 +303,9 @@ async def stream_chat_message_v2(
                                     # Clear evaluation reasoning
                                     event['data'][field] = ''
                     
-                    # Log event being forwarded
-                    logger.info(f"📡 ROUTER: Forwarding event to client: type={event.get('type')}, step={event.get('step')}")
+                    # Log event being forwarded (skip noisy token events)
+                    if event.get('type') != 'token':
+                        logger.info(f"📡 ROUTER: Forwarding event to client: type={event.get('type')}, step={event.get('step')}")
 
                     event_type = event.get('type')
 
@@ -666,8 +667,9 @@ async def stream_landing_demo_message_v2(
                                     ('omits' in reasoning_text or 'lacks' in reasoning_text or 'gaps' in reasoning_text)):
                                     event['data'][field] = ''
                     
-                    # Log event being forwarded
-                    logger.info(f"📡 DEMO ROUTER: Forwarding event to client: type={event.get('type')}, step={event.get('step')}")
+                    # Log event being forwarded (skip noisy token events)
+                    if event.get('type') != 'token':
+                        logger.info(f"📡 DEMO ROUTER: Forwarding event to client: type={event.get('type')}, step={event.get('step')}")
                     
                     # Send event
                     if event.get('type') == 'result':

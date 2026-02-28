@@ -90,10 +90,10 @@ const transcriptChatData = [
 ]
 
 const exampleQueries = [
-  "Analyze $PLTR’s 2024 and 2025 10-K filings and explain why growth has been high but margins have been thin",
-  "What is $NVDA’s competitive moat in AI chips?",
+  "Analyze $PLTR’s 2024 and 2025 10-K filings and earnings transcripts, and explain why growth has been high but margins have been thin",
+  "Compile $DDOG billings from last 8 quarters",
   "Compare $MSFT and $GOOGL cloud segment growth",
-  "$META AI capex commentary in last 3 quarters",
+  "compile $META AI capex commentary in last 3 quarters",
   "Comment on $ORCL balance sheet and their usage of debt?",
 ]
 
