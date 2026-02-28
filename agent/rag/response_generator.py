@@ -667,7 +667,7 @@ Source information:
 
 Question: {question}
 
-Instructions: Answer in 2-4 sentences with the specific number(s) or fact(s) requested. Use **bold** for key figures. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Attribute naturally (e.g. "According to {company_name}'s Q1 2025 earnings call [13]..."). Present findings first; if incomplete, add a short note. Never say "chunks"—refer to company documents. Use a markdown table for multiple numbers. Do not label the format ("here is a direct answer"). End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
+Instructions: Answer in 2-4 sentences with the specific number(s) or fact(s) requested. Use **bold** for key figures. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Attribute naturally (e.g. "According to {company_name}'s Q1 2025 earnings call [13]..."). Present findings first; if incomplete, add a short note. Never say "chunks"—refer to company documents. Use a markdown table for multiple numbers. Do not label the format ("here is a direct answer"). End with:\n\n**You might also ask:**\n- [Question about same company $TICKER on a related metric or trend]\n- [Question about same company $TICKER from a different analytical angle]\n- [Question about same company $TICKER going deeper on a key finding]
 {no_context_note}
 
 Answer in markdown. Be factual and grounded in provided sources only."""
@@ -699,7 +699,7 @@ Source information:
 
 Question: {question}
 
-Instructions: 3-5 sentences with key facts and figures. **Bold** key metrics. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Present findings first; if incomplete, note briefly. Use tables only for 3+ data points. End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
+Instructions: 3-5 sentences with key facts and figures. **Bold** key metrics. CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Present findings first; if incomplete, note briefly. Use tables only for 3+ data points. End with:\n\n**You might also ask:**\n- [Question about same company $TICKER on a related metric or trend]\n- [Question about same company $TICKER from a different analytical angle]\n- [Question about same company $TICKER going deeper on a key finding]
 {no_context_note}
 
 Answer in markdown. Be conversational but factually grounded in provided sources only."""
@@ -733,7 +733,7 @@ Source information:
 
 Question: {question}
 
-Instructions: Start with a 2-3 sentence summary; use ## headers by topic; use all relevant data and tables for comparisons. Be direct and conversational—avoid jargon and clichés ("Analyst Assessment", "Bottom Line"). CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations. EVERY fact needs a citation.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Reference {company_name} and period (e.g. "In Q1 2025 [13]..."). Present findings first; if incomplete, acknowledge briefly. Never say "chunks." End with:\n\n**You might also ask:**\n- [Specific follow-up question 1]\n- [Specific follow-up question 2]\n- [Specific follow-up question 3]
+Instructions: Start with a 2-3 sentence summary; use ## headers by topic; use all relevant data and tables for comparisons. Be direct and conversational—avoid jargon and clichés ("Analyst Assessment", "Bottom Line"). CITATION EXAMPLES: If you see "SOURCE [55]" in the data, write [55] in your answer (WITH BRACKETS). If you see "SOURCE [13]", write [13]. ALWAYS include the brackets. DO NOT write 55 or 13 alone — NEVER use bare numbers as citations. EVERY fact needs a citation.{news_sources_instruction}{ten_k_sources_instruction}{transcript_sources_instruction} Reference {company_name} and period (e.g. "In Q1 2025 [13]..."). Present findings first; if incomplete, acknowledge briefly. Never say "chunks." End with:\n\n**You might also ask:**\n- [Question about same company $TICKER on a related metric or trend]\n- [Question about same company $TICKER from a different analytical angle]\n- [Question about same company $TICKER going deeper on a key finding]
 {no_context_note}
 
 Answer in markdown. Thorough but approachable. Factually grounded in provided sources only."""
@@ -1202,9 +1202,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Specific follow-up question 1]
-- [Specific follow-up question 2]
-- [Specific follow-up question 3]
+- [Question about same company/companies $TICKER on a related metric or trend]
+- [Question about same company/companies $TICKER from a different analytical angle]
+- [Question about same company/companies $TICKER going deeper on a key finding]
 
 Answer in **markdown format**."""
         elif _mode == "detailed":
@@ -1251,9 +1251,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Specific follow-up question 1]
-- [Specific follow-up question 2]
-- [Specific follow-up question 3]
+- [Question about same company/companies $TICKER on a related metric or trend]
+- [Question about same company/companies $TICKER from a different analytical angle]
+- [Question about same company/companies $TICKER going deeper on a key finding]
 
 Answer in **markdown format** with actionable insights across all companies."""
         else:  # standard
@@ -1283,9 +1283,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Specific follow-up question 1]
-- [Specific follow-up question 2]
-- [Specific follow-up question 3]
+- [Question about same company/companies $TICKER on a related metric or trend]
+- [Question about same company/companies $TICKER from a different analytical angle]
+- [Question about same company/companies $TICKER going deeper on a key finding]
 
 Answer in **markdown format**."""
 

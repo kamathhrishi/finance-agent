@@ -357,9 +357,14 @@ OTHER RULES:
 End your answer with:
 
 **You might also ask:**
-- [Specific follow-up question about related metrics or trends]
-- [Specific follow-up question about a different angle on this topic]
-- [Specific follow-up question to go deeper on a key finding]"""
+- [Question specific to the same company/ticker and related metric or trend — include the $TICKER in the question]
+- [Question specific to the same company/ticker from a different analytical angle — include the $TICKER]
+- [Question specific to the same company/ticker that goes deeper on a key finding from the answer — include the $TICKER]
+
+Example for a $DDOG billings question:
+- How do billing duration adjustments impact the interpretation of $DDOG billings growth trends across quarters?
+- What is the relationship between $DDOG RPO growth and revenue growth, and what does it signal about customer commitment?
+- Why did $DDOG Q4 2024 bookings reach $1B while reported billings were $908M—what explains the gap?"""
 
         messages = [
             {"role": "system", "content": "You are a precise financial analyst. Answer only from the provided sources. No emojis. CRITICAL: Always cite facts with [TC-N] bracket markers — never use bare numbers alone as citations."},
@@ -633,9 +638,9 @@ OTHER RULES:
 End your answer with:
 
 **You might also ask:**
-- [Specific follow-up question about related metrics or trends]
-- [Specific follow-up question about a different angle on this topic]
-- [Specific follow-up question to go deeper on a key finding]"""
+- [Question specific to the same company/ticker(s) and a related metric or trend — include the $TICKER(s)]
+- [Question specific to the same company/ticker(s) from a different analytical angle — include the $TICKER(s)]
+- [Question specific to the same company/ticker(s) that goes deeper on a key finding — include the $TICKER(s)]"""
 
         messages = [
             {
@@ -694,9 +699,9 @@ OTHER RULES:
 End your answer with:
 
 **You might also ask:**
-- [Specific follow-up question about related metrics or trends]
-- [Specific follow-up question comparing the companies further]
-- [Specific follow-up question to go deeper on a key finding]"""
+- [Question comparing the same companies on a related metric — include all $TICKERs]
+- [Question about one of the companies from a different analytical angle — include the $TICKER]
+- [Question that goes deeper on a key finding from the comparison — include the relevant $TICKER(s)]"""
 
         messages = [
             {
