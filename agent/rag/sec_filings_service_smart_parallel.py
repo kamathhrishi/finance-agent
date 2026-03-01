@@ -468,8 +468,8 @@ class SmartParallelSECFilingsService:
             # ═══════════════════════════════════════════════════════════════
             # EARLY TERMINATION CHECK
             # ═══════════════════════════════════════════════════════════════
-            if quality_score >= confidence_threshold:
-                rag_logger.info(f"   🎉 Early termination: quality {quality_score:.2f} >= {confidence_threshold}")
+            if quality_score >= confidence_threshold and not missing_info:
+                rag_logger.info(f"   🎉 Early termination: quality {quality_score:.2f} >= {confidence_threshold}, no missing info")
                 break
 
             # ═══════════════════════════════════════════════════════════════
@@ -828,6 +828,8 @@ Return JSON with table indices (1-indexed), selecting up to {top_k} tables:
             if available_sections:
                 selected_sections = self._select_relevant_sections(query, available_sections)
 
+            rag_logger.info(f"   🔍 TEXT query='{query}' → sections={selected_sections or 'ALL'}")
+
             # STEP 3: Get text chunks with optional section filtering
             chunks = self.database_manager.search_10k_filings(
                 query_embedding=query_embedding,
@@ -1082,22 +1084,17 @@ ANSWER:
 
 Evaluate strictly:
 1. Does it answer the question completely with actual numbers?
-2. Are numbers/data cited from sources?
-3. Does it stay on-scope (no unrelated metrics or periods)?
-4. What information is missing?
-5. If the question asks for a derived metric or ratio (anything computed from two or more values), are ALL required components present? If any component is missing, list it in missing_info AND set quality_score ≤ 0.4.
+2. Are all required data points present and cited?
+3. If the question requires computing a metric from multiple inputs, are ALL input components present in the answer?
 
-SCORING RULES:
-- quality_score ≥ 0.85: Answer is complete, all required data present, well-cited
-- quality_score 0.5–0.84: Answer is partial — some data found but gaps remain
-- quality_score ≤ 0.4: A required data component is explicitly missing or the answer says it could not be computed
+CRITICAL: `missing_info` must list every specific data point that is absent from the answer. If the answer says any value "could not be found", "is not disclosed", or "cannot be computed", that value MUST appear in missing_info. An answer that reports missing data is NOT complete.
 
 Return JSON:
 {{
     "quality_score": 0.0-1.0,
-    "issues": ["issue1", "issue2"],
-    "missing_info": ["what's missing — be specific about which component or data point"],
-    "suggestions": ["how to improve"]
+    "issues": ["issue1"],
+    "missing_info": ["specific data point 1 that is absent", "specific data point 2"],
+    "suggestions": ["what to search for next"]
 }}"""
 
         try:
