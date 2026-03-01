@@ -478,21 +478,46 @@ Return ONLY valid JSON with this structure:
                 years.extend(latest.get('years', []))
                 context = "latest"
 
-            # Multiple quarters (e.g., "last 3 quarters") - CHECK BEFORE 'q' match!
+            # Multiple years/quarters (e.g., "last 3 years", "last 3 quarters") - CHECK BEFORE 'q' match!
             elif 'last' in ref_lower or 'past' in ref_lower:
                 count = self._extract_number(ref_lower)
                 logger.info(f"🔍 Detected 'last/past' in time_ref: '{ref}', extracted count: {count}")
 
                 if not count:
                     logger.error(f"❌ Failed to extract count from: '{ref}'")
-                    # Don't fail hard - try to fallback to latest
                     continue
 
                 if not tickers or not self.database_manager:
                     logger.error(f"❌ Cannot resolve 'last {count}' - missing tickers or database_manager")
-                    # Don't fail hard - will fallback to latest at end of loop
                     continue
 
+                # If "year" appears in the ref, resolve as fiscal years for 10-K
+                is_year_ref = 'year' in ref_lower
+                if is_year_ref:
+                    rag_logger.info(f"📅 Resolving 'last {count} years' → fetching last {count} fiscal years for {tickers[0]}")
+                    try:
+                        conn = self.database_manager._get_db_connection()
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            "SELECT DISTINCT fiscal_year FROM ten_k_chunks WHERE UPPER(ticker) = %s ORDER BY fiscal_year DESC LIMIT %s",
+                            (tickers[0].upper(), count)
+                        )
+                        rows = cursor.fetchall()
+                        self.database_manager._return_db_connection(conn)
+                        year_list = [r[0] for r in rows]
+                        if year_list:
+                            years.extend(year_list)
+                            for y in year_list:
+                                quarters.extend([f"{y}_q{q}" for q in [4, 3, 2, 1]])
+                            context = "multiple"
+                            rag_logger.info(f"📅 Resolved 'last {count} years' → fiscal years {year_list}")
+                        else:
+                            rag_logger.warning(f"⚠️ No fiscal years found for {tickers[0]}, falling back to latest")
+                    except Exception as e:
+                        rag_logger.error(f"❌ Failed to fetch fiscal years: {e}")
+                    continue
+
+                # Otherwise resolve as quarters
                 logger.info(f"🔍 QUARTER SELECTION: Calling get_last_n_quarters_for_company('{tickers[0]}', {count})")
                 ticker_quarters = self.database_manager.get_last_n_quarters_for_company(
                     tickers[0], count
@@ -500,10 +525,8 @@ Return ONLY valid JSON with this structure:
                 logger.info(f"✅ QUARTER SELECTION: Returned quarters for {tickers[0]}: {ticker_quarters}")
                 rag_logger.info(f"✅ QUARTER SELECTION: Database returned {len(ticker_quarters) if ticker_quarters else 0} quarters: {ticker_quarters}")
 
-                # ✅ CRITICAL FIX: Validate that we got quarters
                 if not ticker_quarters:
                     logger.error(f"❌ No quarters found for {tickers[0]} in database - check data ingestion")
-                    # Don't fail hard - fallback to latest
                     continue
 
                 quarters.extend(ticker_quarters)

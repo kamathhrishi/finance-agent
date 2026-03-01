@@ -1027,7 +1027,7 @@ PREVIOUS ANSWER (citations [10K-1]...[10K-{chunk_start_idx - 1}] remain valid):
 NEW SOURCES ({f'[10K-{chunk_start_idx}]' if context_parts else 'none'}...[10K-{chunk_start_idx + len(context_parts) - 1}]):
 {context}
 
-Integrate new data. Use exact markers [10K-N]. Provide precise numbers."""
+Integrate new data. Use exact markers [10K-N]. Provide precise numbers. If the question asks for a derived metric and all components are now available, compute and show it explicitly."""
         else:
             prompt = f"""Do not use emojis. Answer the question using the retrieved data.
 
@@ -1039,7 +1039,9 @@ SUB-QUESTIONS:
 RETRIEVED DATA:
 {context}
 
-Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, note any missing info."""
+Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, note any missing info.
+
+DERIVED METRICS — CRITICAL: If the question asks for a ratio, per-unit figure, or any value computed from multiple inputs, and the source data contains the required components, compute the result directly. Do not say you cannot calculate it. Show your work (numerator, denominator, result) and cite each component source."""
 
         try:
             messages = [
