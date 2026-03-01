@@ -532,41 +532,33 @@ QUESTION: {question}
 
 Create a strategic search plan to retrieve SPECIFIC DATA from the 10-K filing.
 
-SEARCH QUERIES must be short semantic keyword phrases — NOT full sentences or questions.
-These are used as embedding search queries against a vector database of 10-K chunks.
+SEARCH QUERIES are used as embedding search queries against a vector database of 10-K chunks.
+Each query is independently embedded and searched — they run in parallel, so use MULTIPLE SHORT FOCUSED queries rather than one long query.
 
-CRITICAL RULES for search_plan queries:
-- GOOD: "total revenue cost of revenue gross profit income statement"
-- GOOD: "long-term debt short-term debt borrowings balance sheet"
-- GOOD: "operating expenses research development selling general administrative"
-- BAD: "What is Apple's total revenue?" (do not use question form, do not include company name)
-- BAD: "Microsoft long-term debt" (do not include company name or year - document is already scoped)
-- BAD: "Show all income statement line items" (too vague)
-
-The document is already scoped to the correct company and year - do NOT include company names, ticker symbols, or years in queries. Use only financial concept keywords.
+QUERY RULES:
+- Each query must be SHORT (2–5 words). A shorter, focused phrase produces a better embedding match than a long noisy one.
+- Do NOT cram synonyms or alternatives into a single query — put each angle as a SEPARATE query in the plan.
+- Do NOT use question form. Do NOT include company names, tickers, or years.
+- GOOD: "total revenue"  |  "annual revenue subscription"  |  "cost of revenue"
+- BAD: "total revenue cost of revenue gross profit income statement operating expenses" (too many concepts, dilutes embedding)
 
 DERIVED METRICS AND RATIOS — CRITICAL:
-If the question asks for a metric that must be computed from two or more values (e.g. a ratio, a per-unit figure, a growth rate, or any formula), do NOT search for the derived metric directly. Instead, search for each input component separately.
-Examples of the principle (not exhaustive):
-- A "per employee" figure → search for the numerator metric AND headcount/employees separately
-- A ratio of two line items → search for each line item separately
-- A margin % not directly stated → search for numerator and denominator separately
-- A year-over-year change → search for the value in each period separately
-Always plan at least one search per required component.
+If the question asks for a metric computed from two or more values, search for each component separately. Never search for the derived metric directly.
+- Per-unit figure → one query for numerator, one query for denominator
+- Financial ratio → one query per line item
+- Margin % → numerator query + denominator query
+For each component, generate 2–3 short alternative-phrasing queries to approach from different angles.
 
 SECTION TARGETING — GENERAL PRINCIPLE:
-Think about where in a 10-K the required data physically lives and include vocabulary from that section.
-- Narrative disclosures (workforce, headcount, strategy, business overview): lean toward item_1 terminology
-- Risk factors: item_1a terminology
-- Management discussion of trends and performance: item_7 MD&A terminology
-- Quantitative financial line items and tables: item_8 Financial Statements terminology
-Match your keyword phrase to the vocabulary actually used in the target section, not just the concept name.
-
-Queries should be dense keyword phrases that semantically match the relevant section/table in a 10-K.
+Think about where in a 10-K the data physically lives and use vocabulary from that section.
+- Narrative/operational data (workforce, strategy, business overview): item_1 vocabulary
+- Risk factors: item_1a vocabulary
+- Management commentary and trends: item_7 MD&A vocabulary
+- Financial line items and tables: item_8 Financial Statements vocabulary
 
 SEARCH TYPES:
-- "table": For quantitative data (revenue, COGS, assets, ratios, metrics, line items)
-- "text": For qualitative info (reasons, explanations, risks, strategies, commentary)
+- "table": For quantitative data (revenue, COGS, assets, any number/line item)
+- "text": For narrative data (workforce disclosures, strategy, explanations)
 
 Return ONLY valid JSON:
 {{
@@ -579,22 +571,14 @@ Return ONLY valid JSON:
         "Specific data-retrieval sub-question 2"
     ],
     "search_plan": [
-        {{"query": "dense financial keyword phrase without company name or year", "type": "table|text", "priority": 1}}
+        {{"query": "short focused phrase", "type": "table|text", "priority": 1}}
     ]
 }}
 
-EXAMPLES:
-
-Question: "Show me all line items from Apple's income statement"
-search_plan queries:
-- "revenue cost of revenue gross profit income statement"
-- "operating expenses research development selling general administrative"
-- "income before taxes net income earnings per share"
-
-Question: "What is Microsoft's debt-to-equity ratio?"
-search_plan queries:
-- "total debt long-term short-term borrowings balance sheet"
-- "stockholders equity total equity"
+EXAMPLE PATTERN for a derived metric (two components needed):
+- One or two short queries targeting the numerator from different angles
+- One or two short queries targeting the denominator from different angles
+Each query 2–5 words, each a distinct semantic phrase, run in parallel.
 
 Now analyze the original question and create the search plan."""
 
@@ -1132,7 +1116,7 @@ Return JSON:
 
         executed_queries = [item.get('query', '') for item in current_search_plan]
 
-        prompt = f"""Do not use emojis. Generate NEW searches to fill gaps in a 10-K retrieval.
+        prompt = f"""Do not use emojis. Generate NEW short search queries to fill gaps in a 10-K retrieval.
 
 QUESTION: {question}
 
@@ -1142,14 +1126,17 @@ ALREADY SEARCHED (these did NOT retrieve the needed data):
 MISSING INFO:
 {chr(10).join(f'- {m}' for m in missing_info[:5])}
 
-CRITICAL: The queries above failed to retrieve the required data. You MUST use completely different keyword phrases — try synonyms, alternative terminology, related section vocabulary, or different levels of specificity. Do NOT repeat or slightly reword the same queries.
+RULES:
+- Each query must be SHORT (2–5 words). Short focused phrases produce better embedding matches than long noisy ones.
+- Use completely different vocabulary from the queries already tried — synonyms, alternative terminology, different section vocabulary.
+- Do NOT repeat or rephrase existing queries.
+- Think about what vocabulary the 10-K actually uses in the section containing this data.
+- Generate multiple short queries (each a different angle) rather than one long query.
 
-Think about what vocabulary the 10-K actually uses in the section that would contain this data, and write phrases that match that section's language rather than the question's language.
-
-Return JSON with 1-3 NEW searches (different from all queries already tried):
+Return JSON with 2-4 NEW short searches:
 {{
     "new_searches": [
-        {{"query": "alternative keyword phrase using different vocabulary", "type": "table|text", "priority": 1}}
+        {{"query": "short alternative phrase", "type": "table|text", "priority": 1}}
     ]
 }}"""
 
