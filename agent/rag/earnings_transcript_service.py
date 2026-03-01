@@ -270,19 +270,22 @@ Return ONLY valid JSON:
         if not tasks:
             return []
 
-        async def search_one(scoped_query: str, quarter_str: str) -> List[Dict]:
-            try:
-                return await loop.run_in_executor(
-                    None,
-                    lambda q=scoped_query, qtr=quarter_str: self.search_engine.search_similar_chunks(
-                        q, max_results=chunks_per_query, target_quarter=qtr
-                    ),
-                )
-            except Exception as e:
-                rag_logger.warning(f"[Transcript] search_similar_chunks failed ({scoped_query}, {quarter_str}): {e}")
-                return []
+        # Run all searches in a single executor thread (sequential within thread) to avoid
+        # Python logging lock contention/deadlock when many threads log simultaneously.
+        def run_all_searches() -> List[List[Dict]]:
+            all_results = []
+            for scoped_query, quarter_str in tasks:
+                try:
+                    chunks = self.search_engine.search_similar_chunks(
+                        scoped_query, max_results=chunks_per_query, target_quarter=quarter_str
+                    )
+                    all_results.append(chunks)
+                except Exception as e:
+                    rag_logger.warning(f"[Transcript] search_similar_chunks failed ({scoped_query}, {quarter_str}): {e}")
+                    all_results.append([])
+            return all_results
 
-        results = await asyncio.gather(*[search_one(q, qtr) for q, qtr in tasks])
+        results = await loop.run_in_executor(None, run_all_searches)
 
         # Merge: deduplicate by citation index, keep highest similarity
         best: Dict[Any, Dict] = {}
