@@ -588,6 +588,41 @@ Return ONLY valid JSON:
 
         return remapped_answer, remapped_citations
 
+    @staticmethod
+    def _fix_bare_tc_citations(text: str, max_tc: int) -> str:
+        """
+        Post-process synthesis output to fix bare citation numbers the LLM emitted
+        despite instructions.
+
+        Two patterns fixed:
+        1. Concatenated: "1112" → "[TC-11][TC-12]" (split into two valid TC indices)
+        2. Standalone at end of clause: "grew 27% 4." → "grew 27% [TC-4]."
+        """
+        # Step 1: fix concatenated 3-4 digit numbers that split into two valid TC indices
+        def expand_concat(m):
+            num_str = m.group(1)
+            for split in range(1, len(num_str)):
+                left, right = int(num_str[:split]), int(num_str[split:])
+                if 1 <= left <= max_tc and 1 <= right <= max_tc:
+                    return f"[TC-{left}][TC-{right}]"
+            return m.group(0)
+
+        # Only match 3-4 digit numbers not already inside a bracket or preceded by % $ .
+        text = re.sub(r'(?<!\[)(?<!TC-)(?<!\d)(\d{3,4})(?!\d)(?!%)', expand_concat, text)
+
+        # Step 2: fix standalone 1-2 digit numbers that appear between whitespace and
+        # sentence-ending punctuation — very likely bare citation numbers
+        def fix_standalone(m):
+            n = int(m.group(2))
+            if 1 <= n <= max_tc:
+                return f"{m.group(1)}[TC-{n}]{m.group(3)}"
+            return m.group(0)
+
+        # Pattern: space + 1-2 digits + (period/comma/newline/end) not preceded by % or $
+        text = re.sub(r'(?<![%$\d])( )(\d{1,2})(?=\s*[.,\n]|$)', fix_standalone, text)
+
+        return text
+
     # ═══════════════════════════════════════════════════════════════════════
     # MULTI-TICKER SYNTHESIS
     # ═══════════════════════════════════════════════════════════════════════
@@ -616,6 +651,13 @@ Return ONLY valid JSON:
         if news_context:
             news_section = f"\n\nADDITIONAL NEWS CONTEXT:\n{news_context}\n"
 
+        # Collect all valid TC citation numbers so post-processing knows the range
+        all_tc_indices = set()
+        for r in subagent_results:
+            for c in r.get('citations', []):
+                all_tc_indices.add(c.get('source_number', 0))
+        max_tc = max(all_tc_indices) if all_tc_indices else 60
+
         prompt = f"""Synthesize the following financial analyses into one comprehensive answer.
 
 QUESTION: {question}
@@ -623,10 +665,23 @@ QUESTION: {question}
 PER-SOURCE ANALYSES:
 {sources_text}{news_section}
 
-CITATION RULES — CRITICAL:
-- Preserve ALL [TC-N] and [10K-N] citation markers EXACTLY as they appear — do not renumber or drop any
-- NEVER write a bare number like 1. or 6. without the [TC-] or [10K-] prefix and brackets
-- Every fact or metric you include MUST carry a citation marker
+CITATION FORMAT — ABSOLUTE REQUIREMENT:
+The input analyses use citation markers like [TC-11], [TC-12], [TC-28], [10K-3].
+You MUST copy these EXACTLY — with square brackets, TC- prefix, and the number.
+
+❌ WRONG — NEVER do this:
+  - "Azure grew 39% year-over-year 1112"      ← bare concatenated numbers, no brackets
+  - "Cloud revenue grew 27% 4"                 ← bare number, no brackets
+  - "grew 23% year-over-year 1624"             ← bare numbers, no brackets
+  - "revenue was $168B 16 24"                  ← numbers with spaces, no brackets
+
+✅ CORRECT — always do this:
+  - "Azure grew 39% year-over-year [TC-11][TC-12]"
+  - "Cloud revenue grew 27% [TC-4]"
+  - "grew 23% year-over-year [TC-16][TC-24]"
+  - "revenue was $168B [TC-16][TC-24]"
+
+Every single fact you write MUST have a [TC-N] or [10K-N] marker with brackets.
 
 OTHER RULES:
 - Write a coherent answer (not just a concatenation of sections)
@@ -647,14 +702,19 @@ End your answer with:
                 "role": "system",
                 "content": (
                     "You are a financial analyst synthesizing multiple data-source analyses. "
-                    "Preserve every [TC-N] and [10K-N] citation marker exactly as written."
+                    "CRITICAL: Citation markers like [TC-11], [TC-12], [10K-3] MUST appear with their full brackets and prefix. "
+                    "NEVER output bare numbers as citations (e.g. '1112' or '4' or '1624'). "
+                    "Always write [TC-11][TC-12] — never 1112."
                 ),
             },
             {"role": "user", "content": prompt},
         ]
 
         try:
-            return await self._make_llm_call_async(messages, temperature=0.1, max_tokens=3000)
+            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=3000)
+            # Post-process: fix any bare citation numbers the LLM emitted despite instructions
+            result = self._fix_bare_tc_citations(result, max_tc)
+            return result
         except Exception as e:
             rag_logger.error(f"[Transcript] Subagent synthesis failed: {e}")
             # Fallback: concatenate answers
@@ -714,8 +774,14 @@ End your answer with:
             {"role": "user", "content": prompt},
         ]
 
+        max_tc = max(
+            (c.get('source_number', 0) for r in ticker_results for c in r.get('citations', [])),
+            default=60,
+        )
+
         try:
-            return await self._make_llm_call_async(messages, temperature=0.1, max_tokens=2000)
+            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=2000)
+            return self._fix_bare_tc_citations(result, max_tc)
         except Exception as e:
             rag_logger.error(f"[Transcript] Multi-ticker synthesis failed: {e}")
             # Fallback: concatenate answers

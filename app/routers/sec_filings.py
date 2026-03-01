@@ -141,7 +141,7 @@ async def get_filing(
 
     bucket_key = meta.get("bucket_key")
     if not bucket_key:
-        raise HTTPException(status_code=404, detail="Filing content not yet migrated to bucket")
+        raise HTTPException(status_code=404, detail="Full SEC 10-K coming soon")
 
     markdown = await _fetch_markdown_from_bucket(bucket_key)
 
@@ -165,7 +165,7 @@ async def get_filing_with_highlights(req: HighlightRequest):
 
     bucket_key = meta.get("bucket_key")
     if not bucket_key:
-        raise HTTPException(status_code=404, detail="Filing content not yet migrated to bucket")
+        raise HTTPException(status_code=404, detail="Full SEC 10-K coming soon")
 
     markdown = await _fetch_markdown_from_bucket(bucket_key)
     highlighted = _inject_highlights(markdown, req.relevant_chunks or [])

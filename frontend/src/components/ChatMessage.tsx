@@ -95,13 +95,30 @@ function preprocessCitationMarkers(text: string, sources: Source[]): string {
   }
   // Expand comma-separated citation groups before the main regex:
   // [TC-1, TC-2] → [TC-1][TC-2], [10K-1, 10K-2] → [10K-1][10K-2]
-  const expanded = text.replace(/\[([^\]]+,[^\]]+)\]/g, (match, inner) => {
+  let expanded = text.replace(/\[([^\]]+,[^\]]+)\]/g, (match, inner) => {
     const parts = inner.split(/,\s*/)
     if (parts.every((p: string) => /^(TC-?\d+|10[KQ]-?\d+|N\d+|\d+)$/.test(p.trim()))) {
       return parts.map((p: string) => `[${p.trim()}]`).join('')
     }
     return match
   })
+
+  // When all sources are transcripts, fix bare concatenated numbers emitted by synthesis LLM.
+  // e.g. "grew 39% 1112" → "grew 39% [TC-11][TC-12]"  (split 3-4 digit run into two valid indices)
+  if (allTranscript && sources.length > 0) {
+    const maxIdx = sources.length
+    expanded = expanded.replace(/(?<![%$\d\[])([\d]{3,4})(?!\d)(?!%)/g, (match, num) => {
+      for (let split = 1; split < num.length; split++) {
+        const left = parseInt(num.slice(0, split), 10)
+        const right = parseInt(num.slice(split), 10)
+        if (left >= 1 && left <= maxIdx && right >= 1 && right <= maxIdx) {
+          return `[TC-${left}][TC-${right}]`
+        }
+      }
+      return match
+    })
+  }
+
   // Match [1], [N1], [TC-1], [TC1], [10K1], [10K-1], [10Q1], etc.
   return expanded.replace(/\[(\d+|N\d+|TC-?\d+|10[KQ]-?\d+)\]/g, (match) => {
     const actual = markerMap.get(match)

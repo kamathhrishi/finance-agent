@@ -489,8 +489,8 @@ export default function SECFilingViewer({
                 <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-7 h-7 text-red-600" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-900 mb-2">Filing Not Available</h3>
-                <p className="text-sm text-slate-600 mb-4">{error}</p>
+                <h3 className="text-base font-semibold text-slate-900 mb-2">Full SEC 10-K Coming Soon</h3>
+                <p className="text-sm text-slate-600 mb-4">Full document viewer for this filing is not yet available. Citation data is still used to answer your question.</p>
                 <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm">
                   Close
                 </button>
