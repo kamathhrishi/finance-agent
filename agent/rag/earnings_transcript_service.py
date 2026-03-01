@@ -615,8 +615,9 @@ Return ONLY valid JSON:
                     return f"[TC-{left}][TC-{right}]"
             return m.group(0)
 
-        # Only match 3-4 digit numbers not already inside a bracket or preceded by % $ .
-        text = re.sub(r'(?<!\[)(?<!TC-)(?<!\d)(\d{3,4})(?!\d)(?!%)', expand_concat, text)
+        # Only match 3-4 digit numbers not already inside a bracket or preceded by digit, comma, or $
+        # Lookbehind for comma and $ prevents matching numbers inside dollar amounts like $1,295,920
+        text = re.sub(r'(?<!\[)(?<!TC-)(?<!\d)(?<!,)(?<!\$)(\d{3,4})(?!\d)(?![%,])', expand_concat, text)
 
         # Step 2: fix standalone 1-2 digit numbers that appear between whitespace and
         # sentence-ending punctuation — very likely bare citation numbers

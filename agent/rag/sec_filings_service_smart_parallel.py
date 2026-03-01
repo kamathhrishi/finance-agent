@@ -500,6 +500,11 @@ class SmartParallelSECFilingsService:
         rag_logger.info(f"   Final Quality: {final_quality:.2f}")
         rag_logger.info(f"   Total Chunks: {len(accumulated_chunks)}")
 
+        # Post-process: normalize any malformed [10K_TICKER_FY_CHUNKIDX] citations
+        # that Qwen may generate despite [10K-N] instructions
+        if current_answer:
+            current_answer = self._fix_10k_citation_format(current_answer, accumulated_chunks)
+
         # Yield final results
         yield {
             'type': 'search_complete',
@@ -539,6 +544,15 @@ CRITICAL RULES for search_plan queries:
 - BAD: "Show all income statement line items" (too vague)
 
 The document is already scoped to the correct company and year - do NOT include company names, ticker symbols, or years in queries. Use only financial concept keywords.
+
+DERIVED METRICS AND RATIOS — CRITICAL:
+If the question asks for a metric that must be computed from two or more values (e.g. a ratio, a per-unit figure, a growth rate, or any formula), do NOT search for the derived metric directly. Instead, search for each input component separately.
+Examples of the principle (not exhaustive):
+- A "per employee" figure → search for the numerator metric AND headcount/employees separately
+- A ratio of two line items → search for each line item separately
+- A margin % not directly stated → search for numerator and denominator separately
+- A year-over-year change → search for the value in each period separately
+Always plan at least one search per required component.
 
 Queries should be dense keyword phrases that semantically match the relevant section/table in a 10-K.
 
@@ -1057,7 +1071,8 @@ Evaluate:
 1. Does it answer the question completely?
 2. Are numbers/data cited from sources?
 3. Does it stay on-scope (no unrelated metrics or periods)?
-3. What information is missing?
+4. What information is missing?
+5. If the question asks for a derived metric or ratio (anything computed from two or more values), are ALL required components present? If a component is missing, list it explicitly in missing_info so it can be searched for separately.
 
 Return JSON:
 {{
@@ -1158,7 +1173,7 @@ Return JSON with 1-3 NEW searches:
     def get_10k_citations(self, chunks: List[Dict]) -> List[Dict]:
         """Get citations from chunks."""
         citations = []
-        for i, chunk in enumerate(chunks[:15], 1):
+        for i, chunk in enumerate(chunks, 1):
             # chunk_text is the canonical field; 'content' is an alias used by table chunks
             full_content = chunk.get('chunk_text') or chunk.get('content', '')
             # Build a stable chunk_id so the frontend can scroll to the exact mark
@@ -1179,6 +1194,46 @@ Return JSON with 1-3 NEW searches:
                 'chunk_id': chunk_id,  # Stable ID for per-chunk scroll targeting in the viewer
             })
         return citations
+
+    @staticmethod
+    def _fix_10k_citation_format(text: str, chunks: List[Dict], chunk_start_idx: int = 1) -> str:
+        """
+        Post-process SEC answer to replace malformed [10K_TICKER_FY_CHUNKIDX] markers
+        that Qwen generates despite [10K-N] instructions.
+
+        Builds a mapping from chunk_index → sequential [10K-N] position using the
+        accumulated chunks list, then replaces any bad-format citations in the text.
+        Unresolvable citations are stripped.
+        """
+        # Build mapping: DB chunk_index → [10K-N] sequential marker
+        chunk_idx_to_n: dict = {}
+        for i, chunk in enumerate(chunks, chunk_start_idx):
+            raw_ci = chunk.get('chunk_index')
+            if raw_ci is not None:
+                try:
+                    chunk_idx_to_n[int(raw_ci)] = i
+                except (ValueError, TypeError):
+                    pass
+            # Also parse from the citation field: "10K_ORCL_FY2025_630" → 630
+            citation_str = chunk.get('citation', '')
+            if citation_str:
+                parts = citation_str.rsplit('_', 1)
+                if len(parts) == 2:
+                    try:
+                        chunk_idx_to_n[int(parts[1])] = i
+                    except (ValueError, TypeError):
+                        pass
+
+        def replace_bad(m):
+            try:
+                db_idx = int(m.group(3))
+                if db_idx in chunk_idx_to_n:
+                    return f"[10K-{chunk_idx_to_n[db_idx]}]"
+            except (ValueError, IndexError):
+                pass
+            return ''  # strip unresolvable marker
+
+        return re.sub(r'\[10K_([A-Za-z]+)_FY(\d+)_(\d+)\]', replace_bad, text)
 
     @staticmethod
     def _remap_sec_citations(
