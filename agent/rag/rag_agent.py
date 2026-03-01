@@ -1962,8 +1962,8 @@ class RAGAgent:
                     query_embedding=query_embedding,
                     ticker=ticker,
                     fiscal_year=fiscal_year,
-                    max_iterations=5,
-                    confidence_threshold=0.8,
+                    max_iterations=7,
+                    confidence_threshold=0.85,
                     event_yielder=ctx.stream,
                     embedding_function=self.search_engine.embedding_model.encode
                 ):

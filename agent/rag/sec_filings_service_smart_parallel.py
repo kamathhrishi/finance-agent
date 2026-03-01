@@ -63,7 +63,7 @@ class SmartParallelSECFilingsService:
         """
         self.database_manager = database_manager
         self.config = config
-        self.max_iterations = 5
+        self.max_iterations = 7
 
         # Initialize cross-encoder for reranking
         try:
@@ -554,10 +554,13 @@ Examples of the principle (not exhaustive):
 - A year-over-year change → search for the value in each period separately
 Always plan at least one search per required component.
 
-SECTION TARGETING HINTS (use these keyword phrases to reach the right section):
-- Employee headcount / workforce size → use queries like "total employees full-time headcount human capital" (lives in item_1 Business section)
-- Revenue, margins, operating income → "revenue cost of revenue gross profit" (item_7 MD&A or item_8 Financial Statements)
-- Balance sheet items → "total assets liabilities equity" (item_8 Financial Statements)
+SECTION TARGETING — GENERAL PRINCIPLE:
+Think about where in a 10-K the required data physically lives and include vocabulary from that section.
+- Narrative disclosures (workforce, headcount, strategy, business overview): lean toward item_1 terminology
+- Risk factors: item_1a terminology
+- Management discussion of trends and performance: item_7 MD&A terminology
+- Quantitative financial line items and tables: item_8 Financial Statements terminology
+Match your keyword phrase to the vocabulary actually used in the target section, not just the concept name.
 
 Queries should be dense keyword phrases that semantically match the relevant section/table in a 10-K.
 
@@ -928,7 +931,7 @@ Available sections:
 {chr(10).join(section_summaries)}
 
 SEC 10-K Section Guide:
-- item_1 (Business): Company description, products, services, operations; also contains HUMAN CAPITAL section with employee headcount, workforce size, total employees, full-time employees — USE FOR EMPLOYEE/HEADCOUNT QUERIES
+- item_1 (Business): Company description, products, services, operations; also contains Human Capital subsection (employee headcount, workforce size, full-time employees, talent strategy) — use for any workforce or operational narrative data
 - item_1a (Risk Factors): Risks to business and financials - USE FOR RISK QUESTIONS
 - item_1b (Unresolved Staff Comments): SEC review comments
 - item_2 (Properties): Physical locations, facilities
@@ -1074,18 +1077,23 @@ QUESTION: {question}
 ANSWER:
 {answer[:3000]}
 
-Evaluate:
-1. Does it answer the question completely?
+Evaluate strictly:
+1. Does it answer the question completely with actual numbers?
 2. Are numbers/data cited from sources?
 3. Does it stay on-scope (no unrelated metrics or periods)?
 4. What information is missing?
-5. If the question asks for a derived metric or ratio (anything computed from two or more values), are ALL required components present? If a component is missing, list it explicitly in missing_info so it can be searched for separately.
+5. If the question asks for a derived metric or ratio (anything computed from two or more values), are ALL required components present? If any component is missing, list it in missing_info AND set quality_score ≤ 0.4.
+
+SCORING RULES:
+- quality_score ≥ 0.85: Answer is complete, all required data present, well-cited
+- quality_score 0.5–0.84: Answer is partial — some data found but gaps remain
+- quality_score ≤ 0.4: A required data component is explicitly missing or the answer says it could not be computed
 
 Return JSON:
 {{
     "quality_score": 0.0-1.0,
     "issues": ["issue1", "issue2"],
-    "missing_info": ["what's missing"],
+    "missing_info": ["what's missing — be specific about which component or data point"],
     "suggestions": ["how to improve"]
 }}"""
 
@@ -1119,25 +1127,29 @@ Return JSON:
         quality_score = evaluation.get('quality_score', 0.0)
         missing_info = evaluation.get('missing_info', [])
 
-        if quality_score >= 0.80 or not missing_info:
+        if quality_score >= 0.80 and not missing_info:
             return []
 
         executed_queries = [item.get('query', '') for item in current_search_plan]
 
-        prompt = f"""Do not use emojis. Generate NEW searches to fill gaps.
+        prompt = f"""Do not use emojis. Generate NEW searches to fill gaps in a 10-K retrieval.
 
 QUESTION: {question}
 
-ALREADY SEARCHED:
+ALREADY SEARCHED (these did NOT retrieve the needed data):
 {chr(10).join(f'- {q}' for q in executed_queries)}
 
 MISSING INFO:
 {chr(10).join(f'- {m}' for m in missing_info[:5])}
 
-Return JSON with 1-3 NEW searches:
+CRITICAL: The queries above failed to retrieve the required data. You MUST use completely different keyword phrases — try synonyms, alternative terminology, related section vocabulary, or different levels of specificity. Do NOT repeat or slightly reword the same queries.
+
+Think about what vocabulary the 10-K actually uses in the section that would contain this data, and write phrases that match that section's language rather than the question's language.
+
+Return JSON with 1-3 NEW searches (different from all queries already tried):
 {{
     "new_searches": [
-        {{"query": "new search terms", "type": "table|text", "priority": 1}}
+        {{"query": "alternative keyword phrase using different vocabulary", "type": "table|text", "priority": 1}}
     ]
 }}"""
 
