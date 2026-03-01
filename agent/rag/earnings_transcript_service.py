@@ -354,6 +354,7 @@ CITATION RULES — CRITICAL:
 OTHER RULES:
 - Provide precise numbers and metrics where available
 - Note if data is missing or unavailable for specific quarters
+- If the user's question requests a specific format (e.g. bullet points, table, brief summary, numbered list), follow that format exactly
 - Do not use emojis
 - No external knowledge — only use the provided passages
 
@@ -643,9 +644,22 @@ Return ONLY valid JSON:
         subagent_results: [{'type': 'transcript'|'10k', 'ticker': str, 'answer': str, 'citations': [...]}, ...]
         news_context: Optional Tavily news context string (additive, no citation renaming needed)
         """
+        # Count how many entries share the same (ticker, type) so we can add year labels
+        # when the same ticker has multiple 10-K years (e.g. PLTR FY2024 + PLTR FY2025)
+        from collections import Counter
+        ticker_type_counts = Counter((r['ticker'], r.get('type')) for r in subagent_results)
+
         sections = []
         for r in subagent_results:
-            label = f"{r['ticker']} (Earnings Transcripts)" if r.get('type') == 'transcript' else f"{r['ticker']} (10-K Filing)"
+            if r.get('type') == 'transcript':
+                label = f"{r['ticker']} (Earnings Transcripts)"
+            else:
+                year = r.get('fiscal_year')
+                # Add year to label when multiple 10-Ks exist for the same ticker
+                if year and ticker_type_counts[(r['ticker'], r.get('type'))] > 1:
+                    label = f"{r['ticker']} FY{year} (10-K Filing)"
+                else:
+                    label = f"{r['ticker']} (10-K Filing)"
             sections.append(f"=== {label} ===\n{r['answer']}")
 
         sources_text = "\n\n".join(sections)
@@ -667,6 +681,16 @@ QUESTION: {question}
 
 PER-SOURCE ANALYSES:
 {sources_text}{news_section}
+
+SYNTHESIS REQUIREMENT — ALWAYS WRITE A UNIFIED NARRATIVE:
+Never present the per-source analyses as separate labelled blocks or sections.
+Always merge everything into one coherent, flowing answer — whether the sources cover
+the same company across multiple years, different companies, or a mix of transcripts and filings.
+If multiple years of data exist for the same company, show how metrics evolved over time in one
+narrative. Use markdown tables to compare periods or companies where numbers are involved.
+
+USER FORMATTING: If the user's question requests a specific format (e.g. bullet points, table,
+brief summary, detailed breakdown, numbered list), follow that format exactly.
 
 CITATION FORMAT — ABSOLUTE REQUIREMENT:
 The input analyses use citation markers like [TC-11], [TC-12], [TC-28], [10K-3].
@@ -754,8 +778,9 @@ CITATION RULES — CRITICAL:
 - Every fact or metric you include MUST carry a [TC-N] citation marker
 
 OTHER RULES:
-- Write a coherent comparative answer (not just a concatenation)
-- Use markdown tables where helpful for side-by-side comparison
+- Always write a unified narrative — never present the per-company analyses as separate labelled blocks
+- Use markdown tables for side-by-side metric comparisons
+- If the user's question requests a specific format (e.g. bullet points, brief summary, table, numbered list), follow that format exactly
 - Do not use emojis
 - Do not cite sources that are not present in the analyses above
 

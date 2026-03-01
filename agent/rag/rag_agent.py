@@ -1975,12 +1975,12 @@ class RAGAgent:
                         stream_events.append((ticker, event_type, event_data))
             except Exception as e:
                 rag_logger.warning(f"⚠️ Failed to search 10-K for {ticker}: {e}")
-            return chunks, sec_answer, stream_events, ticker
+            return chunks, sec_answer, stream_events, ticker, fiscal_year
 
         all_results = await asyncio.gather(*[_run_single_10k_search(s) for s in ctx.search_plan.ten_k])
 
         sec_citation_offset = 0
-        for chunks, sec_answer, stream_events, ticker in all_results:
+        for chunks, sec_answer, stream_events, ticker, fiscal_year in all_results:
             if chunks:
                 ctx.ten_k_results.extend(chunks)
             if chunks and sec_answer and sec_answer.strip():
@@ -1992,6 +1992,7 @@ class RAGAgent:
                 ctx.sec_service_results.append({
                     'type': '10k',
                     'ticker': ticker,
+                    'fiscal_year': fiscal_year,
                     'answer': remapped_answer,
                     'citations': remapped_cits,
                     'chunks': chunks,

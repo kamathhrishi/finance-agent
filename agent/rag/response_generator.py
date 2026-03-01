@@ -640,8 +640,11 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
         else:
             no_context_note = ''
 
+        # If the user requested a specific format in their question, honour it regardless of mode
+        user_format_note = "\nUSER FORMAT: If the question asks for a specific format (e.g. bullet points, table, brief summary, numbered list, one-liner), follow that format exactly and override the default instructions below.\n"
+
         if _mode == "direct":
-            prompt = f"""CRITICAL RULES - READ FIRST:
+            prompt = f"""CRITICAL RULES - READ FIRST:{user_format_note}
 1. ONLY use information from the "Source information" section below
 2. NEVER cite sources that don't exist in the provided data
 3. If the answer isn't in the provided sources, respond EXACTLY: "I don't have information about [topic] in the available data."
@@ -1180,8 +1183,11 @@ If the user asks "would you say the same about [X]?" or "what about [company]?",
         # Use answer_mode if provided, fall back to comprehensive flag
         _mode = answer_mode or ("detailed" if comprehensive else "standard")
 
+        # If the user requested a specific format in their question, honour it regardless of mode
+        multi_user_format_note = "\nUSER FORMAT: If the question asks for a specific format (e.g. bullet points, table, brief summary, numbered list, one-liner), follow that format exactly and override the default instructions below.\n"
+
         if _mode == "direct":
-            prompt = f"""You are a financial analyst. Do not use emojis in your responses. Answer the following question based on the provided company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
+            prompt = f"""You are a financial analyst. Do not use emojis in your responses.{multi_user_format_note}Answer the following question based on the provided company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
 {news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
@@ -1208,7 +1214,7 @@ End with:
 
 Answer in **markdown format**."""
         elif _mode == "detailed":
-            prompt = f"""You are a senior equity research analyst. Analyze the following company data and answer the question comprehensively.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
+            prompt = f"""You are a senior equity research analyst.{multi_user_format_note}Analyze the following company data and answer the question comprehensively.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
 {news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
@@ -1257,7 +1263,7 @@ End with:
 
 Answer in **markdown format** with actionable insights across all companies."""
         else:  # standard
-            prompt = f"""You are a financial analyst. Do not use emojis in your responses. Answer the question based on the following company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
+            prompt = f"""You are a financial analyst. Do not use emojis in your responses.{multi_user_format_note}Answer the question based on the following company data.{data_sources_text}{previous_answer_section}{conversation_context_section_multi}
 
 {news_section}{ten_k_section}{transcript_section}
 Company Data (each source labeled as SOURCE [N] [TICKER] Quarter):
