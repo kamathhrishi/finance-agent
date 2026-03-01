@@ -1208,9 +1208,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Question about same company/companies $TICKER on a related metric or trend]
-- [Question about same company/companies $TICKER from a different analytical angle]
-- [Question about same company/companies $TICKER going deeper on a key finding]
+- [Question on a related metric or trend for the same company/companies]
+- [Question from a different analytical angle for the same company/companies]
+- [Question going deeper on a key finding for the same company/companies]
 
 Answer in **markdown format**."""
         elif _mode == "detailed":
@@ -1257,9 +1257,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Question about same company/companies $TICKER on a related metric or trend]
-- [Question about same company/companies $TICKER from a different analytical angle]
-- [Question about same company/companies $TICKER going deeper on a key finding]
+- [Question on a related metric or trend for the same company/companies]
+- [Question from a different analytical angle for the same company/companies]
+- [Question going deeper on a key finding for the same company/companies]
 
 Answer in **markdown format** with actionable insights across all companies."""
         else:  # standard
@@ -1289,9 +1289,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Question about same company/companies $TICKER on a related metric or trend]
-- [Question about same company/companies $TICKER from a different analytical angle]
-- [Question about same company/companies $TICKER going deeper on a key finding]
+- [Question on a related metric or trend for the same company/companies]
+- [Question from a different analytical angle for the same company/companies]
+- [Question going deeper on a key finding for the same company/companies]
 
 Answer in **markdown format**."""
 

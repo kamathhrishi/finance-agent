@@ -1052,7 +1052,7 @@ SUB-QUESTIONS:
 RETRIEVED DATA:
 {context}
 
-Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers, note any missing info.
+Cite sources using exact markers [10K-1], [10K-2] etc. Provide precise numbers with units (e.g., "$2.5 billion", "$245 million", "42.1%") — never state a bare number without its unit. Note any missing info.
 
 DERIVED METRICS — CRITICAL: If the question asks for a ratio, per-unit figure, or any value computed from multiple inputs, and the source data contains the required components, compute the result directly. Do not say you cannot calculate it. Show your work (numerator, denominator, result) and cite each component source."""
 
