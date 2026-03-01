@@ -605,6 +605,10 @@ Return ONLY valid JSON:
         # Step 1: fix concatenated 3-4 digit numbers that split into two valid TC indices
         def expand_concat(m):
             num_str = m.group(1)
+            num = int(num_str)
+            # Calendar years (1900–2100) are never citation pairs — skip them
+            if 1900 <= num <= 2100:
+                return m.group(0)
             for split in range(1, len(num_str)):
                 left, right = int(num_str[:split]), int(num_str[split:])
                 if 1 <= left <= max_tc and 1 <= right <= max_tc:
@@ -619,7 +623,7 @@ Return ONLY valid JSON:
         def fix_standalone(m):
             n = int(m.group(2))
             if 1 <= n <= max_tc:
-                return f"{m.group(1)}[TC-{n}]{m.group(3)}"
+                return f"{m.group(1)}[TC-{n}]"
             return m.group(0)
 
         # Pattern: space + 1-2 digits + (period/comma/newline/end) not preceded by % or $
@@ -644,8 +648,6 @@ Return ONLY valid JSON:
         subagent_results: [{'type': 'transcript'|'10k', 'ticker': str, 'answer': str, 'citations': [...]}, ...]
         news_context: Optional Tavily news context string (additive, no citation renaming needed)
         """
-        # Count how many entries share the same (ticker, type) so we can add year labels
-        # when the same ticker has multiple 10-K years (e.g. PLTR FY2024 + PLTR FY2025)
         from collections import Counter
         ticker_type_counts = Counter((r['ticker'], r.get('type')) for r in subagent_results)
 
@@ -655,7 +657,6 @@ Return ONLY valid JSON:
                 label = f"{r['ticker']} (Earnings Transcripts)"
             else:
                 year = r.get('fiscal_year')
-                # Add year to label when multiple 10-Ks exist for the same ticker
                 if year and ticker_type_counts[(r['ticker'], r.get('type'))] > 1:
                     label = f"{r['ticker']} FY{year} (10-K Filing)"
                 else:
@@ -682,15 +683,11 @@ QUESTION: {question}
 PER-SOURCE ANALYSES:
 {sources_text}{news_section}
 
-SYNTHESIS REQUIREMENT — ALWAYS WRITE A UNIFIED NARRATIVE:
-Never present the per-source analyses as separate labelled blocks or sections.
-Always merge everything into one coherent, flowing answer — whether the sources cover
-the same company across multiple years, different companies, or a mix of transcripts and filings.
-If multiple years of data exist for the same company, show how metrics evolved over time in one
-narrative. Use markdown tables to compare periods or companies where numbers are involved.
-
-USER FORMATTING: If the user's question requests a specific format (e.g. bullet points, table,
-brief summary, detailed breakdown, numbered list), follow that format exactly.
+SYNTHESIS REQUIREMENTS:
+- Write a single coherent answer — do NOT reproduce the `=== SOURCE ===` section headers from the input
+- Use ## markdown headings to organize your answer into logical sections (by metric, time period, theme, or company comparison)
+- Use markdown tables to compare periods or companies where numbers are involved
+- If the user's question requests a specific format (e.g. bullet points, table, brief summary, detailed breakdown, numbered list), follow that format exactly
 
 CITATION FORMAT — ABSOLUTE REQUIREMENT:
 The input analyses use citation markers like [TC-11], [TC-12], [TC-28], [10K-3].
@@ -711,8 +708,6 @@ You MUST copy these EXACTLY — with square brackets, TC- prefix, and the number
 Every single fact you write MUST have a [TC-N] or [10K-N] marker with brackets.
 
 OTHER RULES:
-- Write a coherent answer (not just a concatenation of sections)
-- Use markdown tables where helpful for side-by-side comparison
 - Incorporate any news context naturally where relevant
 - Do not use emojis
 - Do not cite sources not present in the analyses above
@@ -738,7 +733,7 @@ End your answer with:
         ]
 
         try:
-            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=3000)
+            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=5000)
             # Post-process: fix any bare citation numbers the LLM emitted despite instructions
             result = self._fix_bare_tc_citations(result, max_tc)
             return result

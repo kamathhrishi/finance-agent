@@ -2264,10 +2264,11 @@ class RAGAgent:
                 )
                 ctx.transcript_context_str = combined_tc
             if ctx.sec_service_results:
-                combined_10k = "\n\n".join(
-                    f"=== {r['ticker']} (10-K Filing) ===\n{r['answer']}"
-                    for r in ctx.sec_service_results
-                )
+                def _10k_label(r):
+                    fy = r.get('fiscal_year')
+                    fy_str = (' FY' + str(fy)) if fy else ''
+                    return f"=== {r['ticker']}{fy_str} (10-K Filing) ===\n{r['answer']}"
+                combined_10k = "\n\n".join(_10k_label(r) for r in ctx.sec_service_results)
                 ctx.ten_k_context_str = combined_10k
             n_tc = len(ctx.transcript_per_ticker_results)
             n_10k = len(ctx.sec_service_results)
