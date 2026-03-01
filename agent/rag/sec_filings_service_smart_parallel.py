@@ -575,10 +575,29 @@ Return ONLY valid JSON:
     ]
 }}
 
-EXAMPLE PATTERN for a derived metric (two components needed):
-- One or two short queries targeting the numerator from different angles
-- One or two short queries targeting the denominator from different angles
-Each query 2–5 words, each a distinct semantic phrase, run in parallel.
+EXAMPLES:
+
+Question: "What is revenue per employee?"
+- {{"query": "total revenue", "type": "table", "priority": 1}}
+- {{"query": "subscription professional services revenue", "type": "table", "priority": 2}}
+- {{"query": "number of employees", "type": "text", "priority": 1}}
+- {{"query": "human capital workforce", "type": "text", "priority": 2}}
+
+Question: "What is the R&D expense as a percentage of total operating expenses?"
+- {{"query": "research development expense", "type": "table", "priority": 1}}
+- {{"query": "total operating expenses", "type": "table", "priority": 1}}
+- {{"query": "sales marketing general administrative", "type": "table", "priority": 2}}
+
+Question: "What is the debt-to-equity ratio?"
+- {{"query": "long-term debt borrowings", "type": "table", "priority": 1}}
+- {{"query": "short-term debt current liabilities", "type": "table", "priority": 2}}
+- {{"query": "stockholders equity", "type": "table", "priority": 1}}
+- {{"query": "total equity retained earnings", "type": "table", "priority": 2}}
+
+Question: "What is the gross margin trend?"
+- {{"query": "total revenue", "type": "table", "priority": 1}}
+- {{"query": "cost of revenue gross profit", "type": "table", "priority": 1}}
+- {{"query": "gross margin percentage", "type": "table", "priority": 2}}
 
 Now analyze the original question and create the search plan."""
 
