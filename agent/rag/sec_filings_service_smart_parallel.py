@@ -554,6 +554,11 @@ Examples of the principle (not exhaustive):
 - A year-over-year change → search for the value in each period separately
 Always plan at least one search per required component.
 
+SECTION TARGETING HINTS (use these keyword phrases to reach the right section):
+- Employee headcount / workforce size → use queries like "total employees full-time headcount human capital" (lives in item_1 Business section)
+- Revenue, margins, operating income → "revenue cost of revenue gross profit" (item_7 MD&A or item_8 Financial Statements)
+- Balance sheet items → "total assets liabilities equity" (item_8 Financial Statements)
+
 Queries should be dense keyword phrases that semantically match the relevant section/table in a 10-K.
 
 SEARCH TYPES:
@@ -923,7 +928,7 @@ Available sections:
 {chr(10).join(section_summaries)}
 
 SEC 10-K Section Guide:
-- item_1 (Business): Company description, products, services, operations
+- item_1 (Business): Company description, products, services, operations; also contains HUMAN CAPITAL section with employee headcount, workforce size, total employees, full-time employees — USE FOR EMPLOYEE/HEADCOUNT QUERIES
 - item_1a (Risk Factors): Risks to business and financials - USE FOR RISK QUESTIONS
 - item_1b (Unresolved Staff Comments): SEC review comments
 - item_2 (Properties): Physical locations, facilities
