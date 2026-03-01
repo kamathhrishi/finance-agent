@@ -875,18 +875,20 @@ class RAGAgent:
                 {'type': 'transcript', 'ticker': r['ticker'], 'answer': r['answer'], 'citations': r['citations']}
                 for r in ctx.transcript_per_ticker_results
             ] + [
-                {'type': '10k', 'ticker': r['ticker'], 'answer': r['answer'], 'citations': r['citations']}
+                {'type': '10k', 'ticker': r['ticker'], 'answer': r['answer'], 'citations': r['citations'], 'fiscal_year': r.get('fiscal_year')}
                 for r in ctx.sec_service_results
             ]
             synthesis = await self.transcript_service.synthesize_subagents(
                 ctx.question, all_subagent_results, news_context
             )
             rag_logger.info(f"🔀 Synthesis complete ({len(synthesis)} chars)")
+            # Mark skip so improvement loop doesn't overwrite the synthesis with raw per-subagent blocks
+            ctx.skip_improvement = True
             state = ImprovementState(
                 accumulated_chunks=all_chunks.copy(),
                 accumulated_citations=all_citations.copy(),
                 best_answer=synthesis,
-                best_confidence=0.85,
+                best_confidence=0.9,
                 best_citations=all_citations.copy(),
                 best_context_chunks=[c.get('chunk_text', '') for c in all_chunks],
                 best_chunks=all_chunks.copy(),
