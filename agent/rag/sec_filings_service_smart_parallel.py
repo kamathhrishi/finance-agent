@@ -1042,7 +1042,7 @@ NEW SOURCES ({f'[10K-{chunk_start_idx}]' if context_parts else 'none'}...[10K-{c
 
 Integrate new data. Use exact markers [10K-N]. Provide precise numbers. If the question asks for a derived metric and all components are now available, compute and show it explicitly."""
         else:
-            prompt = f"""Do not use emojis. Answer the question using the retrieved data.
+            prompt = f"""NO EMOJIS. Answer the question using the retrieved data.
 
 QUESTION: {question}
 
@@ -1058,7 +1058,7 @@ DERIVED METRICS — CRITICAL: If the question asks for a ratio, per-unit figure,
 
         try:
             messages = [
-                {"role": "system", "content": "Expert financial analyst. Do not use emojis. Cite sources, be precise. CRITICAL: If the retrieved data is from a different fiscal year than what the question asks for, state this prominently at the top of your answer (e.g. 'Note: Available data is from FY2023 — FY2024 data was not retrieved.'). Never silently answer from a wrong period."},
+                {"role": "system", "content": "Expert financial analyst. ABSOLUTELY NO EMOJIS OR SPECIAL SYMBOLS — use plain text and markdown only. Cite sources with [10K-N] markers. Be precise. CRITICAL: If retrieved data is from a different fiscal year than requested, state this at the top. Never silently answer from a wrong period."},
                 {"role": "user", "content": prompt}
             ]
 

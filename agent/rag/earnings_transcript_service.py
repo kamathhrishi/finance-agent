@@ -672,12 +672,14 @@ Return ONLY valid JSON:
         if news_context:
             news_section = f"\n\nADDITIONAL NEWS CONTEXT:\n{news_context}\n"
 
-        # Collect all valid TC citation numbers so post-processing knows the range
+        # Collect valid TC citation numbers — only transcript citations, NOT 10-K citations.
+        # 10-K citation source_numbers must not inflate max_tc or bare 10K numbers get mangled.
         all_tc_indices = set()
         for r in subagent_results:
             for c in r.get('citations', []):
-                all_tc_indices.add(c.get('source_number', 0))
-        max_tc = max(all_tc_indices) if all_tc_indices else 60
+                if c.get('type', '').lower() in ('transcript', 'tc'):
+                    all_tc_indices.add(c.get('source_number', 0))
+        max_tc = max(all_tc_indices) if all_tc_indices else 0
 
         prompt = f"""Synthesize the following financial analyses into one comprehensive answer.
 
@@ -801,8 +803,9 @@ End your answer with:
         ]
 
         max_tc = max(
-            (c.get('source_number', 0) for r in ticker_results for c in r.get('citations', [])),
-            default=60,
+            (c.get('source_number', 0) for r in ticker_results for c in r.get('citations', [])
+             if c.get('type', '').lower() in ('transcript', 'tc')),
+            default=0,
         )
 
         try:
