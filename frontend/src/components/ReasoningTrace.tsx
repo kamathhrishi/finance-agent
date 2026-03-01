@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, ChevronDown, ChevronRight, FileText, Globe } from 'lucide-react'
 import type { ReasoningStep } from '../lib/api'
@@ -168,13 +168,28 @@ function DocumentChips({ docs, onDocumentClick }: { docs: DocRef[], onDocumentCl
 
 export default function ReasoningTrace({ steps, isStreaming, defaultCollapsed = false, onDocumentClick }: ReasoningTraceProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
+  const [slowWarning, setSlowWarning] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (isStreaming) {
+      setSlowWarning(false)
+      timerRef.current = setTimeout(() => setSlowWarning(true), 20000)
+    } else {
+      setSlowWarning(false)
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [isStreaming])
+
   const processedSteps = processSteps(steps)
 
   if (processedSteps.length === 0) return null
 
   const lastStep = processedSteps[processedSteps.length - 1]
+  const processingText = slowWarning ? 'This is taking a bit longer than usual...' : 'Processing...'
   const summaryText = isStreaming
-    ? 'Processing...'
+    ? processingText
     : cleanMessage(lastStep.message).slice(0, 60) + (lastStep.message.length > 60 ? '...' : '')
 
   return (
@@ -263,7 +278,7 @@ export default function ReasoningTrace({ steps, isStreaming, defaultCollapsed = 
               {isStreaming && (
                 <div className="flex items-center gap-2 text-slate-400 mt-1.5 pt-1.5 border-t border-slate-100">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span className="text-xs">Processing...</span>
+                  <span className="text-xs">{processingText}</span>
                 </div>
               )}
             </div>
