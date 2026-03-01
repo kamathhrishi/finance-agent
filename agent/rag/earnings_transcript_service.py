@@ -627,8 +627,10 @@ Return ONLY valid JSON:
                 return f"{m.group(1)}[TC-{n}]"
             return m.group(0)
 
-        # Pattern: space + 1-2 digits + (period/comma/newline/end) not preceded by % or $
-        text = re.sub(r'(?<![%$\d])( )(\d{1,2})(?=\s*[.,\n]|$)', fix_standalone, text)
+        # Pattern: space + 1-2 digits + (period/newline/end) not preceded by % or $ or word char
+        # Comma removed from lookahead: "6,838" must not match (6 before , is part of a number)
+        # \w in lookbehind: "January 31" must not match (31 after letter is a date not a citation)
+        text = re.sub(r'(?<![%$\d\w])( )(\d{1,2})(?=\s*[.\n]|$)', fix_standalone, text)
 
         return text
 
