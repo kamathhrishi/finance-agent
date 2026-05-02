@@ -1,0 +1,12 @@
+## Item 12. Security Ownership of Certain Beneficial Owners and Management and Related Stockholder Matters
+
+*We refer you to our Proxy Statement for the 2017 Annual Meeting of Stockholders under the captions “Share Ownership of Directors and Certain Executive Officers,” and “Share Ownership of Principal Stockholders” which sections are incorporated by reference herein, for information concerning security ownership of certain beneficial owners and management and related stockholder matters\. The following table summarizes information about the Company’s common stock that may be issued upon the exercise of options, warrants and rights under all of our equity compensation plans as of December 31, 2016\.*
+
+
+|                                                        | Numberof securitiestobe issuedupon exerciseof outstanding options,warrants andrights(1) | Weighted averageexercise priceof outstanding options,warrants andrights | Numberofsecurities remainingavailablefor futureissuanceunder equitycompensation plans(excluding securitiesreflectedin firstcolumn)(1) |
+|--------------------------------------------------------|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| Equity compensation plans approved by stockholders     | 23,275                                                                                  | $68.60                                                                  | 17,645                                                                                                                                |
+| Equity compensation plans not approved by stockholders | —                                                                                       | —                                                                       | —                                                                                                                                     |
+| Total                                                  | 23,275                                                                                  | $68.60                                                                  | 17,645                                                                                                                                |
+
+- **\(1\)**: Shares in thousands\.

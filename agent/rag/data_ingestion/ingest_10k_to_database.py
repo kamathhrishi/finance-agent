@@ -40,6 +40,8 @@ import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed, TimeoutError
 from functools import partial
 import signal
+import boto3
+from botocore.config import Config as BotocoreConfig
 
 # Import the sophisticated data loading module
 sys.path.insert(0, str(Path(__file__).parent))
@@ -67,6 +69,47 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# S3 bucket client (lazy init, optional)
+# ---------------------------------------------------------------------------
+_s3_client = None
+_BUCKET_NAME = None
+
+
+def _get_s3_client():
+    global _s3_client, _BUCKET_NAME
+    endpoint = os.getenv("RAILWAY_BUCKET_ENDPOINT", "").strip()
+    key_id   = os.getenv("RAILWAY_BUCKET_ACCESS_KEY_ID", "").strip()
+    secret   = os.getenv("RAILWAY_BUCKET_SECRET_KEY", "").strip()
+    bucket   = os.getenv("RAILWAY_BUCKET_NAME", "").strip()
+    if not all([endpoint, key_id, secret, bucket]):
+        return None, None
+    if _s3_client is None:
+        _s3_client = boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=key_id,
+            aws_secret_access_key=secret,
+            region_name="auto",
+            config=BotocoreConfig(signature_version="s3v4"),
+        )
+        _BUCKET_NAME = bucket
+    return _s3_client, _BUCKET_NAME
+
+
+def upload_filing_to_bucket(bucket_key: str, text: str) -> bool:
+    """Upload filing text to S3 bucket. Returns True on success."""
+    s3, bucket = _get_s3_client()
+    if not s3:
+        return False
+    s3.put_object(
+        Bucket=bucket,
+        Key=bucket_key,
+        Body=text.encode("utf-8"),
+        ContentType="text/plain; charset=utf-8",
+    )
+    return True
 
 
 class DatabaseIntegration:
@@ -143,8 +186,14 @@ class DatabaseIntegration:
                     sec_section VARCHAR(50),
                     sec_section_title VARCHAR(200),
                     path_string TEXT,
+                    exhibit_type VARCHAR(20),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+            """)
+            # Add exhibit_type column to existing tables that predate this schema
+            cursor.execute("""
+                ALTER TABLE ten_k_chunks
+                ADD COLUMN IF NOT EXISTS exhibit_type VARCHAR(20);
             """)
             conn.commit()
             logger.info("   ✅ ten_k_chunks table created/verified")
@@ -248,6 +297,13 @@ class DatabaseIntegration:
             conn.commit()
             logger.info("   ✅ complete_sec_filings table created/verified")
 
+            # Add bucket_key column to existing tables that predate this schema
+            cursor.execute("""
+                ALTER TABLE complete_sec_filings
+                ADD COLUMN IF NOT EXISTS bucket_key VARCHAR(500);
+            """)
+            conn.commit()
+
             # Create indexes for complete_sec_filings
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_sec_filings_ticker
@@ -318,6 +374,8 @@ class DatabaseIntegration:
             filing_type_abbr = filing_type.replace('-', '')
             chunk_data = []
             for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                exhibit_type = chunk.get('exhibit_source')  # e.g. 'EX-23', 'EX-99.1', None
+
                 metadata = {
                     'ticker': ticker,
                     'fiscal_year': fiscal_year,
@@ -327,14 +385,15 @@ class DatabaseIntegration:
                     'level': chunk.get('level'),
                     'path': chunk.get('path', []),
                     'sec_section': chunk.get('sec_section'),
-                    'sec_section_title': chunk.get('sec_section_title')
+                    'sec_section_title': chunk.get('sec_section_title'),
+                    'exhibit_type': exhibit_type,
                 }
 
                 citation = f"{ticker}_{filing_type_abbr}_FY{fiscal_year}_{idx}"
 
                 chunk_data.append((
                     chunk['content'],
-                    embedding.tolist(),  # Store as array for vector type
+                    embedding.tolist(),
                     json.dumps(metadata),
                     ticker,
                     fiscal_year,
@@ -344,7 +403,10 @@ class DatabaseIntegration:
                     chunk.get('type', 'unknown'),
                     chunk.get('sec_section', 'unknown'),
                     chunk.get('sec_section_title', 'Unknown'),
-                    chunk.get('path_string', '')
+                    chunk.get('path_string', ''),
+                    exhibit_type,
+                    chunk.get('char_offset'),
+                    chunk.get('chunk_length'),
                 ))
 
             # Batch insert
@@ -353,11 +415,12 @@ class DatabaseIntegration:
                 """
                 INSERT INTO ten_k_chunks
                 (chunk_text, embedding, metadata, ticker, fiscal_year, filing_type,
-                 chunk_index, citation, chunk_type, sec_section, sec_section_title, path_string)
+                 chunk_index, citation, chunk_type, sec_section, sec_section_title, path_string,
+                 exhibit_type, char_offset, chunk_length)
                 VALUES %s
                 """,
                 chunk_data,
-                template="(%s, %s::vector, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                template="(%s, %s::vector, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             )
 
             conn.commit()
@@ -504,6 +567,34 @@ class DatabaseIntegration:
             # Calculate document length
             document_length = len(document_text)
 
+            # Build S3 bucket key
+            if filing_type == '10-Q' and quarter:
+                bucket_key = f"filings/{ticker}/{fiscal_year}_Q{quarter}_10-Q.txt"
+            elif filing_type == '8-K':
+                date_part = filing_date if filing_date else (filing_period or str(fiscal_year))
+                bucket_key = f"filings/{ticker}/{date_part}_8-K.txt"
+            elif filing_type == 'S-11':
+                bucket_key = f"filings/{ticker}/{fiscal_year}_S-11.txt"
+            else:
+                bucket_key = f"filings/{ticker}/{fiscal_year}_{filing_type}.txt"
+
+            # Upload to S3; store empty text in DB to save space
+            try:
+                uploaded = upload_filing_to_bucket(bucket_key, document_text)
+            except Exception as s3_err:
+                logger.warning(f"  ⚠️ S3 upload failed for {bucket_key}: {s3_err}")
+                uploaded = False
+
+            if uploaded:
+                logger.info(f"  ☁️  Uploaded to S3: {bucket_key}")
+                db_text = ""
+            else:
+                if _get_s3_client()[0] is not None:
+                    # Bucket configured but upload failed — store empty, null key
+                    logger.warning(f"  ⚠️ S3 configured but upload failed — storing empty text, null bucket_key")
+                db_text = document_text
+                bucket_key = None
+
             # Prepare data
             cursor.execute("""
                 INSERT INTO complete_sec_filings (
@@ -512,9 +603,9 @@ class DatabaseIntegration:
                     document_text, document_length,
                     sections, section_offsets,
                     accession_number, cik, form_type,
-                    source_url, cache_path
+                    source_url, cache_path, bucket_key
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (ticker, filing_type, fiscal_year, quarter, filing_date)
                 DO UPDATE SET
                     company_name = EXCLUDED.company_name,
@@ -528,6 +619,7 @@ class DatabaseIntegration:
                     form_type = EXCLUDED.form_type,
                     source_url = EXCLUDED.source_url,
                     cache_path = EXCLUDED.cache_path,
+                    bucket_key = EXCLUDED.bucket_key,
                     updated_at = CURRENT_TIMESTAMP
             """, (
                 ticker,
@@ -537,7 +629,7 @@ class DatabaseIntegration:
                 quarter,
                 filing_date,
                 filing_period,
-                document_text,
+                db_text,
                 document_length,
                 json.dumps(sections) if sections else None,
                 json.dumps(section_offsets) if section_offsets else None,
@@ -545,7 +637,8 @@ class DatabaseIntegration:
                 cik,
                 filing_type,  # form_type same as filing_type
                 source_url,
-                cache_path
+                cache_path,
+                bucket_key,
             ))
 
             conn.commit()
@@ -554,6 +647,57 @@ class DatabaseIntegration:
 
         except Exception as e:
             logger.error(f"  ❌ Failed to store complete filing: {e}")
+            if conn:
+                conn.rollback()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+
+    def store_exhibit_filing(self, ticker: str, fiscal_year: int, exhibit_type: str, exhibit_text: str) -> bool:
+        """
+        Store an exhibit document in complete_sec_filings using filing_type = exhibit_type.
+        This allows the exhibit viewer to fetch and display the exhibit separately from the 10-K.
+        """
+        if not exhibit_text or len(exhibit_text.strip()) < 20:
+            return False
+        logger.info(f"📎 Storing exhibit {exhibit_type} for {ticker} FY{fiscal_year} ({len(exhibit_text):,} chars)")
+        is_markdown = exhibit_text.lstrip().startswith('#') or '\n#' in exhibit_text[:500]
+        ext = 'md' if is_markdown else 'txt'
+        bucket_key = f"filings/{ticker}/{fiscal_year}_{exhibit_type}.{ext}"
+        try:
+            uploaded = upload_filing_to_bucket(bucket_key, exhibit_text)
+        except Exception as e:
+            logger.warning(f"  ⚠️ S3 upload failed for exhibit {bucket_key}: {e}")
+            uploaded = False
+
+        db_text = "" if uploaded else exhibit_text
+        if uploaded:
+            logger.info(f"  ☁️  Uploaded exhibit to S3: {bucket_key}")
+        else:
+            bucket_key = None
+
+        conn = None
+        cursor = None
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO complete_sec_filings
+                    (ticker, filing_type, fiscal_year, document_text, document_length, bucket_key)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (ticker, filing_type, fiscal_year, quarter, filing_date)
+                DO UPDATE SET
+                    document_text = EXCLUDED.document_text,
+                    document_length = EXCLUDED.document_length,
+                    bucket_key = EXCLUDED.bucket_key,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (ticker, exhibit_type, fiscal_year, db_text, len(exhibit_text), bucket_key))
+            conn.commit()
+            logger.info(f"  ✅ Exhibit {exhibit_type} stored")
+            return True
+        except Exception as e:
+            logger.error(f"  ❌ Failed to store exhibit {exhibit_type}: {e}")
             if conn:
                 conn.rollback()
             return False
@@ -784,11 +928,16 @@ def ingest_ticker(ticker: str, lookback_years: int, db_integration: DatabaseInte
                 sections=sections_list
             )
 
+            # Store each substantive exhibit document separately for the exhibit viewer
+            exhibit_texts = filing_data.get('_exhibit_texts', {})
+            for ex_type, ex_text in exhibit_texts.items():
+                db_integration.store_exhibit_filing(ticker, fiscal_year, ex_type, ex_text)
+
             total_chunks += chunks_stored
             total_tables += tables_stored
             filings_processed += 1
 
-            logger.info(f"✅ FY{fiscal_year}: {chunks_stored} chunks, {tables_stored} tables, filing stored: {filing_stored}")
+            logger.info(f"✅ FY{fiscal_year}: {chunks_stored} chunks, {tables_stored} tables, filing stored: {filing_stored}, exhibits: {len(exhibit_texts)}")
 
             # Clean up processor to free memory
             processor = None

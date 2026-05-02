@@ -1,0 +1,37 @@
+{
+  "ticker": "NKE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-07-24",
+  "period_of_report": "2020-05-31",
+  "accession": "000032018720000047",
+  "filing_chars": 640624,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 755
+    }
+  ]
+}

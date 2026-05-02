@@ -1,0 +1,2 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+On September 10, 2024, D\. S\. Davis retired as a Director of Johnson & Johnson after the successful transition of Audit Committee Chair responsibilities to D\. Adamczyk\. His retirement is for personal reasons and not as a result of any disagreement with management on any matter relating to the Company’s operations, policies, or practices\.

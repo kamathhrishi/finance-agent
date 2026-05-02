@@ -1,0 +1,10 @@
+## ITEM 2. PROPERTIES
+
+*Our corporate headquarters are located in Redmond, Washington\. We have approximately 15 million square feet of space located in King County, Washington that is used for engineering, sales, marketing, and operations, among other general and administrative purposes\. These facilities include approximately 10 million square feet of owned space situated on approximately 520 acres of land we own at our corporate headquarters, and approximately 5 million square feet of space we lease\. In addition, we own and lease space domestically that includes office and datacenter space\. We also own and lease facilities internationally for datacenters, research and development, and other operations\. The largest owned properties include space in the following locations: China, India, Ireland, the Netherlands, Singapore, and South Korea\. The largest leased properties include space in the following locations: Australia, Canada, China, France, Germany, India, Israel, Japan, Netherlands, and the United Kingdom\. In addition to the above locations, we have various product development facilities, both domestically and internationally, as described under Research and Development \(Part I, Item 1 of this Form 10\-K\)\. The table below shows a summary of the square footage of our office, datacenter, and other facilities owned and leased domestically and internationally as of June 30, 2021:*
+
+
+| (Square feet in millions) Location | (Square feet in millions) Owned | (Square feet in millions) Leased | (Square feet in millions) Total |
+|------------------------------------|---------------------------------|----------------------------------|---------------------------------|
+| U.S.                               | 22                              | 17                               | 39                              |
+| International                      | 9                               | 19                               | 28                              |
+| Total                              | 31                              | 36                               | 67                              |

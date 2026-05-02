@@ -1,0 +1,3 @@
+## Item 12.  Security Ownership of Certain Beneficial Owners and Management and Related Stockholder Matters.
+Information with respect to securities authorized for issuance under equity compensation plans can be found under the caption “Executive Compensation – Securities Authorized for Issuance Under Equity Compensation Plans” in our 2025 Proxy Statement and is incorporated herein by reference\.
+Information on the number of shares of PepsiCo Common Stock beneficially owned by each director and named executive officer, by all directors and executive officers as a group and on each beneficial owner of more than 5% of PepsiCo Common Stock is contained under the caption “Ownership of PepsiCo Common Stock” in our 2025 Proxy Statement and is incorporated herein by reference\.

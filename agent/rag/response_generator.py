@@ -547,12 +547,15 @@ class ResponseGenerator:
             transcript_section = f"\n\n{transcript_context}\n\nNote: The above is analysis from earnings call transcripts with [TC-N] citation markers. Use these [TC-N] citations directly in your answer when referencing this data."
 
         # Add previous answer if available (for iterative improvement)
+        # Strip "You might also ask" section so it doesn't duplicate across iterations
         previous_answer_section = ""
         if previous_answer:
+            import re as _re
+            cleaned_previous = _re.split(r'\*\*You might also ask', previous_answer, flags=_re.IGNORECASE)[0].rstrip()
             previous_answer_section = f"""
 
 PREVIOUS ANSWER (build upon this):
-{previous_answer}
+{cleaned_previous}
 
 IMPORTANT: You are improving the previous answer. Build upon it by:
 1. Keeping all accurate information from the previous answer
@@ -1133,12 +1136,15 @@ Answer in markdown. Thorough but approachable. Factually grounded in provided so
             transcript_section = f"\n\n{transcript_context}\n\nNote: The above is analysis from earnings call transcripts with [TC-N] citation markers. Use these [TC-N] citations directly in your answer when referencing this data."
 
         # Add previous answer if available (for iterative improvement)
+        # Strip "You might also ask" section so it doesn't duplicate across iterations
         previous_answer_section = ""
         if previous_answer:
+            import re as _re
+            cleaned_previous = _re.split(r'\*\*You might also ask', previous_answer, flags=_re.IGNORECASE)[0].rstrip()
             previous_answer_section = f"""
 
 PREVIOUS ANSWER (build upon this):
-{previous_answer}
+{cleaned_previous}
 
 IMPORTANT: You are improving the previous answer. Build upon it by:
 1. Keeping all accurate information from the previous answer
@@ -1201,6 +1207,7 @@ INSTRUCTIONS:
 2. Use **bold** for key figures. Reference companies by name.
 3. When comparing numbers across companies, use a markdown table.
 4. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news — ALWAYS WITH BRACKETS, NEVER bare numbers alone
+4a. NEVER use citation markers as date references — write years/quarters as plain text (e.g. "Q2 2024", NOT "Q2 [TC-2][TC-24]")
 {additional_sources_instruction}
 5. NEVER use the word "chunks" - reference official documents naturally.
 6. NEVER label or describe the format of your answer. Just answer naturally.
@@ -1209,9 +1216,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Write the actual question using the real ticker(s) from this conversation — related metric or trend]
-- [Write the actual question using the real ticker(s) from this conversation — different analytical angle]
-- [Write the actual question using the real ticker(s) from this conversation — deeper on a key finding]
+- Write one specific follow-up question about a related metric or trend (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question from a different analytical angle (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question that goes deeper on a key finding (use actual company names/tickers, no $ prefix)
 
 Answer in **markdown format**."""
         elif _mode == "detailed":
@@ -1244,6 +1251,7 @@ INSTRUCTIONS:
 **ATTRIBUTION & SOURCES:**
 13. Reference companies by name with proper attribution (e.g., "Apple disclosed in its FY2024 10-K...", "According to Microsoft's Q1 2025 earnings call...")
 14. Use the exact SOURCE markers from the context (e.g., [1], [2], [3]) for transcript citations, [10K-1] for 10-K data, [N1] for news — ALWAYS WITH BRACKETS, NEVER bare numbers alone
+14a. NEVER use citation markers as date references — write years/quarters as plain text (e.g. "Q2 2024", NOT "Q2 [TC-2][TC-24]")
 {additional_sources_instruction}
 15. Always mention the specific period (e.g., "In FY2024...", "During Q1 2025...")
 
@@ -1258,9 +1266,9 @@ INSTRUCTIONS:
 End with:
 
 **You might also ask:**
-- [Write the actual question using the real ticker(s) from this conversation — related metric or trend]
-- [Write the actual question using the real ticker(s) from this conversation — different analytical angle]
-- [Write the actual question using the real ticker(s) from this conversation — deeper on a key finding]
+- Write one specific follow-up question about a related metric or trend (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question from a different analytical angle (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question that goes deeper on a key finding (use actual company names/tickers, no $ prefix)
 
 Answer in **markdown format** with actionable insights across all companies."""
         else:  # standard
@@ -1284,15 +1292,16 @@ INSTRUCTIONS:
 8. NEVER use the word "chunks" - reference official documents naturally
 9. Use markdown: **bold** for emphasis, bullet points for lists, tables for comparisons
 10. NEVER label or describe the format of your answer. Just answer naturally.
-11. CITATION FORMAT: ALWAYS use brackets — write [1] or [10K-1], NEVER bare numbers alone
+11. CITATION FORMAT: ALWAYS use brackets — write [1] or [10K-1] or [TC-1], NEVER bare numbers alone
+12. NEVER use citation markers as date references — write years/quarters as plain text (e.g. "Q2 2024", NOT "Q2 [TC-2][TC-24]")
 {no_context_instruction}
 
 End with:
 
 **You might also ask:**
-- [Write the actual question using the real ticker(s) from this conversation — related metric or trend]
-- [Write the actual question using the real ticker(s) from this conversation — different analytical angle]
-- [Write the actual question using the real ticker(s) from this conversation — deeper on a key finding]
+- Write one specific follow-up question about a related metric or trend (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question from a different analytical angle (use actual company names/tickers, no $ prefix)
+- Write one specific follow-up question that goes deeper on a key finding (use actual company names/tickers, no $ prefix)
 
 Answer in **markdown format**."""
 

@@ -1,0 +1,2 @@
+## Item 12—Security Ownership of Certain Beneficial Owners and Management and Related Stockholder Matters
+The information required by this Item is incorporated herein by reference to the section entitled “Principal Shareholders” and “Equity Compensation Plan Information” in Costco’s Proxy Statement\.

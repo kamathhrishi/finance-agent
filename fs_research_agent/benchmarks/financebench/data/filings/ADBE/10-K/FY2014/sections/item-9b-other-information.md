@@ -1,0 +1,4 @@
+## ITEM 9B.  OTHER INFORMATION
+On January 14, 2015, Adobe issued a press release announcing that its Board of Directors has approved a new stock repurchase program granting the Company authority to repurchase up to $2\.0 billion in common stock through the end of fiscal 2017\.
+Under our new stock repurchase program, which is designed to return value to our stockholders and minimize dilution from stock issuances, we repurchase shares in the open market and also enter into structured repurchase agreements with third parties\. The new stock repurchase program approved by our Board of Directors is substantially similar to our previous program authorizing the repurchase of up to $2\.0 billion in common stock through fiscal 2015, which authority has been exhausted\.
+# PART III

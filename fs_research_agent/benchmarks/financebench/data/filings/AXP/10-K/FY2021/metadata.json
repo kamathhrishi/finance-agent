@@ -1,0 +1,40 @@
+{
+  "ticker": "AXP",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2022-02-11",
+  "period_of_report": "2021-12-31",
+  "accession": "000000496222000008",
+  "filing_chars": 829644,
+  "section_keys": [
+    "1",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "7",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.29",
+      "file": "EX-10.29.md",
+      "chars": 5881
+    },
+    {
+      "type": "EX-10.46",
+      "file": "EX-10.46.md",
+      "chars": 6217
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 15158
+    }
+  ]
+}

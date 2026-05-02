@@ -1,0 +1,32 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-03-31",
+  "period_of_report": "2021-03-30",
+  "accession": "000110465921044756",
+  "filing_chars": 7031,
+  "section_keys": [
+    "1.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 482987
+    },
+    {
+      "type": "EX-10.2",
+      "file": "EX-10.2.md",
+      "chars": 481165
+    },
+    {
+      "type": "EX-10.3",
+      "file": "EX-10.3.md",
+      "chars": 518844
+    }
+  ]
+}

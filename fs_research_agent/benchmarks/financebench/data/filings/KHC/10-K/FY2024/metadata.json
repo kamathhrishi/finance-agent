@@ -1,0 +1,40 @@
+{
+  "ticker": "KHC",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2025-02-13",
+  "period_of_report": "2024-12-28",
+  "accession": "000163745925000011",
+  "filing_chars": 685297,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-19.1",
+      "file": "EX-19.1.md",
+      "chars": 31387
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 14442
+    }
+  ]
+}

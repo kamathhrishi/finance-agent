@@ -1,0 +1,45 @@
+## ITEM 4. CONTROLS AND PROCEDURES
+As of the end of the period covered by this report, we carried out an evaluation, under the supervision and with the participation of our principal executive officer and principal financial officer, of the effectiveness of the design and operation of our disclosure controls and procedures \(as such term is defined in Rules 13a\-15\(e\) and 15d\-15\(e\) under the Exchange Act\)\. Based on this evaluation, our principal executive officer and principal financial officer concluded that our disclosure controls and procedures are effective in alerting them in a timely manner to material information required to be disclosed in our periodic reports filed with the SEC\.
+During our most recent fiscal quarter, there has not been any change in our internal control over financial reporting \(as such term is defined in Rules 13a\-15\(f\) and 15d\-15\(f\) under the Exchange Act\) that has materially affected, or is reasonably likely to materially affect, our internal control over financial reporting\.
+### PART II.  OTHER INFORMATION
+### PART II.  OTHER INFORMATIONPART II.  OTHER INFORMATION
+## ITEM 1. LEGAL PROCEEDINGS
+Certain legal proceedings in which we are involved are discussed in Note 12A\.
+## ITEM 1A. RISK FACTORS
+We refer to the “Our Operating Environment”, “The Global Economic Environment”, “COVID\-19 Pandemic” and “Forward\-Looking Information and Factors That May Affect Future Results” sections of the MD&A of this Form 10\-Q and to Part I, Item 1A, “Risk Factors” of our 2020 Form 10\-K\.
+## ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS
+
+*The following summarizes purchases of our common stock during the second quarter of 2021:*
+
+
+| Period                      | Total Number of Shares Purchased(a) | Average Price Paid per Share(a) | Total Number of Shares Purchased as Part of Publicly Announced Plan | Approximate Value of Shares That May Yet Be Purchased Under the Plan(b) |
+|-----------------------------|-------------------------------------|---------------------------------|---------------------------------------------------------------------|-------------------------------------------------------------------------|
+| April 5 through May 2, 2021 | 42,590                              | $37.84                          | —                                                                   | $5,292,881,709                                                          |
+| May 3 through May 30, 2021  | 104,104                             | $40.04                          | —                                                                   | $5,292,881,709                                                          |
+| May 31 through July4, 2021  | 26,950                              | $39.07                          | —                                                                   | $5,292,881,709                                                          |
+| Total                       | 173,644                             | $39.35                          | —                                                                   |                                                                         |
+
+
+*Represents \(i\) 168,612 shares of common stock surrendered to the Company to satisfy tax withholding obligations in connection with the vesting of awards under our long\-term incentive programs and \(ii\) the open market purchase by the trustee of 5,032 shares of common stock in connection with the reinvestment of dividends paid on common stock held in trust for employees who deferred receipt of performance share awards\. \(b\)See Note 12 in our 2020 Form 10\-K*
+
+## ITEM 6. EXHIBITS
+
+| Exhibit 31.1                                           | ---Certification by the Chief Executive Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                      | Certification by the Chief Executive Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                         |
+|--------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Exhibit 31.2                                           | ---Certification by the Chief Financial Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                      | Certification by the Chief Financial Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                         |
+| Exhibit 32.1                                           | ---Certification by the Chief Executive Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                       | Certification by the Chief Executive Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                          |
+| Exhibit 32.2                                           | ---Certification by the Chief Financial Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                       | Certification by the Chief Financial Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                          |
+| Exhibit 101:                                           |                                                                                                                                                                                                                                                 |                                                                                                                                                                                                                                                 |
+| EX-101.INS                                             | XBRL Instance Document - the instance document does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                                                 | XBRL Instance Document - the instance document does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                                                 |
+| EX-101.SCH EX-101.CAL EX-101.LAB EX-101.PRE EX-101.DEF | Inline XBRL Taxonomy Extension Schema Inline XBRL Taxonomy Extension Calculation Linkbase Inline XBRL Taxonomy Extension Label Linkbase Inline XBRL Taxonomy Extension Presentation Linkbase Inline XBRL Taxonomy Extension Definition Document | Inline XBRL Taxonomy Extension Schema Inline XBRL Taxonomy Extension Calculation Linkbase Inline XBRL Taxonomy Extension Label Linkbase Inline XBRL Taxonomy Extension Presentation Linkbase Inline XBRL Taxonomy Extension Definition Document |
+| Exhibit 104                                            | Cover Page Interactive Data File––the cover page interactive data file does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                         | Cover Page Interactive Data File––the cover page interactive data file does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                         |
+
+# SIGNATURE
+
+*Pursuant to the requirements of the Securities Exchange Act of 1934, the registrant has duly caused this report to be signed on its behalf by the undersigned thereunto duly authorized\.*
+
+
+|  | Pfizer Inc. (Registrant) |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| August 12, 2021 | /s/ Jennifer B. Damico |
+|  | Jennifer B. Damico, Senior Vice President and Controller (Principal Accounting Officer and Duly Authorized Officer) |

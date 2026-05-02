@@ -1,0 +1,16 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2026",
+  "quarter_label": null,
+  "filing_date": "2026-04-28",
+  "period_of_report": "2026-04-23",
+  "accession": "000020040626000089",
+  "filing_chars": 7375,
+  "section_keys": [
+    "5.07",
+    "9.01"
+  ],
+  "exhibits": []
+}

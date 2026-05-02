@@ -18,6 +18,8 @@ from app.routers.companies_financials import router as companies_financials_rout
 from app.routers.screens import router as screens_router
 from app.routers.screener import router as screener_router
 from app.routers.sec_filings import router as sec_filings_router
+from app.routers.coverage import router as coverage_router
+from app.routers.fs_research import router as fs_research_router
 from app.routers.transcript import router as transcript_router
 from app.routers.users import router as users_router
 from app.websocket.routes import websocket_endpoint
@@ -38,6 +40,8 @@ def setup_routes(app: FastAPI):
     app.include_router(chat_router, prefix="/chat")
     app.include_router(screener_router)
     app.include_router(sec_filings_router)
+    app.include_router(coverage_router)
+    app.include_router(fs_research_router)
     app.include_router(transcript_router)
     app.include_router(users_router)
     

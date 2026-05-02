@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MessageSquare, Info } from 'lucide-react'
 import ChatInput from '../components/ChatInput'
+import ScopeChips from '../components/ScopeChips'
+import ModelSelector from '../components/ModelSelector'
+import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import ChatMessage from '../components/ChatMessage'
 import Sidebar from '../components/Sidebar'
 import AboutModal from '../components/AboutModal'
@@ -26,6 +29,7 @@ export default function ChatPage() {
   const shouldScrollRef = useRef(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [modelId, setModelId] = useState<ModelId>(getStoredModel())
   const [documentPanel, setDocumentPanel] = useState<{ open: boolean; content: DocumentPanelContent | null }>({
     open: false,
     content: null,
@@ -108,6 +112,14 @@ export default function ChatPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <ModelSelector
+                value={modelId}
+                onChange={(id) => {
+                  setModelId(id)
+                  setStoredModel(id)
+                }}
+                align="right"
+              />
               {messages.length > 0 && (
                 <button
                   onClick={startNewConversation}
@@ -151,33 +163,58 @@ export default function ChatPage() {
                 {/* Data Coverage Badges - more muted */}
                 <div className="flex flex-wrap justify-center gap-3 mb-8">
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
-                    500+ Companies
+                    100+ Tech Companies
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
-                    3Y Earnings
+                    3 Years Filings History
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
-                    10-K Filings
+                    10-K · 10-Q · 8-K
                   </span>
                 </div>
 
-                {/* Example queries - clean */}
-                <div className="grid sm:grid-cols-2 gap-2 w-full max-w-2xl">
-                  {[
-                    "Analyze the outage in 2024 on $CRWD by studying their earnings transcript and SEC 10-K filing",
-                    "What is $AAPL's revenue breakdown by segment?",
-                    "How has $NVDA's gross margin changed over time?",
-                    "What are the main risks mentioned in $TSLA's 10-K?",
-                    "What did $MSFT's CEO say about AI in the last earnings call?",
-                  ].map((query, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSendMessage(query)}
-                      className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
-                    >
-                      {query}
-                    </button>
-                  ))}
+                {/* Single company queries */}
+                <div className="w-full max-w-2xl mb-6">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Single company</p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {[
+                      "Analyze $PLTR's 2024 and 2025 10-K filings and explain why growth has been high but margins have been thin",
+                      "How has $NVDA's gross margin changed across the last 4 fiscal years?",
+                      "Summarize $META's AI capex commentary across the last few 10-Q MD&A sections",
+                      "Comment on $ORCL's balance sheet and use of debt in the latest 10-K",
+                    ].map((query, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSendMessage(query)}
+                        className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
+                      >
+                        {query}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Multi-company screener queries */}
+                <div className="w-full max-w-2xl">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Across companies</p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {[
+                      "Compare $MSFT and $GOOGL cloud segment growth in their latest 10-Ks",
+                      "Which companies in our coverage discuss generative AI as a risk factor in their latest 10-K?",
+                      "Compare cybersecurity disclosures across $CRWD, $PANW, and $ZS in the latest 10-K",
+                      "Which companies announced material acquisitions via 8-K in the last 12 months?",
+                    ].map((query, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSendMessage(query)}
+                        className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600 flex items-start gap-2"
+                      >
+                        <span className="text-[#0083f1] shrink-0 mt-0.5">⊞</span>
+                        <span>{query}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2 text-left">Searches across 10-K, 10-Q, and 8-K filings for 100+ tech companies.</p>
                 </div>
               </motion.div>
             ) : (
@@ -201,6 +238,7 @@ export default function ChatPage() {
           }}
         >
           <div className={`mx-auto px-4 lg:px-6 transition-all duration-300 ${documentPanel.open ? 'max-w-2xl' : 'max-w-4xl'}`}>
+            <ScopeChips />
             <ChatInput
               onSubmit={handleSendMessage}
               isLoading={isLoading}

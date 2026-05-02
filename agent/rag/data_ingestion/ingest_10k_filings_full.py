@@ -474,7 +474,8 @@ class DataProcessor:
                         'path': chunk.get('path', []),
                         'path_string': chunk.get('path_string', ''),
                         'sec_section': sec_section,
-                        'sec_section_title': chunk.get('sec_section_title', 'Unknown')
+                        'sec_section_title': chunk.get('sec_section_title', 'Unknown'),
+                        'exhibit_type': chunk.get('exhibit_source') or chunk.get('metadata', {}).get('exhibit_source'),
                     }
                     table_index += 1
 
@@ -494,7 +495,16 @@ class DataProcessor:
                     'sec_section': chunk_sec_section,  # Updated section for tables
                     'sec_section_title': chunk_sec_title,  # Section name
                     'context_before': chunk.get('context_before', []),
-                    'context_after': chunk.get('context_after', [])
+                    'context_after': chunk.get('context_after', []),
+                    'exhibit_source': chunk.get('exhibit_source') or chunk.get('metadata', {}).get('exhibit_source'),
+                    'char_offset': _first_not_none(
+                        chunk.get('char_offset'),
+                        chunk.get('metadata', {}).get('char_offset'),
+                    ) if (chunk.get('exhibit_source') or chunk.get('metadata', {}).get('exhibit_source')) else None,
+                    'chunk_length': _first_not_none(
+                        chunk.get('chunk_length'),
+                        chunk.get('metadata', {}).get('chunk_length'),
+                    ) if (chunk.get('exhibit_source') or chunk.get('metadata', {}).get('exhibit_source')) else None,
                 })
 
             logger.info(f"✅ Created {len(self.chunks)} RAG chunks")
@@ -1069,6 +1079,14 @@ class DataProcessor:
             section = chunk.get('sec_section', 'unknown')
             section_counts[section] = section_counts.get(section, 0) + 1
         return section_counts
+
+def _first_not_none(*values):
+    """Return the first value that is not None (0 and '' are valid)."""
+    for v in values:
+        if v is not None:
+            return v
+    return None
+
 
 def extract_hierarchical_content(data, path=None, level=0, max_level=10):
     """
@@ -1674,27 +1692,19 @@ def download_and_extract_10k(ticker, start_year, end_year):
     (accession number) in datamule document paths, then merged into the
     parent filing's chunk list with an 'Exhibit (EX-XX)' path prefix.
     """
-    EXHIBIT_TYPES_10K = [
-        'EX-13',
-        'EX-21',
-        'EX-23',
-        'EX-31.1', 'EX-31.2',
-        'EX-32.1', 'EX-32.2',
-        'EX-99.1', 'EX-99.2',
-        'EX-10',
-        'EX-4',
-        'EX-3.1', 'EX-3.2',
-    ]
+    # XBRL/interactive-data types to skip — machine-readable XML, not useful for RAG
+    SKIP_EXHIBIT_PREFIXES = ('EX-100', 'EX-101', 'EX-102', 'EX-103', 'EX-104')
 
     sections_map = SEC_10K_SECTIONS
 
     portfolio = Portfolio(ticker)
-    submission_types = ['10-K'] + EXHIBIT_TYPES_10K
-    logger.info(f"📎 Downloading 10-K with exhibits for {ticker} ({start_year}-{end_year}): {submission_types}")
+    # Download only '10-K' — the tar archive already contains all exhibits within
+    # the same submission. Exhibit types are discovered dynamically from metadata.
+    logger.info(f"📥 Downloading 10-K for {ticker} ({start_year}-{end_year})...")
     portfolio.download_submissions(
         ticker=ticker,
         filing_date=(f'{start_year}-01-01', f'{end_year}-12-31'),
-        submission_type=submission_types)
+        submission_type=['10-K'])
 
     filings_by_year = {}
 
@@ -1764,8 +1774,22 @@ def download_and_extract_10k(ticker, start_year, end_year):
             logger.info(f"✅ Stored FY{fiscal_year} ({table_count} tables, tar={tar_prefix[:20]}...)")
 
     # --- Exhibit processing ---
-    # For each exhibit type, match to parent 10-K via shared tar prefix and merge chunks
-    for ex_type in EXHIBIT_TYPES_10K:
+    # Discover all exhibit types present in the downloaded submissions dynamically.
+    # The 10-K tar archive contains all exhibits in the same submission — we don't
+    # need to re-download anything, just iterate over the metadata to find what's there.
+    discovered_exhibit_types = set()
+    for submission in portfolio.submissions:
+        try:
+            for doc in submission.metadata.content.get('documents', []):
+                doc_type = doc.get('type', '')
+                if doc_type.startswith('EX-') and not doc_type.startswith(SKIP_EXHIBIT_PREFIXES):
+                    discovered_exhibit_types.add(doc_type)
+        except Exception:
+            pass
+
+    logger.info(f"📎 Discovered {len(discovered_exhibit_types)} exhibit types: {sorted(discovered_exhibit_types)}")
+
+    for ex_type in sorted(discovered_exhibit_types):
         try:
             exhibit_docs = list(portfolio.document_type(ex_type))
         except Exception:
@@ -1796,22 +1820,39 @@ def download_and_extract_10k(ticker, start_year, end_year):
                 ex_doc.parse()
                 ex_data = ex_doc.data.get('document', ex_doc.data) if isinstance(ex_doc.data, dict) else ex_doc.data
 
+                # Prefer datamule markdown (same as 10-K viewer); fall back to plain text
+                ex_markdown = getattr(ex_doc, 'markdown', None) or ''
+                ex_plain = extract_text(ex_doc.data)
+                # Use markdown for the viewer document; plain text for offset search fallback
+                ex_viewer_text = ex_markdown if ex_markdown.strip() else ex_plain
+
                 ex_hier_chunks = extract_hierarchical_content(ex_data)
                 for chunk in ex_hier_chunks:
                     chunk['path'] = [f'Exhibit ({ex_type})'] + chunk.get('path', [])
                     chunk['exhibit_source'] = ex_type
+                    # Compute offset within the exhibit viewer document
+                    content = chunk.get('content', '').strip()
+                    search_in = ex_viewer_text
+                    if content and search_in:
+                        idx = search_in.find(content[:120])
+                        chunk['char_offset'] = idx if idx != -1 else None
+                        chunk['chunk_length'] = len(content)
+                    else:
+                        chunk['char_offset'] = None
+                        chunk['chunk_length'] = None
 
-                ex_text = extract_text(ex_doc.data)
                 ex_ctx_chunks = create_contextual_chunks(ex_hier_chunks, sections_map=sections_map)
 
                 existing = filings_by_year[parent_year]
                 existing['hierarchical_chunks'].extend(ex_hier_chunks)
                 existing['contextual_chunks'].extend(ex_ctx_chunks)
-                existing['document_text'] += f"\n\n--- {ex_type} ---\n\n" + ex_text
+                existing['document_text'] += f"\n\n--- {ex_type} ---\n\n" + ex_plain
                 ex_table_count = sum(1 for c in ex_hier_chunks if c.get('type') == 'table')
                 existing['_table_count'] += ex_table_count
-                existing['document_length'] += len(ex_text)
-                logger.info(f"📎 {ex_type} → FY{parent_year}: {len(ex_hier_chunks)} chunks, {ex_table_count} tables, {len(ex_text)} chars")
+                existing['document_length'] += len(ex_viewer_text)
+                # Store exhibit markdown (or plain text) for the exhibit document viewer
+                existing.setdefault('_exhibit_texts', {})[ex_type] = ex_viewer_text
+                logger.info(f"📎 {ex_type} → FY{parent_year}: {len(ex_hier_chunks)} chunks, {ex_table_count} tables, {len(ex_viewer_text)} chars, markdown={'yes' if ex_markdown.strip() else 'no'}")
             except Exception as e:
                 logger.warning(f"⚠️  Failed to parse exhibit {ex_type}: {e}")
 
@@ -2155,24 +2196,38 @@ def download_and_extract_filing(ticker, start_year, end_year, filing_type='10-K'
                     ex_doc.parse()
                     ex_data = ex_doc.data.get('document', ex_doc.data) if isinstance(ex_doc.data, dict) else ex_doc.data
 
+                    # Prefer datamule markdown for viewer; fall back to plain text
+                    ex_markdown = getattr(ex_doc, 'markdown', None) or ''
+                    ex_plain = extract_text(ex_doc.data)
+                    ex_viewer_text = ex_markdown if ex_markdown.strip() else ex_plain
+
                     # Wrap exhibit content under an "Exhibit X" path prefix
                     ex_hier_chunks = extract_hierarchical_content(ex_data)
                     for chunk in ex_hier_chunks:
                         chunk['path'] = [f'Exhibit ({ex_type})'] + chunk.get('path', [])
                         chunk['exhibit_source'] = ex_type
+                        # Compute offset within the exhibit viewer document
+                        content = chunk.get('content', '').strip()
+                        if content and ex_viewer_text:
+                            idx = ex_viewer_text.find(content[:120])
+                            chunk['char_offset'] = idx if idx != -1 else None
+                            chunk['chunk_length'] = len(content)
+                        else:
+                            chunk['char_offset'] = None
+                            chunk['chunk_length'] = None
 
-                    ex_text = extract_text(ex_doc.data)
                     ex_ctx_chunks = create_contextual_chunks(ex_hier_chunks, sections_map=sections_map)
 
                     # Merge into parent 8-K
                     existing = filings_by_key[parent_key]
                     existing['hierarchical_chunks'].extend(ex_hier_chunks)
                     existing['contextual_chunks'].extend(ex_ctx_chunks)
-                    existing['document_text'] += f"\n\n--- {ex_type} ---\n\n" + ex_text
+                    existing['document_text'] += f"\n\n--- {ex_type} ---\n\n" + ex_plain
                     ex_table_count = sum(1 for c in ex_hier_chunks if c.get('type') == 'table')
                     existing['_table_count'] += ex_table_count
-                    existing['document_length'] += len(ex_text)
-                    logger.info(f"📎 Extracted exhibit {ex_type} → parent {parent_key}: {len(ex_hier_chunks)} chunks, {ex_table_count} tables, {len(ex_text)} chars")
+                    existing['document_length'] += len(ex_viewer_text)
+                    existing.setdefault('_exhibit_texts', {})[ex_type] = ex_viewer_text
+                    logger.info(f"📎 Extracted exhibit {ex_type} → parent {parent_key}: {len(ex_hier_chunks)} chunks, {ex_table_count} tables, {len(ex_viewer_text)} chars, markdown={'yes' if ex_markdown.strip() else 'no'}")
                 except Exception as e:
                     logger.warning(f"⚠️  Failed to parse exhibit {ex_type}: {e}")
 

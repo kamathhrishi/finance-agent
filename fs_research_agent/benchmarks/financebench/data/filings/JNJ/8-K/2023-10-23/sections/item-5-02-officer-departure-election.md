@@ -1,0 +1,3 @@
+# Item 5.02     Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers
+On October 23, 2023, the Company announced that Ashley McEvoy resigned from her position as Executive Vice President, Worldwide Chair MedTech and member of the Executive Committee effective October 20, 2023, and will depart the Company in the first quarter of 2024 after a transition period\.
+The Company’s related press release is attached to this Report as Exhibit 99\.1\.

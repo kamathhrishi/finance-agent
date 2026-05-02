@@ -48,6 +48,7 @@ class SortRequest(BaseModel):
     column: str = Field(..., description="Column name to sort by")
     direction: str = Field(..., pattern="^(asc|desc)$", description="Sort direction: asc or desc")
     query_id: Optional[str] = Field(None, description="Query ID for cached results")
+    question: Optional[str] = Field(None, description="Question text (used when query_id is unavailable)")
 
 
 class SortResponse(BaseModel):

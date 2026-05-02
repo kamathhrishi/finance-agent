@@ -1,0 +1,2 @@
+## Item 3.  Legal Proceedings.
+We are routinely involved in legal proceedings, claims, and governmental inquiries, inspections or investigations \(“Legal Matters”\) arising in the ordinary course of our business\. While we cannot predict with certainty the results of Legal Matters in which we are currently involved or may in the future be involved, we do not expect that the ultimate costs to resolve any of the Legal Matters that are currently pending will have a material adverse effect on our financial condition or results of operations\.

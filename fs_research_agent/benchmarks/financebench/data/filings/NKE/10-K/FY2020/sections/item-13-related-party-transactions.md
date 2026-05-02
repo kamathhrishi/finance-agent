@@ -1,0 +1,2 @@
+## ITEM 13. CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS AND DIRECTOR INDEPENDENCE
+The information required by Items 404 and 407\(a\) of Regulation S\-K is included under “Stock Ownership Information — Transactions with Related Persons” and “Corporate Governance — Individual Board Skills Matrix — Director Independence” in the definitive Proxy Statement for our 2020 Annual Meeting of Shareholders and is incorporated herein by reference\.

@@ -1,0 +1,60 @@
+{
+  "ticker": "KHC",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2018",
+  "quarter_label": null,
+  "filing_date": "2019-06-07",
+  "period_of_report": "2018-12-29",
+  "accession": "000163745919000049",
+  "filing_chars": 2022126,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.15",
+      "file": "EX-10.15.md",
+      "chars": 108493
+    },
+    {
+      "type": "EX-10.16",
+      "file": "EX-10.16.md",
+      "chars": 122062
+    },
+    {
+      "type": "EX-10.17",
+      "file": "EX-10.17.md",
+      "chars": 121312
+    },
+    {
+      "type": "EX-10.18",
+      "file": "EX-10.18.md",
+      "chars": 92772
+    },
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 104480
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 15930
+    }
+  ]
+}

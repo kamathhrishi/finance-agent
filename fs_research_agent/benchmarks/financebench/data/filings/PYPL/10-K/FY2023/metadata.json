@@ -1,0 +1,57 @@
+{
+  "ticker": "PYPL",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-02-08",
+  "period_of_report": "2023-12-31",
+  "accession": "000163391724000024",
+  "filing_chars": 654197,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.30",
+      "file": "EX-10.30.md",
+      "chars": 19180
+    },
+    {
+      "type": "EX-10.31",
+      "file": "EX-10.31.md",
+      "chars": 16775
+    },
+    {
+      "type": "EX-10.32",
+      "file": "EX-10.32.md",
+      "chars": 21807
+    },
+    {
+      "type": "EX-10.33",
+      "file": "EX-10.33.md",
+      "chars": 12486
+    },
+    {
+      "type": "EX-21.01",
+      "file": "EX-21.01.md",
+      "chars": 1701
+    }
+  ]
+}

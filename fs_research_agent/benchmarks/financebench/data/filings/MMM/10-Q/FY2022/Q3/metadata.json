@@ -1,0 +1,24 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": "Q3",
+  "filing_date": "2022-10-25",
+  "period_of_report": "2022-09-30",
+  "accession": "000006674022000076",
+  "filing_chars": 602711,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 56045
+    }
+  ]
+}

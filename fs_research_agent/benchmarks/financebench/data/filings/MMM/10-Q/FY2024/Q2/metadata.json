@@ -1,0 +1,24 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": "Q2",
+  "filing_date": "2024-07-26",
+  "period_of_report": "2024-06-30",
+  "accession": "000006674024000080",
+  "filing_chars": 544994,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 19805
+    }
+  ]
+}

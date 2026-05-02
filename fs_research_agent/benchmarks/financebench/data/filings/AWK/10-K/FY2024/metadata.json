@@ -1,0 +1,97 @@
+{
+  "ticker": "AWK",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2025-02-19",
+  "period_of_report": "2024-12-31",
+  "accession": "000141063625000022",
+  "filing_chars": 833029,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.8",
+      "file": "EX-10.8.md",
+      "chars": 31403
+    },
+    {
+      "type": "EX-10.16 8",
+      "file": "EX-10.16-8.md",
+      "chars": 25552
+    },
+    {
+      "type": "EX-10.16 10",
+      "file": "EX-10.16-10.md",
+      "chars": 25566
+    },
+    {
+      "type": "EX-10.16 21",
+      "file": "EX-10.16-21.md",
+      "chars": 31212
+    },
+    {
+      "type": "EX-10.16 23",
+      "file": "EX-10.16-23.md",
+      "chars": 28732
+    },
+    {
+      "type": "EX-10.16 25",
+      "file": "EX-10.16-25.md",
+      "chars": 31227
+    },
+    {
+      "type": "EX-10.16 27",
+      "file": "EX-10.16-27.md",
+      "chars": 28744
+    },
+    {
+      "type": "EX-10.16 29",
+      "file": "EX-10.16-29.md",
+      "chars": 28697
+    },
+    {
+      "type": "EX-10.16 30",
+      "file": "EX-10.16-30.md",
+      "chars": 2483
+    },
+    {
+      "type": "EX-10.20 3",
+      "file": "EX-10.20-3.md",
+      "chars": 17698
+    },
+    {
+      "type": "EX-19.1",
+      "file": "EX-19.1.md",
+      "chars": 38492
+    },
+    {
+      "type": "EX-19.2",
+      "file": "EX-19.2.md",
+      "chars": 16082
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 4908
+    }
+  ]
+}

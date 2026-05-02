@@ -1,0 +1,39 @@
+{
+  "ticker": "COST",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2024-10-09",
+  "period_of_report": "2024-09-01",
+  "accession": "000090983224000049",
+  "filing_chars": 280029,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "5",
+    "7",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-19.1",
+      "file": "EX-19.1.md",
+      "chars": 1594
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 2189
+    }
+  ]
+}

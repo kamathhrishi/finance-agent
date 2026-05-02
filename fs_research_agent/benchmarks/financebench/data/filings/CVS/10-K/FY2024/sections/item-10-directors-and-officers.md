@@ -1,0 +1,4 @@
+## Item 10.  Directors, Executive Officers and Corporate Governance.
+Information concerning the Executive Officers of CVS Health Corporation is included in Part I of this 10\-K pursuant to General Instruction G to Form 10\-K\.
+We have adopted an insider trading policy related to the purchase, sale and other transactions in our securities entered into by our directors, officers, employees and related other persons and by us\. The insider trading policy is designed to promote compliance with the securities laws and related rules and regulations, NYSE listing standards and our own Code of Conduct\. Our insider trading policy is filed as Exhibit 19 to this 10\-K\.
+The sections of the Proxy Statement under the captions “Committees of the Board as of the Annual Meeting,” “Code of Conduct,” “Audit Committee Report,” and “Biographies of our Incumbent Board Nominees” are incorporated herein by reference\.

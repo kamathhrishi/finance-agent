@@ -144,6 +144,9 @@ class RAGAgent:
         # Thread pool for CPU-bound operations
         self.thread_pool = ThreadPoolExecutor(max_workers=4)
 
+        # Screener (injected after init via set_qualitative_screener)
+        self.qualitative_screener = None
+
         # OpenAI access is via response_generator.client (single shared instance)
         logger.info(f"🚀 RAG Agent initialized successfully (instance: {self.instance_id})")
 
@@ -152,6 +155,11 @@ class RAGAgent:
             logger.info(f"🔀 Hybrid search enabled - Vector weight: {self.config.get('vector_weight', 0.7)}, Keyword weight: {self.config.get('keyword_weight', 0.3)}")
         else:
             logger.info("⚠️ Hybrid search disabled - using vector-only search")
+
+    def set_qualitative_screener(self, screener):
+        """Inject the qualitative screener so it can be used as a data source."""
+        self.qualitative_screener = screener
+        logger.info("✅ QualitativeScreener injected into RAGAgent")
 
     def set_database_connection(self, db_connection):
         """Set the database connection for retrieving conversation history."""
@@ -845,6 +853,56 @@ class RAGAgent:
         transcript_context = ctx.transcript_context_str
         all_citations = ctx.combined_citations
 
+        # Screener-only fast path: build a clean formatted list directly from screener rows
+        if (ctx.screener_data_rows
+                and not ctx.transcript_per_ticker_results
+                and not ctx.sec_service_results
+                and not all_chunks):
+            import re as _re_scr
+            rag_logger.info(f"🔍 Screener-only path: formatting {len(ctx.screener_data_rows)} results directly")
+            rows = ctx.screener_data_rows
+            lines = [f"Found **{len(rows)} companies** matching your criteria:\n"]
+            global_citations = []
+            citation_offset = 0
+
+            for i, row in enumerate(rows, 1):
+                symbol = row.get('symbol', '')
+                evidence = (row.get('evidence_summary') or '').strip()
+                cit_list = row.get('citations', [])
+
+                # Remap local [1],[2] in evidence_summary → global [TC-N] / [10K-N] markers
+                remapped = evidence
+                for cit in cit_list:
+                    local_idx = cit.get('index', 0)
+                    if not local_idx:
+                        continue
+                    global_idx = local_idx + citation_offset
+                    src_type = cit.get('source_type', cit.get('type', 'transcript'))
+                    prefix = 'TC' if src_type in ('transcript', 'tc') else '10K'
+                    global_marker = f"[{prefix}-{global_idx}]"
+                    remapped = _re_scr.sub(rf'\[{local_idx}\]', global_marker, remapped)
+                    global_citations.append({**cit, 'source_number': global_idx, 'marker': global_marker})
+
+                citation_offset += len(cit_list)
+                lines.append(f"{i}. **{symbol}** — {remapped}" if remapped else f"{i}. **{symbol}**")
+
+            screener_answer = "\n".join(lines)
+            ctx.combined_citations = global_citations
+            state = ImprovementState(
+                accumulated_chunks=[],
+                accumulated_citations=global_citations,
+                best_answer=screener_answer,
+                best_confidence=0.9,
+                best_citations=global_citations,
+                best_context_chunks=[],
+                best_chunks=[],
+                news_context=news_context,
+                ten_k_context=ten_k_context,
+                transcript_context=transcript_context,
+            )
+            ctx.skip_improvement = True
+            return (state, None)
+
         # Fast path: single subagent answer is final — skip response generator entirely
         if getattr(ctx, 'skip_improvement', False) and ctx.transcript_service_answer:
             rag_logger.info("⚡ skip_improvement=True: using single subagent answer directly")
@@ -1484,6 +1542,204 @@ class RAGAgent:
     # RAG flow stages (async generators: mutate ctx, yield progress/analysis/search/result events)
     # -------------------------------------------------------------------------
 
+    async def _stage_reflection(self, ctx: RAGFlowContext):
+        """
+        Reflection stage: review Wave 1 results and decide if Wave 2 per-company research is needed.
+        Runs after _stage_parallel_multi_source_search, before _stage_prepare_context.
+        """
+        # Build a compact Wave 1 summary for the LLM
+        summary_parts = []
+        if ctx.screener_data_rows:
+            tickers = [r.get('symbol', '') for r in ctx.screener_data_rows[:15]]
+            summary_parts.append(f"Screener: Found {len(ctx.screener_data_rows)} companies: {', '.join(tickers)}")
+        if ctx.transcript_per_ticker_results:
+            tickers = [r.get('ticker', '') for r in ctx.transcript_per_ticker_results]
+            summary_parts.append(f"Transcripts already searched: {', '.join(tickers)}")
+        if ctx.sec_service_results:
+            tickers = [r.get('ticker', '') for r in ctx.sec_service_results]
+            summary_parts.append(f"10-K already searched: {', '.join(tickers)}")
+        if ctx.news_results and ctx.news_results.get('results'):
+            summary_parts.append(f"News: {len(ctx.news_results['results'])} articles found")
+
+        if not summary_parts:
+            return  # nothing to reflect on
+
+        wave1_summary = "\n".join(summary_parts)
+        rag_logger.info(f"🔍 Reflection — Wave 1 summary:\n{wave1_summary}")
+
+        try:
+            original_data_sources = ctx.question_analysis.get('data_sources', [])
+            reflection = await self.reasoning_planner.reflect(ctx.question, wave1_summary, original_data_sources)
+            ctx.reflection_result = reflection
+
+            if reflection.needs_more_research and reflection.threads:
+                rag_logger.info(f"🔄 Reflection: spawning Wave 2 for {len(reflection.threads)} companies")
+                if ctx.stream:
+                    yield {
+                        'type': 'reasoning',
+                        'message': reflection.reasoning,
+                        'step': 'reflection',
+                        'event_name': 'wave2_plan',
+                        'data': {'threads': [{'ticker': t.ticker, 'reason': t.reason} for t in reflection.threads]}
+                    }
+            else:
+                rag_logger.info("✅ Reflection: Wave 1 sufficient, no Wave 2 needed")
+        except Exception as e:
+            rag_logger.error(f"❌ Reflection stage failed: {e}")
+
+    async def _stage_wave2_search(self, ctx: RAGFlowContext):
+        """
+        Wave 2: spawn parallel sub-planners (one per company thread), then run their searches in parallel.
+        Merges results into ctx alongside Wave 1 data.
+        """
+        if not ctx.reflection_result or not ctx.reflection_result.needs_more_research:
+            return
+        threads = ctx.reflection_result.threads
+        if not threads:
+            return
+        # Cap Wave 2 to max 1 company thread for now
+        threads = threads[:1]
+
+        if ctx.stream:
+            yield {
+                'type': 'progress',
+                'message': f'Researching {len(threads)} companies in depth...',
+                'step': 'wave2_search',
+                'data': {'companies': [t.ticker for t in threads]}
+            }
+
+        rag_logger.info(f"🚀 Wave 2: {len(threads)} parallel sub-planners")
+
+        # Step 1: run all sub-planner LLM calls in parallel
+        sub_plans = await asyncio.gather(
+            *[self.reasoning_planner.plan_for_company(ctx.question, t.ticker, t.reason) for t in threads],
+            return_exceptions=True
+        )
+
+        # Normalize sub_plans (replace exceptions with defaults)
+        normalized_plans = []
+        for i, (thread, plan) in enumerate(zip(threads, sub_plans)):
+            if isinstance(plan, Exception):
+                rag_logger.warning(f"Sub-planner failed for {thread.ticker}: {plan}")
+                plan = {"ticker": thread.ticker, "data_sources": ["earnings_transcripts"], "time_refs": ["latest"]}
+            normalized_plans.append(plan)
+
+        rag_logger.info(f"✅ Wave 2 sub-plans ready: {[(p['ticker'], p['data_sources']) for p in normalized_plans]}")
+
+        # Step 2: run all company searches in parallel, collecting events
+        event_queue = asyncio.Queue()
+
+        async def collect(gen):
+            async for event in gen:
+                await event_queue.put(event)
+
+        async def research_company(sub_plan):
+            ticker = sub_plan["ticker"]
+            try:
+                from .rag_flow_context import RAGFlowContext as _RFC
+                sub_ctx = _RFC(
+                    question=ctx.question,
+                    stream=ctx.stream,
+                    show_details=ctx.show_details,
+                    comprehensive=ctx.comprehensive,
+                    max_iterations=1,
+                )
+                sub_ctx.question_analysis = {
+                    'tickers': [ticker],
+                    'extracted_tickers': [ticker],
+                    'extracted_ticker': ticker,
+                    'topic': ctx.question_analysis.get('topic', ''),
+                    'question_type': 'specific_company',
+                    'time_refs': sub_plan.get('time_refs', ['latest']),
+                    'data_sources': sub_plan.get('data_sources', ['earnings_transcripts']),
+                    'original_question': ctx.question,
+                    'reasoning_statement': sub_plan.get('reasoning', ''),
+                }
+                # Search planning (sets sub_ctx.search_plan)
+                async for _ in self._stage_search_planning(sub_ctx):
+                    pass  # no events needed from sub-planner planning
+
+                # Run searches in parallel within this company
+                data_sources = sub_plan.get('data_sources', ['earnings_transcripts'])
+                company_tasks = []
+                if 'earnings_transcripts' in data_sources:
+                    company_tasks.append(asyncio.create_task(collect(self._stage_transcript_search(sub_ctx))))
+                if '10k' in data_sources:
+                    company_tasks.append(asyncio.create_task(collect(self._stage_10k_search(sub_ctx))))
+                if 'news' in data_sources:
+                    company_tasks.append(asyncio.create_task(collect(self._stage_news_search(sub_ctx))))
+                if company_tasks:
+                    await asyncio.gather(*company_tasks, return_exceptions=True)
+
+                # Merge into main ctx
+                ctx.transcript_per_ticker_results.extend(sub_ctx.transcript_per_ticker_results)
+                ctx.sec_service_results.extend(sub_ctx.sec_service_results)
+                ctx.all_chunks.extend(sub_ctx.all_chunks)
+                ctx.all_citations.extend(sub_ctx.all_citations)
+                if sub_ctx.news_results and sub_ctx.news_results.get('results'):
+                    if ctx.news_results and ctx.news_results.get('results'):
+                        ctx.news_results['results'].extend(sub_ctx.news_results['results'])
+                    else:
+                        ctx.news_results = sub_ctx.news_results
+
+                rag_logger.info(f"✅ Wave 2 research complete for {ticker}: {len(sub_ctx.all_chunks)} chunks")
+            except Exception as e:
+                rag_logger.error(f"❌ Wave 2 research failed for {ticker}: {e}")
+
+        company_tasks = [asyncio.create_task(research_company(p)) for p in normalized_plans]
+
+        async def wait_and_signal():
+            await asyncio.gather(*company_tasks, return_exceptions=True)
+            await event_queue.put(None)
+
+        done_task = asyncio.create_task(wait_and_signal())
+
+        while True:
+            event = await event_queue.get()
+            if event is None:
+                break
+            yield event
+
+        await done_task
+        rag_logger.info(f"✅ Wave 2 complete — ctx now has {len(ctx.all_chunks)} total chunks")
+
+    async def _stage_screener_search(self, ctx: RAGFlowContext):
+        """Run qualitative screener search if 'screener' is in data_sources."""
+        data_sources = ctx.question_analysis.get('data_sources', []) if ctx.question_analysis else []
+        if 'screener' not in data_sources or not self.qualitative_screener:
+            return
+
+        if ctx.stream:
+            yield {'type': 'progress', 'message': 'Searching across companies...', 'step': 'screener_search', 'data': {}}
+
+        rag_logger.info("🔍 Running screener search for company discovery query")
+        try:
+            data_rows = []
+            synthesis_text = ""
+            async for event in self.qualitative_screener.screen_with_streaming(question=ctx.question):
+                if ctx.stream:
+                    yield event
+                if event.get('type') == 'result':
+                    result_data = event.get('data', {})
+                    data_rows = result_data.get('data_rows', [])
+                    synthesis_text = result_data.get('synthesis', '')
+
+            if data_rows:
+                ctx.screener_data_rows = data_rows  # store raw rows for reflection
+                lines = [f"=== SCREENER RESULTS ===\nFound {len(data_rows)} companies matching your criteria:\n"]
+                for i, row in enumerate(data_rows, 1):
+                    symbol = row.get('symbol', '')
+                    evidence = row.get('evidence_summary', '')
+                    lines.append(f"{i}. **{symbol}** — {evidence}")
+                if synthesis_text:
+                    lines.append(f"\n=== ANALYSIS ===\n{synthesis_text}")
+                ctx.screener_context_str = "\n".join(lines)
+                rag_logger.info(f"✅ Screener found {len(data_rows)} companies")
+            else:
+                rag_logger.info("⚠️ Screener returned no results")
+        except Exception as e:
+            rag_logger.error(f"❌ Screener search failed: {e}")
+
     async def _stage_parallel_multi_source_search(self, ctx: RAGFlowContext):
         """
         Run news, 10-K, and transcript searches in parallel for maximum performance.
@@ -1512,7 +1768,7 @@ class RAGAgent:
                     'data': {'error': str(e)}
                 })
 
-        # Create tasks for all three search stages
+        # Create tasks for all search stages
         tasks = []
 
         # Always create tasks, but they'll skip internally if not needed
@@ -1530,6 +1786,11 @@ class RAGAgent:
             collect_stage_events(self._stage_transcript_search(ctx), 'transcript_search')
         )
         tasks.append(transcript_task)
+
+        screener_task = asyncio.create_task(
+            collect_stage_events(self._stage_screener_search(ctx), 'screener_search')
+        )
+        tasks.append(screener_task)
 
         # Sentinel to mark completion
         async def wait_and_mark_done():
@@ -1689,13 +1950,18 @@ class RAGAgent:
             ctx.reasoning_result = reasoning_result
             ctx.reasoning_statement = reasoning_result.reasoning
 
-            # Check if valid
+            # Check if valid — non-research intents (greetings, capability, off-topic)
+            # respond directly as a chat message without spawning any searches
             if not reasoning_result.is_valid:
-                yield {
-                    'type': 'rejected',
-                    'message': reasoning_result.validation_message or 'I can only help with public company financial data.',
-                    'step': 'complete',
-                    'data': {'reasoning': reasoning_result.reasoning}
+                answer = reasoning_result.validation_message or "I can help with public company financial research — earnings calls, 10-K filings, news, and company discovery. What would you like to explore?"
+                ctx.final_result = {
+                    'answer': answer,
+                    'confidence': 1.0,
+                    'citations': [],
+                    'context_chunks': [],
+                    'iterations': [],
+                    'chunks': [],
+                    'timing': {'total': time.time() - ctx.start_time},
                 }
                 ctx.early_return = True
                 return
@@ -2224,14 +2490,17 @@ class RAGAgent:
         total_agents = len(ctx.transcript_per_ticker_results) + len(ctx.sec_service_results) + (1 if has_news else 0)
 
         if total_agents == 1 and ctx.transcript_per_ticker_results:
-            # Fast path: single transcript subagent — answer is final, skip main agent
-            ctx.skip_improvement = True
+            # Single transcript subagent — pass as context to main agent so follow-up
+            # questions are generated once by the response generator (not the subagent)
+            ctx.skip_improvement = False
             result = ctx.transcript_per_ticker_results[0]
             ctx.transcript_service_answer = result['answer']
             ctx.all_citations = result['citations']
             ctx.all_chunks = result['chunks']
-            ctx.transcript_context_str = f"=== EARNINGS TRANSCRIPT ANALYSIS ===\n{result['answer']}"
-            rag_logger.info(f"📝 Single transcript subagent — answer ready ({len(result['answer'])} chars)")
+            import re as _re
+            clean_answer = _re.split(r'\*\*You might also ask', result['answer'], flags=_re.IGNORECASE)[0].rstrip()
+            ctx.transcript_context_str = f"=== EARNINGS TRANSCRIPT ANALYSIS ===\n{clean_answer}"
+            rag_logger.info(f"📝 Single transcript subagent — passing to response generator ({len(clean_answer)} chars)")
         elif total_agents == 1 and ctx.sec_service_results:
             # SEC single-agent: pass pre-analyzed answer as context to main agent for synthesis
             ctx.skip_improvement = False
@@ -2257,9 +2526,13 @@ class RAGAgent:
                 all_subagent_citations.extend(r['citations'])
             ctx.all_chunks = all_subagent_chunks
             ctx.all_citations = all_subagent_citations
+            import re as _re2
+            def _strip_followup(text):
+                return _re2.split(r'\*\*You might also ask', text, flags=_re2.IGNORECASE)[0].rstrip()
+
             if ctx.transcript_per_ticker_results:
                 combined_tc = "\n\n".join(
-                    f"=== {r['ticker']} (Earnings Transcripts) ===\n{r['answer']}"
+                    f"=== {r['ticker']} (Earnings Transcripts) ===\n{_strip_followup(r['answer'])}"
                     for r in ctx.transcript_per_ticker_results
                 )
                 ctx.transcript_context_str = combined_tc
@@ -2267,7 +2540,7 @@ class RAGAgent:
                 def _10k_label(r):
                     fy = r.get('fiscal_year')
                     fy_str = (' FY' + str(fy)) if fy else ''
-                    return f"=== {r['ticker']}{fy_str} (10-K Filing) ===\n{r['answer']}"
+                    return f"=== {r['ticker']}{fy_str} (10-K Filing) ===\n{_strip_followup(r['answer'])}"
                 combined_10k = "\n\n".join(_10k_label(r) for r in ctx.sec_service_results)
                 ctx.ten_k_context_str = combined_10k
             n_tc = len(ctx.transcript_per_ticker_results)
@@ -2280,6 +2553,9 @@ class RAGAgent:
             if ctx.ten_k_results and not ctx.sec_service_results:
                 ctx.ten_k_context_str = self.sec_service.format_10k_context(ctx.ten_k_results)
                 rag_logger.info(f"📄 Using formatted raw 10-K chunks ({len(ctx.ten_k_context_str)} chars)")
+
+        # NOTE: screener context is handled separately in _build_initial_improvement_state
+        # (screener-only queries get a clean fast-path answer, not merged into 10-K context)
 
         # Build combined citations (subagent citations + news)
         ten_k_citations = []
@@ -2405,7 +2681,7 @@ class RAGAgent:
     # Main entry: execute_rag_flow runs stages in order and yields events (or returns final result)
     # -------------------------------------------------------------------------
 
-    async def execute_rag_flow(self, question: str, show_details: bool = False, comprehensive: bool = True, stream_callback=None, max_iterations: int = None, conversation_id: str = None, stream: bool = True):
+    async def execute_rag_flow(self, question: str, show_details: bool = False, comprehensive: bool = True, stream_callback=None, max_iterations: int = None, conversation_id: str = None, stream: bool = True, **_extra):
         """
         ╔═══════════════════════════════════════════════════════════════════════╗
         ║  MAIN RAG FLOW EXECUTION - Earnings Transcript Q&A Pipeline          ║
@@ -2451,20 +2727,36 @@ class RAGAgent:
             conversation_id=conversation_id,
         )
 
-        # Pipeline order: setup → combined reasoning (early-return possible) → search planning → PARALLEL(news + 10k + transcript) → prepare context → improvement → finalize
+        # Pipeline: setup → reasoning → search planning → Wave 1 parallel search
+        #           → reflection → Wave 2 parallel sub-planners → prepare context → improvement → finalize
         async for event in self._stage_setup(ctx):
             yield event
 
         async for event in self._stage_combined_reasoning(ctx):
             yield event
         if ctx.early_return:
+            if ctx.final_result:
+                yield {
+                    'type': 'result',
+                    'message': 'Response generated successfully',
+                    'step': 'complete',
+                    'data': ctx.final_result,
+                }
             return
 
         async for event in self._stage_search_planning(ctx):
             yield event
 
-        # 🚀 NEW: Run all three search stages in parallel for maximum performance
+        # Wave 1: all sources in parallel
         async for event in self._stage_parallel_multi_source_search(ctx):
+            yield event
+
+        # Reflection: review Wave 1, decide if Wave 2 needed
+        async for event in self._stage_reflection(ctx):
+            yield event
+
+        # Wave 2: spawn parallel sub-planners + searches per discovered company
+        async for event in self._stage_wave2_search(ctx):
             yield event
 
         self._stage_prepare_context(ctx)

@@ -1,0 +1,61 @@
+{
+  "ticker": "LMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2026-01-29",
+  "period_of_report": "2025-12-31",
+  "accession": "000162828026004195",
+  "filing_chars": 462458,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.7",
+      "file": "EX-10.7.md",
+      "chars": 55897
+    },
+    {
+      "type": "EX-10.10",
+      "file": "EX-10.10.md",
+      "chars": 3252
+    },
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 1647
+    },
+    {
+      "type": "EX-10.26",
+      "file": "EX-10.26.md",
+      "chars": 2531
+    },
+    {
+      "type": "EX-10.43",
+      "file": "EX-10.43.md",
+      "chars": 65659
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1549
+    }
+  ]
+}

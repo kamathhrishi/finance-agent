@@ -1,0 +1,81 @@
+{
+  "ticker": "WMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2016",
+  "quarter_label": null,
+  "filing_date": "2016-03-30",
+  "period_of_report": "2016-01-31",
+  "accession": "000010416916000079",
+  "filing_chars": 181114,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.(D)",
+      "file": "EX-10.-D-.md",
+      "chars": 47463
+    },
+    {
+      "type": "EX-10.(E)",
+      "file": "EX-10.-E-.md",
+      "chars": 78841
+    },
+    {
+      "type": "EX-10.(I).1",
+      "file": "EX-10.-I-.1.md",
+      "chars": 3975
+    },
+    {
+      "type": "EX-10.(J)",
+      "file": "EX-10.-J-.md",
+      "chars": 76162
+    },
+    {
+      "type": "EX-10.(O)",
+      "file": "EX-10.-O-.md",
+      "chars": 65466
+    },
+    {
+      "type": "EX-10.(P)",
+      "file": "EX-10.-P-.md",
+      "chars": 65998
+    },
+    {
+      "type": "EX-10.(Q)",
+      "file": "EX-10.-Q-.md",
+      "chars": 31367
+    },
+    {
+      "type": "EX-10.(R)",
+      "file": "EX-10.-R-.md",
+      "chars": 32763
+    },
+    {
+      "type": "EX-10.(S)",
+      "file": "EX-10.-S-.md",
+      "chars": 55616
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 3003
+    }
+  ]
+}

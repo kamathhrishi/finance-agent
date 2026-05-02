@@ -1,0 +1,37 @@
+{
+  "ticker": "CVS",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2017",
+  "quarter_label": null,
+  "filing_date": "2018-02-14",
+  "period_of_report": "2017-12-31",
+  "accession": "000155837018000707",
+  "filing_chars": 235775,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1569
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "ticker": "KO",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2026-02-20",
+  "period_of_report": "2025-12-31",
+  "accession": "000162828026010047",
+  "filing_chars": 727406,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.20 1",
+      "file": "EX-10.20-1.md",
+      "chars": 1451
+    },
+    {
+      "type": "EX-19",
+      "file": "EX-19.md",
+      "chars": 23492
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 6884
+    }
+  ]
+}

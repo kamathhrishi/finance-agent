@@ -1,0 +1,15 @@
+## Item 12.  Security Ownership of Certain Beneficial Owners and Management and Related Stockholder Matters
+The sections entitled “Beneficial Ownership of Directors and Officers” and “Beneficial Ownership of Corning’s Largest Shareholders” in our Definitive Proxy Statement relating to the Annual Meeting of Shareholders to be held on May 2, 2019, are incorporated by reference in this Annual Report on Form 10\-K\.
+### Equity Compensation Plan Information
+
+*The following table shows the total number of outstanding stock options and shares available for other future issuances of options under our existing equity compensation plans as of December 31, 2018, including the 2010 Equity Plan for Non\-Employee Directors and 2012 Long\-Term Incentive Plan:*
+
+
+| ﻿                                                          | A                                                                                     | B                                                                           | C                                                                                                                                         |
+|------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| ﻿                                                          | Numberof securitiesto beissued upon exercise ofoutstanding options,warrants andrights | Weighted-average exercise price of outstanding options, warrants and rights | Number of securities remaining available for future issuance under equity compensation plans (excluding securities reflected in column A) |
+| Equity compensation plans approved by security holders(1)  | 20,285,069                                                                            | $14.68                                                                      | 61,767,482                                                                                                                                |
+| Equity compensation plans not approved by security holders |                                                                                       |                                                                             |                                                                                                                                           |
+| Total                                                      | 20,285,069                                                                            | $14.68                                                                      | 61,767,482                                                                                                                                |
+
+- **\(1\)**: Shares indicated are total grants under the most recent shareholder approved plans as well as any shares remaining outstanding from any prior shareholder approved plans\.

@@ -1,0 +1,42 @@
+{
+  "ticker": "MSFT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2017",
+  "quarter_label": null,
+  "filing_date": "2017-08-02",
+  "period_of_report": "2017-06-30",
+  "accession": "000156459017014900",
+  "filing_chars": 427777,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1B",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.3",
+      "file": "EX-10.3.md",
+      "chars": 21215
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1061
+    }
+  ]
+}

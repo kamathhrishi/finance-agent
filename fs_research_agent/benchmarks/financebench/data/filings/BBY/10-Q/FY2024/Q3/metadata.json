@@ -1,0 +1,24 @@
+{
+  "ticker": "BBY",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": "Q3",
+  "filing_date": "2024-09-06",
+  "period_of_report": "2024-08-03",
+  "accession": "000076447824000035",
+  "filing_chars": 159901,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 22272
+    }
+  ]
+}

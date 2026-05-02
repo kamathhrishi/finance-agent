@@ -1,0 +1,72 @@
+{
+  "ticker": "KO",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2016",
+  "quarter_label": null,
+  "filing_date": "2017-02-24",
+  "period_of_report": "2016-12-31",
+  "accession": "000002134417000009",
+  "filing_chars": 877035,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.45",
+      "file": "EX-10.45.md",
+      "chars": 4258
+    },
+    {
+      "type": "EX-10.46",
+      "file": "EX-10.46.md",
+      "chars": 5226
+    },
+    {
+      "type": "EX-10.9.3",
+      "file": "EX-10.9.3.md",
+      "chars": 1380
+    },
+    {
+      "type": "EX-10.13.2",
+      "file": "EX-10.13.2.md",
+      "chars": 1633
+    },
+    {
+      "type": "EX-10.16.1",
+      "file": "EX-10.16.1.md",
+      "chars": 4985
+    },
+    {
+      "type": "EX-10.21.4",
+      "file": "EX-10.21.4.md",
+      "chars": 4884
+    },
+    {
+      "type": "EX-10.32.4",
+      "file": "EX-10.32.4.md",
+      "chars": 4489
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 10088
+    }
+  ]
+}

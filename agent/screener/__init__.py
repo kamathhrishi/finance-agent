@@ -11,12 +11,14 @@ from .main_duckdb import (
     QueryProcessingError,
     SchemaValidationError
 )
+from .qualitative_screener import QualitativeScreener
 
 __all__ = [
     'FinancialDataAnalyzer',
-    'SystemInitializationError', 
+    'SystemInitializationError',
     'QueryProcessingError',
-    'SchemaValidationError'
+    'SchemaValidationError',
+    'QualitativeScreener',
 ]
 
 __version__ = '1.0.0'

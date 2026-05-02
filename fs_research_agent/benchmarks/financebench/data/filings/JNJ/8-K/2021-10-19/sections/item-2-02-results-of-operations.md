@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+On October 19, 2021, Johnson & Johnson issued the attached press release announcing its sales and earnings for the third quarter ended October 3, 2021\.

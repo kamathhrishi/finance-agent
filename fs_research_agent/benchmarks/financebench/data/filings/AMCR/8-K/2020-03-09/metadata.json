@@ -1,0 +1,37 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-03-09",
+  "period_of_report": "2020-03-09",
+  "accession": "000110465920030752",
+  "filing_chars": 10696,
+  "section_keys": [
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 300301
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 159823
+    },
+    {
+      "type": "EX-99.3",
+      "file": "EX-99.3.md",
+      "chars": 197554
+    },
+    {
+      "type": "EX-99.4",
+      "file": "EX-99.4.md",
+      "chars": 12996
+    }
+  ]
+}

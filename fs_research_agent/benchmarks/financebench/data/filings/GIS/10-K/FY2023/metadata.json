@@ -1,0 +1,40 @@
+{
+  "ticker": "GIS",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-06-28",
+  "period_of_report": "2023-05-28",
+  "accession": "000119312523177500",
+  "filing_chars": 301718,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.30",
+      "file": "EX-10.30.md",
+      "chars": 415453
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 2143
+    }
+  ]
+}

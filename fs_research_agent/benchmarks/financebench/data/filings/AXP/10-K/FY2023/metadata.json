@@ -1,0 +1,41 @@
+{
+  "ticker": "AXP",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-02-09",
+  "period_of_report": "2023-12-31",
+  "accession": "000000496224000013",
+  "filing_chars": 906917,
+  "section_keys": [
+    "1",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "5",
+    "7",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.24",
+      "file": "EX-10.24.md",
+      "chars": 97774
+    },
+    {
+      "type": "EX-10.25",
+      "file": "EX-10.25.md",
+      "chars": 86819
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 12514
+    }
+  ]
+}

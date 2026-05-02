@@ -1,0 +1,18 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": "Q2",
+  "filing_date": "2021-07-27",
+  "period_of_report": "2021-06-30",
+  "accession": "000155837021009338",
+  "filing_chars": 463242,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

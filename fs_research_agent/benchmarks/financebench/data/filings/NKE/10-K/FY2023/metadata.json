@@ -1,0 +1,37 @@
+{
+  "ticker": "NKE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-07-20",
+  "period_of_report": "2023-05-31",
+  "accession": "000032018723000039",
+  "filing_chars": 578114,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1378
+    }
+  ]
+}

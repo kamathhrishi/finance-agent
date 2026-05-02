@@ -1,0 +1,16 @@
+## Item 5. Market for Registrant’s Common Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities
+The principal market for our common stock is the New York Stock Exchange where it trades under the symbol BA\. As of February 5, 2018, there were 108,310 shareholders of record\. Additional information required by this item is incorporated by reference from Note 22 to our Consolidated Financial Statements\.
+### Issuer Purchases of Equity Securities
+The following table provides information about purchases we made during the quarter ended December 31, 2017 of equity securities that are registered by us pursuant to Section 12 of the Exchange Act:
+#### (Dollars in millions, except per share data)
+
+|                           | (a)                                 | (b)                         | (c)                                                                              | (d)                                                                                         |
+|---------------------------|-------------------------------------|-----------------------------|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+|                           | Total Number of Shares Purchased(1) | Average Price Paidper Share | Total Number of Shares Purchased as Part of Publicly Announced Plans or Programs | Approximate Dollar Value of Shares That May Yet be Purchased Under the Plans or Programs(2) |
+| 10/1/2017 thru 10/31/2017 | 3,860,891                           | $259.30                     | 3,856,749                                                                        | $5,501                                                                                      |
+| 11/1/2017 thru 11/30/2017 | 2,806,168                           | 262.85                      | 2,800,181                                                                        | 4,765                                                                                       |
+| 12/1/2017 thru 12/31/2017 | 39,098                              | 276.49                      |                                                                                  | 18,000                                                                                      |
+| Total                     | 6,706,157                           | $260.89                     | 6,656,930                                                                        |                                                                                             |
+
+
+*We purchased an aggregate of 6,656,930 shares of our common stock in the open market pursuant to our repurchase plan and 49,227 shares transferred to us from employees in satisfaction of minimum tax withholding obligations associated with the vesting of restricted stock units during the period\. We did not purchase shares in swap transactions\. \(2\)On December 11, 2017, we announced a new repurchase plan for up to $18 billion of common stock, replacing the plan previously authorized in 2016\.*

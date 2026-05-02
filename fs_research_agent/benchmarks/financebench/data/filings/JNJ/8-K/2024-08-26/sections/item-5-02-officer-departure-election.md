@@ -1,0 +1,3 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+On August 26, 2024, Johnson & Johnson \(the Company\) issued a press release announcing that Peter M\. Fasolo, Executive Vice President, Chief Human Resources Officer \(CHRO\), has elected to retire\.  He will step down from the role of CHRO and member of the Executive Committee, effective October 1, 2024, and depart the Company at the end of the year\.
+A copy of the Company's press release, dated August 26, 2024, is contained in Exhibit 99\.1 to this Report\.

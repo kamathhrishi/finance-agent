@@ -1,0 +1,61 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2024-08-16",
+  "period_of_report": "2024-06-30",
+  "accession": "000174879024000022",
+  "filing_chars": 471593,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.13",
+      "file": "EX-10.13.md",
+      "chars": 53846
+    },
+    {
+      "type": "EX-10.14",
+      "file": "EX-10.14.md",
+      "chars": 53651
+    },
+    {
+      "type": "EX-10.15",
+      "file": "EX-10.15.md",
+      "chars": 8915
+    },
+    {
+      "type": "EX-10.16",
+      "file": "EX-10.16.md",
+      "chars": 8900
+    },
+    {
+      "type": "EX-19",
+      "file": "EX-19.md",
+      "chars": 26992
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1412
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "ticker": "CVS",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2016",
+  "quarter_label": null,
+  "filing_date": "2017-02-09",
+  "period_of_report": "2016-12-31",
+  "accession": "000006480317000006",
+  "filing_chars": 206361,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.13",
+      "file": "EX-10.13.md",
+      "chars": 236544
+    },
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 78892
+    },
+    {
+      "type": "EX-10.22",
+      "file": "EX-10.22.md",
+      "chars": 21322
+    },
+    {
+      "type": "EX-10.23",
+      "file": "EX-10.23.md",
+      "chars": 12655
+    },
+    {
+      "type": "EX-10.25",
+      "file": "EX-10.25.md",
+      "chars": 38493
+    },
+    {
+      "type": "EX-10.27",
+      "file": "EX-10.27.md",
+      "chars": 16336
+    },
+    {
+      "type": "EX-10.37",
+      "file": "EX-10.37.md",
+      "chars": 12639
+    },
+    {
+      "type": "EX-10.38",
+      "file": "EX-10.38.md",
+      "chars": 15567
+    },
+    {
+      "type": "EX-10.44",
+      "file": "EX-10.44.md",
+      "chars": 20267
+    },
+    {
+      "type": "EX-10.45",
+      "file": "EX-10.45.md",
+      "chars": 29037
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1562
+    }
+  ]
+}

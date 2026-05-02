@@ -11,6 +11,7 @@ extracted from earnings transcripts and 10-K filings:
 import asyncio
 import json
 import logging
+import re
 import time
 from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -27,7 +28,7 @@ class QualitativeScreener:
     # Minimum company count for a quarter to be considered "well-populated"
     MIN_COMPANIES_FOR_DEFAULT = 200
 
-    def __init__(self, financial_analyzer, rag_system):
+    def __init__(self, rag_system, financial_analyzer=None):
         self.financial_analyzer = financial_analyzer
         self.search_engine = rag_system.search_engine
         self.database_manager = rag_system.database_manager
@@ -60,192 +61,325 @@ class QualitativeScreener:
             }
         }
 
+    # Data coverage description used in meta-message responses
+    _DATA_COVERAGE = (
+        "StrataLens covers 500+ publicly listed tech companies (semiconductors, software, fintech, cloud, AI) with:\n"
+        "- Earnings call transcripts: Q1 2022 – Q4 2025 (latest available quarter)\n"
+        "- 10-K annual filings: FY 2022 – FY 2024\n"
+        "You can ask about a single company (e.g. \"$NVDA margins\", \"$AAPL supply chain risks\") "
+        "or screen across all companies (e.g. \"which companies are investing in AI infrastructure\").\n"
+        "Quantitative financial screening (P/E, revenue filters) is coming soon once real-time market data is integrated."
+    )
+
     # ------------------------------------------------------------------
     # Stage 1: Intent Split (sync, CPU-bound LLM call)
+    # Handles ALL message types: research queries, greetings, capability
+    # questions, and off-topic messages in a single LLM call.
     # ------------------------------------------------------------------
-    def _split_intent(self, question: str) -> Dict[str, Any]:
+    def _split_intent(self, question: str, max_retries: int = 3) -> Dict[str, Any]:
         default_year, default_quarter = self._get_best_default_quarter()
 
-        # For GPT-5 reasoning models: no temperature, no system role, use reasoning_effort
         system_context = (
-            "You classify stock-screening queries. Separate them into:\n"
-            "- financial: metrics, ratios, sectors, market cap, revenue, P/E, etc. "
-            "(answerable with SQL on structured financial data)\n"
-            "- qualitative: themes, sentiment, strategy, management commentary "
-            "(requires searching text documents like earnings transcripts or 10-K filings)\n\n"
-            "Return JSON with these keys:\n"
+            "You are a router for StrataLens, a financial research tool.\n\n"
+            f"Data coverage:\n{self._DATA_COVERAGE}\n\n"
+            "STEP 1 — Classify the message type:\n"
+            "  A) GREETING: hi, hello, hey, how are you, etc.\n"
+            "  B) CAPABILITY: what can you do, what data do you have, how does this work, etc.\n"
+            "  C) OFF_TOPIC: weather, cooking, personal advice, generic coding help, etc.\n"
+            "  D) RESEARCH: any company, stock market, financial, or investment question\n\n"
+            "For types A/B/C return JSON with ONLY these keys:\n"
+            '  "message_type": "greeting" | "capability" | "off_topic",\n'
+            '  "meta_response": string (friendly reply — plain text, no markdown headers)\n\n'
+            "For type D return JSON with ALL these keys:\n"
+            '  "message_type": "research",\n'
+            '  "meta_response": null,\n'
             '  "mode": "financial_only" | "qualitative_only" | "mixed",\n'
-            '  "financial": string or null (natural language description of financial criteria, NOT SQL),\n'
-            '  "qualitative": string or null (text-search part),\n'
-            '  "source": "transcript" or "10k" (only needed if qualitative is not null),\n'
-            '  "time_scope": {"year": int, "quarter": int or null}\n\n'
-            "IMPORTANT:\n"
-            "- The 'financial' field should be a natural language query, NOT SQL.\n"
-            "- The 'qualitative' field should stay CLOSE to the original user phrasing - do NOT over-elaborate or add extra details.\n"
-            "- Keep queries concise and preserve the user's intent.\n\n"
+            '  "financial": string or null,\n'
+            '  "qualitative": string or null,\n'
+            '  "source": "transcript" or "10k",\n'
+            '  "time_scope": {"year": int, "quarter": int or null},\n'
+            '  "user_specified_time": true | false,\n'
+            '  "is_multi_company": true | false,\n'
+            '  "needs_synthesis": true | false\n\n'
+            "Rules for RESEARCH classification:\n"
+            "- financial: metrics, ratios, P/E, revenue, market cap (SQL-answerable)\n"
+            "- qualitative: themes, strategy, commentary (requires text search in transcripts/10-K)\n"
+            "- is_multi_company: true when discovering companies across a theme; false for specific named companies\n"
+            "- needs_synthesis: true when the query asks for ANYTHING beyond just listing companies — e.g. analysis, opportunities, risks, trends, insights, overview, breakdown, study, report, deep dive, or any open-ended research question about the space itself. If the user wants to UNDERSTAND the space (not just find who's in it), set true.\n"
+            "- user_specified_time: true ONLY if user explicitly mentioned a year, quarter, or time period\n"
+            f"- Default time_scope: year={default_year}, quarter={default_quarter}; use quarter=null for 10-K\n\n"
+            "IMPORTANT: Err heavily toward RESEARCH. Only use greeting/capability/off_topic when completely certain.\n"
+            "You MUST return valid JSON only. No markdown, no explanation, no code fences.\n\n"
             "Examples:\n"
-            '- "tech stocks with P/E < 20" → mode: "financial_only", financial: "tech stocks with P/E under 20"\n'
-            '- "companies discussing AI capex" → mode: "qualitative_only", qualitative: "discussing AI capex"\n'
-            '- "companies building their own foundational models" → mode: "qualitative_only", qualitative: "building their own foundational models"\n'
-            '- "tech stocks with revenue > $50B investing in AI" → mode: "mixed", '
-            'financial: "tech stocks with revenue greater than 50 billion", qualitative: "investing in AI"\n'
-            '- "top 10 stocks by market cap" → mode: "financial_only"\n\n'
-            f"Default year to {default_year} and quarter to {default_quarter} "
-            "if not specified. Use quarter=null for 10-K filings."
+            f'- "hi there" → {{"message_type":"greeting","meta_response":"Hello!...","mode":null,"financial":null,"qualitative":null,"source":null,"time_scope":null,"user_specified_time":false,"is_multi_company":false,"needs_synthesis":false}}\n'
+            f'- "companies discussing AI capex" → {{"message_type":"research","meta_response":null,"mode":"qualitative_only","financial":null,"qualitative":"discussing AI capex","source":"transcript","time_scope":{{"year":{default_year},"quarter":{default_quarter}}},"user_specified_time":false,"is_multi_company":true,"needs_synthesis":false}}\n'
+            f'- "find companies building agentic finance and analyze opportunities and risks" → {{"message_type":"research","meta_response":null,"mode":"qualitative_only","financial":null,"qualitative":"building agentic finance","source":"transcript","time_scope":{{"year":{default_year},"quarter":{default_quarter}}},"user_specified_time":false,"is_multi_company":true,"needs_synthesis":true}}\n'
+            f'- "what did $NVDA say about AI?" → {{"message_type":"research","meta_response":null,"mode":"qualitative_only","financial":null,"qualitative":"AI commentary","source":"transcript","time_scope":{{"year":{default_year},"quarter":{default_quarter}}},"user_specified_time":false,"is_multi_company":false,"needs_synthesis":false}}\n'
         )
 
-        response = self.openai_client.chat.completions.create(
-            model="gpt-5-nano-2025-08-07",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"{system_context}\n\nQuery: {question}\n\nProvide your response as JSON only."
-                },
-            ],
-        )
-        return json.loads(response.choices[0].message.content)
+        prompt = f"{system_context}\n\nMessage: {question}\n\nReturn JSON only."
+        last_error = None
+        content = ""
+
+        for attempt in range(max_retries):
+            try:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-5-nano-2025-08-07",
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                content = response.choices[0].message.content or ""
+
+                # Strip markdown code fences if present
+                content = re.sub(r'^```(?:json)?\s*', '', content.strip(), flags=re.IGNORECASE)
+                content = re.sub(r'\s*```$', '', content.strip())
+                content = content.strip()
+
+                parsed = json.loads(content)
+
+                # Validate: meta messages need message_type + meta_response
+                # research messages need mode
+                msg_type = parsed.get("message_type", "research")
+                if msg_type in ("greeting", "capability", "off_topic"):
+                    if not parsed.get("meta_response"):
+                        raise ValueError(f"Missing 'meta_response' for {msg_type}: {content}")
+                elif msg_type == "research":
+                    if "mode" not in parsed:
+                        raise ValueError(f"Missing 'mode' key for research query: {content}")
+                else:
+                    raise ValueError(f"Unknown message_type '{msg_type}': {content}")
+
+                return parsed
+
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+                logger.warning(f"Intent split attempt {attempt + 1}/{max_retries} failed: {e}. Raw: {content!r}")
+                if attempt < max_retries - 1:
+                    prompt = (
+                        f"{system_context}\n\nMessage: {question}\n\n"
+                        f"Previous attempt returned invalid JSON: {content!r}\n"
+                        f"Error: {e}\n\n"
+                        "Return ONLY valid JSON, no other text."
+                    )
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Intent split attempt {attempt + 1}/{max_retries} API error: {e}")
+                if attempt >= max_retries - 1:
+                    break
+
+        # All retries failed — assume research query, default to qualitative-only
+        logger.error(f"Intent split failed after {max_retries} attempts: {last_error}")
+        return {
+            "message_type": "research",
+            "meta_response": None,
+            "mode": "qualitative_only",
+            "financial": None,
+            "qualitative": question,
+            "source": "transcript",
+            "time_scope": {"year": default_year, "quarter": default_quarter},
+            "user_specified_time": False,
+            "is_multi_company": False,
+        }
 
     # ------------------------------------------------------------------
     # Stage 5: LLM Evidence Summary (sync, called via asyncio.to_thread)
     # ------------------------------------------------------------------
-    def _summarize_evidence(self, ticker: str, source: str, qualitative_query: str, chunks: List[Dict]) -> Dict[str, Any]:
-        excerpts = "\n---\n".join(c['chunk_text'][:600] for c in chunks[:3])
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        """Remove null bytes and non-printable control characters that break JSON payloads."""
+        return ''.join(ch for ch in text if ch >= ' ' or ch in '\n\t')
 
-        # For GPT-5 reasoning models: no temperature, no system role, use reasoning_effort and max_completion_tokens
+    def _summarize_evidence(self, ticker: str, source: str, qualitative_query: str, chunks: List[Dict], max_retries: int = 3) -> Dict[str, Any]:
+        top_chunks = chunks[:5]
+        numbered_excerpts = "\n\n".join(
+            f"[{i+1}] {self._clean_text(c['chunk_text'])[:500]}" for i, c in enumerate(top_chunks)
+        )
+
+        base_prompt = (
+            f"You are evaluating {ticker}'s {source} for relevance to: '{qualitative_query}'.\n\n"
+            f"Source excerpts (numbered for citation):\n{numbered_excerpts}\n\n"
+            "Return JSON only with these keys:\n"
+            '  "relevance_score": 0-100 (strict — only 70+ for strong matches)\n'
+            '  "evidence": 2-3 sentence explanation using inline citation markers like [1], [2] to reference the excerpts above. '
+            'Include specific quotes or numbers from the sources. Example: "The company discussed X [1] and committed $Y to Z [2]."\n\n'
+            "If it doesn't match well, score 20-40 and explain why.\n"
+            "Return ONLY valid JSON, no markdown, no code fences."
+        )
+        prompt = base_prompt
+        last_error = None
+        content = ""
+
+        for attempt in range(max_retries):
+            try:
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-5-nano-2025-08-07",
+                    max_completion_tokens=4000,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+
+                content = response.choices[0].message.content or ""
+                if not content:
+                    raise ValueError("Empty response from model")
+
+                # Strip markdown code fences
+                content = re.sub(r'^```(?:json)?\s*', '', content.strip(), flags=re.IGNORECASE)
+                content = re.sub(r'\s*```$', '', content.strip()).strip()
+
+                parsed = json.loads(content)
+                return {
+                    'relevance_score': parsed.get('relevance_score', 0),
+                    'evidence': parsed.get('evidence', content),
+                }
+
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+                logger.warning(f"Evidence summary attempt {attempt + 1}/{max_retries} for {ticker} failed: {e}. Raw: {content!r}")
+                if attempt < max_retries - 1:
+                    prompt = (
+                        f"{base_prompt}\n\n"
+                        f"Previous attempt returned invalid JSON: {content!r}\n"
+                        f"Error: {e}\n"
+                        "Return ONLY valid JSON."
+                    )
+            except Exception as e:
+                last_error = e
+                logger.error(f"Evidence summary attempt {attempt + 1}/{max_retries} for {ticker} API error: {e}")
+                if attempt >= max_retries - 1:
+                    break
+
+        logger.error(f"Evidence summary failed for {ticker} after {max_retries} attempts: {last_error}")
+        return {'relevance_score': 0, 'evidence': 'Unable to generate summary'}
+
+    # ------------------------------------------------------------------
+    # Stage 6: Space Synthesis (async streaming)
+    # Reads across all scored companies and produces an analysis report.
+    # ------------------------------------------------------------------
+    async def _synthesize_space(self, topic: str, source_label: str, scored_companies: List[Dict], marker_prefix: str) -> AsyncGenerator[str, None]:
+        """Stream a synthesis analysis of the space based on evidence from scored companies."""
+        # Collect top chunks from each company (up to 3 per company, top 10 companies)
+        evidence_blocks = []
+        citation_offset = 0
+        for entry in scored_companies[:10]:
+            if entry.get('llm_relevance_score', 0) < self.RELEVANCE_THRESHOLD:
+                continue
+            ticker = entry['ticker']
+            chunks = entry.get('chunks', [])[:3]
+            if not chunks:
+                continue
+            excerpts = []
+            for chunk in chunks:
+                citation_offset += 1
+                excerpts.append(f"[{marker_prefix}-{citation_offset}] {self._clean_text(chunk['chunk_text'])[:400]}")
+            evidence_blocks.append(f"**{ticker}**:\n" + "\n".join(excerpts))
+
+        if not evidence_blocks:
+            yield "No strong matches found to synthesize an analysis from."
+            return
+
+        evidence_text = "\n\n".join(evidence_blocks)
+
         prompt = (
-            f"Given excerpts from {ticker}'s {source}, evaluate how well this company matches the query: '{qualitative_query}'.\n\n"
-            f"Excerpts:\n{excerpts}\n\n"
-            "Return JSON with:\n"
-            '1. "relevance_score": 0-100 (how well it matches - be strict, only 70+ for strong matches)\n'
-            '2. "evidence": 1-2 sentence explanation with specific quotes/numbers\n\n'
-            "If it doesn't match well, score it low (20-40) and explain why."
+            f"You are a financial analyst. Based on primary source evidence from companies' {source_label}, "
+            f"write a concise but insightful analysis of the theme: \"{topic}\".\n\n"
+            f"Evidence:\n{evidence_text}\n\n"
+            "Structure your response with these sections (use markdown headers):\n"
+            "## Overview\n"
+            "## Key Opportunities\n"
+            "## Key Risks\n"
+            "## Notable Company Initiatives\n\n"
+            "Rules:\n"
+            "- Use inline citations like [TC-1] or [10K-1] when referencing specific evidence above.\n"
+            "- Be specific — quote numbers, product names, and strategic commitments where available.\n"
+            "- Keep each section to 3-5 sentences.\n"
+            "- Do not speculate beyond what the evidence supports.\n"
         )
 
         try:
-            response = self.openai_client.chat.completions.create(
+            stream = self.openai_client.chat.completions.create(
                 model="gpt-5-nano-2025-08-07",
-                max_completion_tokens=4000,  # Increased for complex reasoning
-                messages=[
-                    {"role": "user", "content": prompt},
-                ],
+                messages=[{"role": "user", "content": prompt}],
+                max_completion_tokens=1200,
+                stream=True,
             )
-
-            # Log the response structure for debugging
-            logger.info(f"Response for {ticker}: choices={len(response.choices)}, finish_reason={response.choices[0].finish_reason if response.choices else 'N/A'}")
-
-            content = response.choices[0].message.content
-            if not content:
-                logger.warning(f"Empty content from gpt-5-nano for {ticker}. Full response: {response.model_dump()}")
-                return {'relevance_score': 0, 'evidence': 'Unable to generate summary'}
-
-            # Parse JSON response
-            try:
-                result = json.loads(content.strip())
-                return {
-                    'relevance_score': result.get('relevance_score', 0),
-                    'evidence': result.get('evidence', content.strip())
-                }
-            except json.JSONDecodeError:
-                # Fallback if not valid JSON
-                logger.warning(f"Non-JSON response for {ticker}, using raw content")
-                return {'relevance_score': 50, 'evidence': content.strip()}
-
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content if chunk.choices else None
+                if delta:
+                    yield delta
         except Exception as e:
-            logger.error(f"Error summarizing evidence for {ticker}: {e}", exc_info=True)
-            return {'relevance_score': 0, 'evidence': f"Error: {str(e)}"}
+            logger.error(f"Synthesis streaming failed: {e}")
+            yield "\n\n*(Analysis generation failed — please try again.)*"
 
     # ------------------------------------------------------------------
     # Main streaming pipeline (async generator)
     # ------------------------------------------------------------------
-    async def screen_with_streaming(self, question: str, top_n: int = 20, page: int = 1, page_size: Optional[int] = None) -> AsyncGenerator[Dict, None]:
+    RELEVANCE_THRESHOLD = 60  # 0-100 scale; companies scoring >= this are "strong matches"
+
+    async def screen_with_streaming(self, question: str, top_n: Optional[int] = None, page: int = 1, page_size: Optional[int] = None, _parsed_intent: Optional[Dict] = None) -> AsyncGenerator[Dict, None]:
         """Async generator yielding SSE events. Auto-detects financial vs qualitative vs mixed."""
         start_time = time.time()
+        top_n = top_n or 20  # default if caller doesn't specify
 
-        # --- Stage 1: Intent Split ---
+        # --- Stage 1: Intent Split (skip if already parsed by caller) ---
         yield self._make_reasoning_event("step_start", "Understanding your question...", "intent_split")
-        try:
+        if _parsed_intent is not None:
+            intent = _parsed_intent
+        else:
             intent = await asyncio.to_thread(self._split_intent, question)
-        except Exception as e:
-            logger.error(f"Intent split failed: {e}")
-            yield self._make_reasoning_event("step_error", f"Failed to analyze query: {e}", "intent_split")
-            yield {'type': 'error', 'message': f"Failed to analyze query: {e}"}
-            return
 
         mode = intent.get("mode", "financial_only")
         financial_part = intent.get("financial")
         qualitative_part = intent.get("qualitative")
-        source = intent.get("source", "transcript")
         default_year, default_quarter = self._get_best_default_quarter()
         time_scope = intent.get("time_scope", {})
-        year = time_scope.get("year", default_year)
-        quarter = time_scope.get("quarter", default_quarter)
 
-        # --- Pure financial: delegate to existing financial streamer ---
+        source = intent.get("source", "transcript")
+        needs_synthesis = bool(intent.get("needs_synthesis", False))
+        logger.info(f"🔍 Intent: mode={intent.get('mode')}, is_multi={intent.get('is_multi_company')}, needs_synthesis={needs_synthesis}")
+        user_specified_time = intent.get("user_specified_time", False)
+        year = time_scope.get("year", default_year) if user_specified_time else default_year
+        quarter = time_scope.get("quarter", default_quarter) if user_specified_time else default_quarter
+
+        # --- Pure financial: not supported, inform the user ---
         if mode == "financial_only" or not qualitative_part:
             yield self._make_reasoning_event(
                 "step_complete",
-                "Detected pure financial query \u2014 using financial screener",
+                "Detected financial-only query",
                 "intent_split",
             )
-            for event in self.financial_analyzer.query_with_streaming(
-                question=question,
-                page=page,
-                page_size=page_size,
-            ):
-                yield event
+            yield {
+                'type': 'result',
+                'data': {
+                    'success': False,
+                    'columns': [],
+                    'friendly_columns': {},
+                    'data_rows': [],
+                    'message': (
+                        "Financial screening (metrics, ratios, market cap, etc.) is not available yet. "
+                        "Try a qualitative query instead — for example: "
+                        "\"companies investing heavily in AI infrastructure\" or "
+                        "\"companies with strong ESG commentary in earnings calls\"."
+                    ),
+                },
+            }
             return
 
         source_label = "earnings transcripts" if source == "transcript" else "10-K filings"
-        time_label = f"FY{year}" if quarter is None else f"Q{quarter} {year}"
-        # Keep it simple - show original query, not rephrased version
+        # For mixed queries, skip the financial filter and treat as qualitative-only
         if financial_part and qualitative_part:
-            search_desc = f"Filtering by financials, then searching {source_label.lower()}"
-        elif qualitative_part:
-            search_desc = f"Searching {source_label.lower()}"
+            yield self._make_reasoning_event(
+                "step_complete",
+                f"Searching {source_label.lower()} (financial filters not yet available)",
+                "intent_split",
+            )
         else:
-            search_desc = "Processing query"
-        yield self._make_reasoning_event(
-            "step_complete",
-            search_desc,
-            "intent_split",
-        )
+            yield self._make_reasoning_event(
+                "step_complete",
+                f"Searching {source_label.lower()}",
+                "intent_split",
+            )
 
-        # --- Stage 2: Financial Filter (optional, for mixed queries) ---
+        # --- Stage 2: Financial Filter (disabled) ---
+        # Search all companies qualitatively; financial filters not yet available.
         ticker_list: List[str] = []
-        if financial_part:
-            yield self._make_reasoning_event("step_start", f"Filtering companies by {financial_part.lower()}...", "financial_filter")
-            try:
-                fin_result = await asyncio.to_thread(
-                    self.financial_analyzer.query, financial_part, 1, None
-                )
-                if fin_result and not fin_result.get("error") and fin_result.get("data_rows"):
-                    for row in fin_result["data_rows"]:
-                        sym = row.get("symbol") or row.get("Symbol") or row.get("ticker") or row.get("Ticker")
-                        if sym:
-                            ticker_list.append(str(sym).upper())
-
-                if len(ticker_list) >= 3:
-                    yield self._make_reasoning_event(
-                        "step_complete",
-                        f"Found {len(ticker_list)} companies matching financial criteria",
-                        "financial_filter",
-                    )
-                else:
-                    # Too few results — likely a bad filter. Search all companies instead.
-                    n_found = len(ticker_list)
-                    ticker_list = []
-                    yield self._make_reasoning_event(
-                        "step_complete",
-                        f"Expanding search to include all companies for better results",
-                        "financial_filter",
-                    )
-            except Exception as e:
-                logger.warning(f"Financial filter failed, proceeding without: {e}")
-                yield self._make_reasoning_event(
-                    "step_error",
-                    f"Searching all companies for your criteria",
-                    "financial_filter",
-                )
 
         # --- Stage 3: Bulk RAG Search ---
         company_scope = f"{len(ticker_list)} companies" if ticker_list else "all companies"
@@ -279,9 +413,16 @@ class QualitativeScreener:
                 chunks_per_company=100,  # Fetch 100 for cross-encoder
             )
 
+        # Cap to top_n * 2 companies by best similarity — no need to process all 500+
+        max_candidates = top_n * 2
+        if len(company_chunks) > max_candidates:
+            best_sim = {t: max(c['similarity'] for c in chunks) for t, chunks in company_chunks.items()}
+            keep = sorted(best_sim, key=best_sim.get, reverse=True)[:max_candidates]
+            company_chunks = {t: company_chunks[t] for t in keep}
+
         yield self._make_reasoning_event(
             "step_complete",
-            f"Found {len(company_chunks)} companies with relevant information",
+            f"Found {len(company_chunks)} candidate companies — analyzing top {max_candidates}",
             "bulk_search",
         )
 
@@ -483,60 +624,96 @@ class QualitativeScreener:
             },
         }
 
-        # --- Stage 5: LLM Evidence Summary (parallel via threads) ---
+        # --- Stage 5: LLM Evidence Summary — parallel with early stopping ---
         yield self._make_reasoning_event(
             "step_start",
-            f"Preparing results with supporting evidence...",
+            f"Scoring {len(top_companies)} companies for relevance...",
             "summarize",
         )
 
-        tasks = [
-            asyncio.to_thread(
+        async def _summarize_one(entry: Dict) -> tuple:
+            result = await asyncio.to_thread(
                 self._summarize_evidence,
-                entry['ticker'],
-                source_label,
-                qualitative_part,
-                entry['chunks'],
+                entry['ticker'], source_label, qualitative_part, entry['chunks'],
             )
-            for entry in top_companies
-        ]
-        summaries = await asyncio.gather(*tasks, return_exceptions=True)
+            return entry, result
 
-        for i, summary in enumerate(summaries):
-            if isinstance(summary, Exception):
-                logger.error(f"Failed to generate summary for {top_companies[i]['ticker']}: {summary}")
-                top_companies[i]['evidence_summary'] = "Unable to generate summary - please try again"
-                top_companies[i]['llm_relevance_score'] = 0
-            elif isinstance(summary, dict):
-                top_companies[i]['evidence_summary'] = summary.get('evidence', 'No summary available')
-                top_companies[i]['llm_relevance_score'] = summary.get('relevance_score', 0)
+        futures = [asyncio.ensure_future(_summarize_one(e)) for e in top_companies]
+        found_relevant = 0
+        completed = 0
+        scored_companies: List[Dict] = []
+
+        try:
+            for fut in asyncio.as_completed(futures):
+                entry, summary = await fut
+                completed += 1
+
+                if isinstance(summary, dict):
+                    entry['llm_relevance_score'] = summary.get('relevance_score', 0)
+                    entry['evidence_summary'] = summary.get('evidence', '')
+                else:
+                    entry['llm_relevance_score'] = 0
+                    entry['evidence_summary'] = ''
+
+                scored_companies.append(entry)
+
+                if entry['llm_relevance_score'] >= self.RELEVANCE_THRESHOLD:
+                    found_relevant += 1
+
+                yield self._make_reasoning_event(
+                    "step_progress",
+                    f"Reviewed {completed}/{len(top_companies)} companies — {found_relevant} strong match{'es' if found_relevant != 1 else ''} so far",
+                    "summarize",
+                )
+
+                # Early stopping: already have enough strong matches
+                if found_relevant >= top_n:
+                    for f in futures:
+                        if not f.done():
+                            f.cancel()
+                    yield self._make_reasoning_event(
+                        "step_complete",
+                        f"Found {found_relevant} relevant companies — stopping early",
+                        "summarize",
+                    )
+                    break
             else:
-                logger.warning(f"Unexpected summary format for {top_companies[i]['ticker']}")
-                top_companies[i]['evidence_summary'] = str(summary) if summary else "No summary available"
-                top_companies[i]['llm_relevance_score'] = 0
+                yield self._make_reasoning_event(
+                    "step_complete",
+                    f"Analysis complete — {found_relevant} relevant {'company' if found_relevant == 1 else 'companies'} found out of {completed} reviewed",
+                    "summarize",
+                )
+        finally:
+            for f in futures:
+                if not f.done():
+                    f.cancel()
 
+        top_companies = scored_companies
         # Re-sort by LLM relevance score (more accurate than cross-encoder)
         top_companies.sort(key=lambda x: x.get('llm_relevance_score', 0), reverse=True)
-
-        yield self._make_reasoning_event("step_complete", "Results ready", "summarize")
 
         # --- Stage 6: Yield Result ---
         elapsed = time.time() - start_time
         data_rows = []
         for entry in top_companies:
-            # Format sources for citation display
+            # Format sources — index matches [1],[2] markers in evidence_summary
+            # Use typed markers so frontend scroll/highlight works correctly
+            marker_prefix = "TC" if source == "transcript" else "10K"
             sources = []
-            for idx, chunk in enumerate(entry.get('chunks', [])[:5], 1):  # Top 5 chunks
+            for idx, chunk in enumerate(entry.get('chunks', [])[:5], 1):
                 sources.append({
-                    'type': source,  # 'transcript' or '10k'
+                    'index': idx,                        # corresponds to [idx] in evidence_summary
+                    'marker': f"[{marker_prefix}-{idx}]",  # e.g. [TC-1], [10K-1]
+                    'type': source,
+                    'source_type': source,
                     'ticker': entry['ticker'],
                     'chunk_text': chunk.get('chunk_text', ''),
-                    'similarity': chunk.get('similarity', chunk.get('distance', 0)),
-                    'marker': f"[{idx}]",
+                    'similarity': chunk.get('similarity', chunk.get('cross_encoder_score', 0)),
                     'year': year,
                     'quarter': quarter if source == 'transcript' else None,
                     'fiscal_year': year if source == '10k' else None,
-                    'section': chunk.get('section'),
+                    'section': chunk.get('section') or chunk.get('sec_section'),
+                    'section_title': chunk.get('sec_section_title'),
                 })
 
             data_rows.append({
@@ -545,6 +722,27 @@ class QualitativeScreener:
                 'evidence_summary': entry.get('evidence_summary', ''),
                 'citations': sources,  # Citations in separate column
             })
+
+        # --- Stage 7: Space Synthesis (optional, streamed as tokens) ---
+        synthesis_text = ""
+        marker_prefix = "TC" if source == "transcript" else "10K"
+        if needs_synthesis and top_companies:
+            yield self._make_reasoning_event(
+                "step_start",
+                "Synthesizing insights across companies...",
+                "synthesis",
+            )
+            tokens = []
+            async for token in self._synthesize_space(
+                topic=qualitative_part or question,
+                source_label=source_label,
+                scored_companies=top_companies,
+                marker_prefix=marker_prefix,
+            ):
+                tokens.append(token)
+                yield {'type': 'synthesis_token', 'token': token}
+            synthesis_text = "".join(tokens)
+            yield self._make_reasoning_event("step_complete", "Analysis complete", "synthesis")
 
         yield {
             'type': 'result',
@@ -558,6 +756,7 @@ class QualitativeScreener:
                     'citations': 'Citations',
                 },
                 'data_rows': data_rows,
+                'synthesis': synthesis_text,
                 'message': f'Found {len(data_rows)} companies matching qualitative criteria ({elapsed:.1f}s)',
                 'execution_time': elapsed,
             },

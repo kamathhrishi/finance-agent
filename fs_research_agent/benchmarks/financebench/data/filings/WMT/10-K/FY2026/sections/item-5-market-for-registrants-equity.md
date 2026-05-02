@@ -1,0 +1,28 @@
+## ITEM 5.ITEM 5.MARKET FOR REGISTRANT'S COMMON EQUITY, RELATED STOCKHOLDER MATTERS AND ISSUER PURCHASES OF EQUITY SECURITIESMARKET FOR REGISTRANT'S COMMON EQUITY, RELATED STOCKHOLDER MATTERS AND ISSUER PURCHASES OF EQUITY SECURITIESMARKET FOR REGISTRANT'S COMMON EQUITY, RELATED STOCKHOLDER MATTERS AND ISSUER PURCHASES OF EQUITY SECURITIES
+### Market for Common Stock
+Effective December 9, 2025, the principal market on which Walmart's common stock is listed has been the Nasdaq Global Select Market\. Prior to December 9, 2025, Walmart's common stock was listed on the New York Stock Exchange\. The common stock trades under the symbol "WMT\."
+### Holders of Record of Common Stock
+As of March 11, 2026, there were 185,190 holders of record of Walmart's common stock, although there is a much larger number of beneficial owners\.
+### Stock Performance Chart
+This graph compares the cumulative total shareholder return on Walmart's common stock during the five fiscal years ended through fiscal 2026 to the cumulative total returns on the S&P 500 Consumer Discretionary Distribution & Retailing Index and the S&P 500 Index\. The comparison assumes $100 was invested on February 1, 2021 in shares of our common stock and in each of the indices shown and assumes all dividends were reinvested\.
+
+|                                                               | Fiscal Years Ended January 31, 2021 | Fiscal Years Ended January 31, 2022 | Fiscal Years Ended January 31, 2023 | Fiscal Years Ended January 31, 2024 | Fiscal Years Ended January 31, 2025 | Fiscal Years Ended January 31, 2026 |
+|---------------------------------------------------------------|-------------------------------------|-------------------------------------|-------------------------------------|-------------------------------------|-------------------------------------|-------------------------------------|
+| Walmart Inc.                                                  | $100.00                             | $101.10                             | $105.67                             | $123.22                             | $222.20                             | $272.28                             |
+| S&P 500 Index                                                 | 100.00                              | 123.29                              | 113.16                              | 136.72                              | 172.78                              | 201.03                              |
+| S&P 500 Consumer Discretionary Distribution & Retailing Index | 100.00                              | 108.64                              | 88.85                               | 114.73                              | 161.20                              | 164.12                              |
+
+### Issuer Repurchases of Equity Securities
+
+*From time to time, the Company repurchases shares of its common stock under share repurchase programs authorized by the Company's Board of Directors\. Any repurchased shares are constructively retired and returned to an unissued status\. All repurchases during fiscal 2026 were made under the $20\.0 billion share repurchase program approved in November 2022, of which authorization for $4\.0 billion of share repurchases remained as of January 31, 2026\. In February 2026, the Board of Directors approved a new $30\.0 billion share repurchase authorization, which has no expiration date or other restrictions limiting the period over which the Company can make repurchases, and beginning February 23, 2026, replaced the remaining capacity under the prior authorization\. Share repurchase activity under our share repurchase programs, on a trade date basis, for each month in the quarter ended January 31, 2026, was as follows:*
+
+
+| Fiscal Period       | Total Numberof Shares Repurchased | Average PricePaid perShare (in dollars) | Total Numberof Shares Repurchased asPartof Publicly Announced Plansor Programs | Approximate DollarValueof Sharesthat MayYet Be Repurchased Underthe Plansor Programs(1) (in billions) |
+|---------------------|-----------------------------------|-----------------------------------------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| November 1-30, 2025 | 3,187,083                         | $104.48                                 | 3,187,083                                                                      | $4.7                                                                                                  |
+| December 1-31, 2025 | 3,472,099                         | 113.61                                  | 3,472,099                                                                      | 4.3                                                                                                   |
+| January 1-31, 2026  | 3,073,037                         | 116.69                                  | 3,073,037                                                                      | 4.0                                                                                                   |
+| Total               | 9,732,219                         |                                         | 9,732,219                                                                      |                                                                                                       |
+
+- **\(1\)**: Represents the approximate dollar value of shares that could have been repurchased under the current plan at the end of the month\.
+## ITEM 6.

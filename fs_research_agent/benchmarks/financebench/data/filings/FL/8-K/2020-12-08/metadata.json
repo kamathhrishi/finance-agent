@@ -1,0 +1,29 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-12-08",
+  "period_of_report": "2020-12-07",
+  "accession": "000153949720001499",
+  "filing_chars": 20648,
+  "section_keys": [
+    "3.03",
+    "5.03",
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-3.1",
+      "file": "EX-3.1.md",
+      "chars": 25390
+    },
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 4750
+    }
+  ]
+}

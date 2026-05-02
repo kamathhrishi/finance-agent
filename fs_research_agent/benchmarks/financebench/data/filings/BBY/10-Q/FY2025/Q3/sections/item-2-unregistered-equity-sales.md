@@ -1,0 +1,11 @@
+## Item 2.    Unregistered Sales of Equity Securities and Use of Proceeds
+
+*c\) Stock Repurchases On February 28, 2022, our Board approved a $5\.0 billion share repurchase program\. There is no expiration date governing the period over which we can repurchase shares under this authorization\. For additional information, see Note 9, Repurchase of Common Stock, of the Notes to the Condensed Consolidated Financial Statements included in this Quarterly Report on Form 10\-Q\.*
+
+
+| Fiscal Period                       | Total Number of Shares Purchased | Average Price Paid per Share | Total Number of Shares Purchased as Part of Publicly Announced Program | Approximate Dollar Value of Shares that May Yet Be Purchased Under the Program |
+|-------------------------------------|----------------------------------|------------------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| May 4, 2025 through May 31, 2025    |                                  |                              |                                                                        | $----$---3,184,000,000                                                         |
+| June 1, 2025 through July 5, 2025   | 406,173                          | $69.38                       | 406,173                                                                | $3,156,000,000                                                                 |
+| July 6, 2025 through August 2, 2025 | 563,745                          | $68.13                       | 563,745                                                                | $3,118,000,000                                                                 |
+| Total fiscal 2026 second quarter    | 969,918                          | $68.65                       | 969,918                                                                | $3,118,000,000                                                                 |

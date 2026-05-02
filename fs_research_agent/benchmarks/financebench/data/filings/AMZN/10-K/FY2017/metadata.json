@@ -1,0 +1,36 @@
+{
+  "ticker": "AMZN",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2017",
+  "quarter_label": null,
+  "filing_date": "2018-02-02",
+  "period_of_report": "2017-12-31",
+  "accession": "000101872418000005",
+  "filing_chars": 414382,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 927
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+## Item 7A. Quantitative and Qualitative Disclosures about Market Risk
+As of December 31, 2016, the Company did not have any interest rate, foreign currency exchange rate or commodity derivative instruments in place and believes that as of December 31, 2016 its exposure to interest rate risk \(inherent in the Company's debt portfolio\), foreign currency exchange rate risk and commodity price risk is not material\.

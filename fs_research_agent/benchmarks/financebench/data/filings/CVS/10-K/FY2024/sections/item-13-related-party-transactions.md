@@ -1,0 +1,2 @@
+## Item 13.  Certain Relationships and Related Transactions, and Director Independence.
+The sections of the Proxy Statement under the captions “Independence Determinations for Directors” and “Related Person Transaction Policy” are incorporated herein by reference\.

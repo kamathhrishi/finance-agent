@@ -59,8 +59,8 @@ class Config:
             },
             
             # OpenAI settings (response generation)
-            "openai_model": "gpt-5-nano-2025-08-07",  # OpenAI for response generation
-            "openai_max_tokens": int(os.getenv("RAG_OPENAI_MAX_TOKENS", "8000")),  # max_completion_tokens; lower = faster
+            "openai_model": "gpt-5.4-nano-2026-03-17",  # OpenAI for response generation
+            "openai_max_tokens": int(os.getenv("RAG_OPENAI_MAX_TOKENS", "16000")),  # max_completion_tokens; lower = faster
             "openai_temperature": 1,
             
             # Groq settings (question analysis, evaluation, rephrasing)
@@ -74,7 +74,7 @@ class Config:
             "cerebras_temperature": 0.1,
             "use_cerebras": True,  # Enable Cerebras as primary LLM (legacy; prefer llm_provider)
             # LLM provider: "openai" | "cerebras" | "auto" (auto = Cerebras if key set, else OpenAI)
-            "llm_provider": os.getenv("RAG_LLM_PROVIDER", "cerebras"),
+            "llm_provider": os.getenv("RAG_LLM_PROVIDER", "openai"),
             
             # Embedding settings
             "embedding_model": "all-MiniLM-L6-v2",
@@ -87,8 +87,7 @@ class Config:
             # Iterative RAG settings
             "max_iterations": int(os.getenv("RAG_MAX_ITERATIONS", "3")),
             "sec_max_iterations": int(os.getenv("SEC_MAX_ITERATIONS", "5")),  # More iterations for 10-K/SEC queries
-            # Use Cerebras model for evaluation as well (no Groq/OpenAI OSS)
-            "evaluation_model": os.getenv("RAG_EVALUATION_MODEL", "qwen-3-235b-a22b-instruct-2507"),
+            "evaluation_model": os.getenv("RAG_EVALUATION_MODEL", "gpt-5.4-nano-2026-03-17"),
             "evaluation_temperature": 0.1,
             
             # Hybrid search settings

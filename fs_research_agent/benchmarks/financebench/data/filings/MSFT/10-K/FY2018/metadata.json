@@ -1,0 +1,43 @@
+{
+  "ticker": "MSFT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2018",
+  "quarter_label": null,
+  "filing_date": "2018-08-03",
+  "period_of_report": "2018-06-30",
+  "accession": "000156459018019062",
+  "filing_chars": 440168,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1B",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.5",
+      "file": "EX-10.5.md",
+      "chars": 51586
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 862
+    }
+  ]
+}

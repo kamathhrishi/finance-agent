@@ -192,7 +192,7 @@ INSTRUCTIONS:
 {ticker_instructions}
 2. Classify question type based on the nature of the question
 3. Extract the main topic/subject of the question (what the user is asking about)
-4. Detect temporal references (e.g., "Q4 2024", "2024", "latest quarter") but do NOT resolve them. ALWAYS use digits for counts — never words (e.g. "last 8 quarters" not "last eight quarters", "last 3 years" not "last three years"). If the question says "the same period" or "same N quarters/years", resolve it using the conversation history to produce a concrete time_ref like "last 8 quarters".
+4. Detect temporal references (e.g., "Q4 2024", "2024", "latest quarter") but do NOT resolve them. ALWAYS use digits for counts — never words (e.g. "last 8 quarters" not "last eight quarters", "last 3 years" not "last three years"). If the question says "the same period" or "same N quarters/years", resolve it using the conversation history to produce a concrete time_ref like "last 8 quarters". ⚠️ When multiple specific years are mentioned (e.g. "2024 and 2025"), output EACH year as a SEPARATE item in time_refs — e.g. ["2024", "2025"]. NEVER combine them into a single string like ["2024 and 2025"].
 5. Identify any explicit user requests or hints (e.g., "check 10-K", "from earnings call", "latest news")
 6. Assess validity and provide suggestions if needed
 
@@ -217,7 +217,10 @@ We have data from PUBLIC COMPANY earnings call transcripts, 10-K SEC filings, an
 Valid questions are about:
 - Public company financial performance, revenue, earnings, margins, growth
 - What management said in earnings calls (guidance, strategy, commentary)
-- 10-K filing data (balance sheets, risk factors, executive compensation)
+- 10-K filing data (balance sheets, risk factors, executive compensation) including exhibits:
+  EX-13 (annual report to shareholders), EX-21 (subsidiaries list), EX-23 (auditor consent),
+  EX-31/EX-32 (SOX certifications), EX-99.1 (earnings press releases / supplemental financials),
+  EX-10 (material contracts), EX-4 (debt instruments), EX-3 (incorporation documents)
 - Company news and recent developments
 - Industry trends discussed by public companies
 - Comparing public companies
@@ -230,10 +233,34 @@ When marking as invalid, provide a helpful reason explaining what we CAN help wi
 **USER HINTS** - Intelligently determine answer complexity and data sources:
 
 **Data Source Hints:**
-- If user explicitly asks for BOTH "10-K/10k filing" AND "earnings transcripts/calls" (e.g. "10k and earnings transcripts", "filing and transcripts") -> user_hints: {{"data_source": "hybrid"}} so BOTH sources are used together.
-- If user mentions only "10-K", "annual report", "SEC filing" -> user_hints: {{"data_source": "10k"}}
-- If user mentions only "earnings call", "transcript", "earnings" -> user_hints: {{"data_source": "earnings_transcripts"}}
-- If user mentions "latest news", "recent news", "news" -> user_hints: {{"data_source": "latest_news"}}
+CRITICAL RULE: Financial statement metrics (anything from the income statement, balance sheet, or cash flow statement) reported over multiple years or year-over-year MUST use data_source "10k". Do NOT use earnings_transcripts for year-over-year or multi-year financial metric questions. Transcripts are quarterly and do not provide authoritative annual figures.
+
+Use your judgment to infer the best data source:
+
+- **"10k"** — questions about metrics formally disclosed in financial statements (income statement, balance sheet, cash flow statement) or other sections of the annual filing:
+  * Explicitly mentions "10-K", "annual report", "SEC filing"
+  * Any metric that appears in the three core financial statements — revenue, margins, operating income, net income, EPS, assets, liabilities, equity, cash flows, capex, debt, etc.
+  * Year-over-year or multi-year trends in financial statement metrics ("how has gross margin changed over 3 years", "revenue over last 5 years", "how has debt evolved")
+  * Risk factors, auditors, subsidiaries, executive compensation, segment financials, notes to financial statements
+
+- **"earnings_transcripts"** — quarterly results, management commentary, forward guidance:
+  * Explicitly mentions "earnings call", "transcript", "what did management say"
+  * Asks about a specific recent quarter ("Q3", "last quarter", "latest quarter")
+  * Asks what the CEO/CFO said, tone, sentiment, qualitative commentary on a single period
+  * Forward guidance, outlook statements, management's own framing of results
+
+- **"hybrid"** — needs both official financial figures AND qualitative management commentary:
+  * "Why" or "what drove" questions about financial metrics ("why did margins compress", "what drove revenue growth")
+  * Questions explicitly asking to "analyze", "explain the drivers of", "what caused" a financial trend
+  * Questions that combine quantitative trends with strategic or qualitative context
+  * Comparing a metric across years AND asking for management's explanation of the change
+
+- **"latest_news"** — recent events, news, announcements:
+  * Explicitly mentions "news", "latest", "recently announced", "press release"
+
+- **No data_source set** — let the system decide:
+  * Short-horizon questions (1-2 quarters) about what was reported/said → system will use transcripts
+  * Ambiguous questions where the time horizon is unclear
 
 **Answer Mode (ALWAYS SET THIS - REQUIRED):**
 You MUST determine the appropriate answer_mode for EVERY question based on its complexity and scope:
@@ -294,6 +321,30 @@ OUTPUT: {{"is_valid": true, "reason": "Valid question about quarterly results", 
 
 QUESTION: "How has Microsoft's revenue changed over the last 3 quarters?"
 OUTPUT: {{"is_valid": true, "reason": "Valid question about revenue trends", "question_type": "specific_company", "extracted_ticker": "MSFT", "extracted_tickers": ["MSFT"], "topic": "revenue changes", "time_refs": ["last 3 quarters"], "suggested_improvements": [], "confidence": 0.9, "user_hints": {{"answer_mode": "standard"}}}}
+
+QUESTION: "How has $NVDA gross margin changed over the last 3 years?"
+OUTPUT: {{"is_valid": true, "reason": "Gross margin is an income statement metric over multiple years — MUST use 10-K, NOT earnings_transcripts", "question_type": "specific_company", "extracted_ticker": "NVDA", "extracted_tickers": ["NVDA"], "topic": "gross margin trend", "time_refs": ["last 3 years"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "detailed"}}}}
+
+QUESTION: "What has $NVDA gross margin trend been over last 4 years?"
+OUTPUT: {{"is_valid": true, "reason": "Gross margin trend over multiple years = income statement metric over multiple annual periods — MUST use 10-K. 'Trend' does NOT mean quarterly; use 10-K for annual figures.", "question_type": "specific_company", "extracted_ticker": "NVDA", "extracted_tickers": ["NVDA"], "topic": "gross margin trend", "time_refs": ["last 4 years"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "detailed"}}}}
+
+QUESTION: "Show me $AAPL operating margin trend over last 5 years"
+OUTPUT: {{"is_valid": true, "reason": "Operating margin is an income statement metric — multi-year trend questions MUST use 10-K", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "operating margin trend", "time_refs": ["last 5 years"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "detailed"}}}}
+
+QUESTION: "How has $AAPL revenue changed year over year?"
+OUTPUT: {{"is_valid": true, "reason": "Revenue is an income statement metric over multiple annual periods — MUST use 10-K", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "revenue trend", "time_refs": ["year over year"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "standard"}}}}
+
+QUESTION: "How has Apple's R&D spending evolved over the past 5 years?"
+OUTPUT: {{"is_valid": true, "reason": "R&D expense is a financial statement line item — 10-K for annual figures", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "R&D spending trend", "time_refs": ["last 5 years"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "detailed"}}}}
+
+QUESTION: "What has been MSFT's revenue growth year over year?"
+OUTPUT: {{"is_valid": true, "reason": "Revenue is a financial statement metric — 10-K for annual figures", "question_type": "specific_company", "extracted_ticker": "MSFT", "extracted_tickers": ["MSFT"], "topic": "revenue growth", "time_refs": ["year over year"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "10k", "answer_mode": "standard"}}}}
+
+QUESTION: "Why did $AAPL margins compress last year?"
+OUTPUT: {{"is_valid": true, "reason": "Asking for drivers/explanation — needs financial figures from 10-K and management commentary from transcripts", "question_type": "specific_company", "extracted_ticker": "AAPL", "extracted_tickers": ["AAPL"], "topic": "margin compression drivers", "time_refs": ["last year"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "hybrid", "answer_mode": "detailed"}}}}
+
+QUESTION: "What drove NVDA's revenue growth over the last 3 years?"
+OUTPUT: {{"is_valid": true, "reason": "Asking for drivers — hybrid for 10-K figures and earnings call explanations of what caused the growth", "question_type": "specific_company", "extracted_ticker": "NVDA", "extracted_tickers": ["NVDA"], "topic": "revenue growth drivers", "time_refs": ["last 3 years"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"data_source": "hybrid", "answer_mode": "detailed"}}}}
 
 QUESTION: "Comment on Oracle's balance sheet and their usage of debt"
 OUTPUT: {{"is_valid": true, "reason": "Complex financial analysis question", "question_type": "specific_company", "extracted_ticker": "ORCL", "extracted_tickers": ["ORCL"], "topic": "balance sheet and debt analysis", "time_refs": ["latest"], "suggested_improvements": [], "confidence": 0.95, "user_hints": {{"answer_mode": "detailed", "data_source": "10k"}}}}
@@ -442,7 +493,7 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                             max_tokens=1000,
                             temperature=0.1,
                             stream=False,
-                            reasoning_effort="low",
+                            reasoning_effort="medium",
                         )
                 else:
                     analysis_text = self.llm.complete(
@@ -454,7 +505,7 @@ Example: {{"is_valid": true, "reason": "Valid question", "question_type": "speci
                         max_tokens=1000,
                         temperature=0.1,
                         stream=False,
-                        reasoning_effort="low",
+                        reasoning_effort="medium",
                     )
                 call_time = time.time() - start_time
                 rag_logger.info(f"✅ Received response from LLM in {call_time:.3f}s")

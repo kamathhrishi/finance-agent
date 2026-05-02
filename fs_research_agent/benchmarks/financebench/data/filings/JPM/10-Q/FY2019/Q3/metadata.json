@@ -1,0 +1,24 @@
+{
+  "ticker": "JPM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2019",
+  "quarter_label": "Q3",
+  "filing_date": "2019-11-04",
+  "period_of_report": "2019-09-30",
+  "accession": "000001961719000232",
+  "filing_chars": 2190326,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 17832
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2024-04-25",
+  "period_of_report": "2024-04-23",
+  "accession": "000110465924051956",
+  "filing_chars": 6968,
+  "section_keys": [
+    "1.01",
+    "2.03",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 15878
+    }
+  ]
+}

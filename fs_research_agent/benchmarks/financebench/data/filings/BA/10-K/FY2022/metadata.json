@@ -1,0 +1,40 @@
+{
+  "ticker": "BA",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-01-27",
+  "period_of_report": "2022-12-31",
+  "accession": "000001292723000007",
+  "filing_chars": 492183,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.13",
+      "file": "EX-10.13.md",
+      "chars": 121699
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1855
+    }
+  ]
+}

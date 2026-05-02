@@ -1,0 +1,86 @@
+{
+  "ticker": "WMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2018",
+  "quarter_label": null,
+  "filing_date": "2018-03-30",
+  "period_of_report": "2018-01-31",
+  "accession": "000010416918000028",
+  "filing_chars": 538303,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.(A)",
+      "file": "EX-10.-A-.md",
+      "chars": 145270
+    },
+    {
+      "type": "EX-10.(B)",
+      "file": "EX-10.-B-.md",
+      "chars": 29835
+    },
+    {
+      "type": "EX-10.(C)",
+      "file": "EX-10.-C-.md",
+      "chars": 52697
+    },
+    {
+      "type": "EX-10.(D)",
+      "file": "EX-10.-D-.md",
+      "chars": 78788
+    },
+    {
+      "type": "EX-10.(E)",
+      "file": "EX-10.-E-.md",
+      "chars": 37404
+    },
+    {
+      "type": "EX-10.(F)",
+      "file": "EX-10.-F-.md",
+      "chars": 54066
+    },
+    {
+      "type": "EX-10.(H)",
+      "file": "EX-10.-H-.md",
+      "chars": 74447
+    },
+    {
+      "type": "EX-10.(L)",
+      "file": "EX-10.-L-.md",
+      "chars": 57973
+    },
+    {
+      "type": "EX-10.(M)",
+      "file": "EX-10.-M-.md",
+      "chars": 61283
+    },
+    {
+      "type": "EX-10.(G).1",
+      "file": "EX-10.-G-.1.md",
+      "chars": 3323
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2984
+    }
+  ]
+}

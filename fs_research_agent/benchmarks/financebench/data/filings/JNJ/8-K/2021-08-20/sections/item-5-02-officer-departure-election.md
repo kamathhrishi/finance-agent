@@ -1,0 +1,9 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+On August 19, 2021, the Board of Directors \(the “Board”\) of Johnson & Johnson \(the “Company”\) decided:
+•Alex Gorsky, currently Chairman and Chief Executive Officer \(“CEO”\) of the Company, will relinquish the CEO position, effective January 3, 2022, and will continue his service on the Board as Executive Chairman\.
+•Joaquin Duato will become CEO of the Company, effective January 3, 2022;
+•Mr\. Duato will be appointed a Director of the Board, effective January 3, 2022; and
+A copy of the Company's press release, dated August 19, 2021, to announce these decisions is contained in Exhibit 99 to this Report\.
+Mr\. Duato, age 59, is currently Vice Chairman of the Company's Executive Committee and provides strategic direction for the Pharmaceutical and Consumer Health sectors and oversees the Global Supply Chain, Technology and Health & Wellness teams\. Mr\. Duato originally joined the Company in 1989\. In 2005, he was named President of Ortho Biotech, LP, a subsidiary of the Company\. In 2007, he was appointed Company Group Chairman for the Company's Ortho Clinical Diagnostics business\. Mr\. Duato was appointed Company Group Chairman for the Company's pharmaceuticals business in 2009\. In 2011, Mr\. Duato was appointed Worldwide Chair of the Company’s pharmaceuticals business\. Mr\. Duato became a Member of the Executive Committee in 2016 and was appointed as Vice Chairman of the Executive Committee in July 2018\.
+Mr\. Duato a dual citizen of Spain and the United States, holds a Master of Business Administration from ESADE in Barcelona, Spain, and a Master of International Management from Thunderbird School of Global Management at Arizona State University in Phoenix, Arizona\.
+Employment arrangements in connection with the announced transitions are still to be finalized\.

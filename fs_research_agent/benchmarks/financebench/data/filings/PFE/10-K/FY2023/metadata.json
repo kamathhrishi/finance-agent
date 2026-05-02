@@ -1,0 +1,48 @@
+{
+  "ticker": "PFE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-02-22",
+  "period_of_report": "2023-12-31",
+  "accession": "000007800324000039",
+  "filing_chars": 1409802,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.12",
+      "file": "EX-10.12.md",
+      "chars": 6022
+    },
+    {
+      "type": "EX-10.29",
+      "file": "EX-10.29.md",
+      "chars": 60798
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 29303
+    }
+  ]
+}

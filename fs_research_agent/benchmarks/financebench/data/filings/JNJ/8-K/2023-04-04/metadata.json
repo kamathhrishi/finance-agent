@@ -1,0 +1,22 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-04-04",
+  "period_of_report": "2023-04-04",
+  "accession": "000020040623000037",
+  "filing_chars": 5050,
+  "section_keys": [
+    "7.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 9060
+    }
+  ]
+}

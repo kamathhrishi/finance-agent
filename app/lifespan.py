@@ -35,11 +35,12 @@ SECRET_KEY = None
 
 # Import optional dependencies
 try:
-    from agent.screener import FinancialDataAnalyzer
+    from agent.screener import FinancialDataAnalyzer, QualitativeScreener
     ANALYZER_AVAILABLE = True
 except ImportError:
     ANALYZER_AVAILABLE = False
     FinancialDataAnalyzer = None
+    QualitativeScreener = None
 
 try:
     import redis.asyncio as redis
@@ -355,7 +356,7 @@ async def setup_authentication_and_routing():
     
     from app.auth import auth
     from app.utils import rate_limiter, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_MONTH, ADMIN_RATE_LIMIT_PER_MONTH
-    from app.routers.screener import set_analyzer_instance
+    from app.routers.screener import set_analyzer_instance, set_qualitative_screener_instance
     from app.routers.users import set_user_globals
     
     # Set up centralized database and authentication
@@ -368,6 +369,35 @@ async def setup_authentication_and_routing():
     if analyzer_instance:
         set_analyzer_instance(analyzer_instance)
         log_info("✅ Analyzer instance set in screener router")
+
+    # Initialize QualitativeScreener using the chat router's existing RAG system
+    # (avoids creating a second RAG instance; financial_analyzer is optional)
+    qualitative_screener = None
+    if QualitativeScreener:
+        try:
+            from app.routers import chat as _chat_router
+            chat_rag = _chat_router.rag_system
+            if chat_rag is None:
+                raise RuntimeError("Chat RAG system not yet initialized")
+            qualitative_screener = QualitativeScreener(
+                rag_system=chat_rag,
+                financial_analyzer=analyzer_instance,  # may be None; not required
+            )
+            set_qualitative_screener_instance(qualitative_screener)
+            log_info("✅ QualitativeScreener initialized and set in screener router")
+        except Exception as e:
+            log_info(f"⚠️  QualitativeScreener initialization failed: {e} — screener unavailable")
+
+    # Inject screener into the active agent (RAGAgent or OrchestratorAgent)
+    if qualitative_screener:
+        try:
+            from app.routers import chat as _chat_router
+            rag = _chat_router.rag_system
+            if rag is not None and hasattr(rag, "set_qualitative_screener"):
+                rag.set_qualitative_screener(qualitative_screener)
+                log_info("✅ QualitativeScreener injected into active agent")
+        except Exception as e:
+            log_info(f"⚠️  Could not inject screener into active agent: {e}")
     
     # Set up user router globals
     log_info("👤 Setting up user router globals...")
@@ -445,6 +475,66 @@ async def lifespan(app: FastAPI):
         log_stage_header(5, "👤", "USER MANAGEMENT & ADMIN SETUP")
         await create_default_admin()
         
+        # Verify ripgrep (`rg`) is on PATH — fs_research_agent's grep tool
+        # shells out to it. Without rg, every grep call returns an error and
+        # the agent quietly degrades. Loud-fail at boot makes deploys obvious.
+        # In Nixpacks builds (Railway) this is provided by nixpacks.toml's
+        # aptPkgs = ["ripgrep"]. Locally, install with `apt-get install ripgrep`
+        # or `brew install ripgrep`.
+        import shutil as _shutil
+        _rg_path = _shutil.which("rg")
+        if _rg_path:
+            log_info(f"✅ ripgrep found at {_rg_path} (fs_research_agent grep tool ready)")
+        else:
+            log_info(
+                "⚠ ripgrep (rg) NOT on PATH — fs_research_agent's grep tool will fail. "
+                "Install: `apt-get install ripgrep` or `brew install ripgrep`. "
+                "On Railway/Nixpacks add `aptPkgs = [\"ripgrep\"]` under [phases.setup] in nixpacks.toml."
+            )
+
+        # ── Smart defaults so Railway "just works" with zero env config ──
+        #
+        # FS_RESEARCH_DATA_ROOT: on Railway, default to /data/fs_research_corpus
+        # (the standard volume mount path) so the corpus survives redeploys
+        # without forcing the operator to set the var. Locally we keep the
+        # in-repo default so dev workflows are unaffected.
+        if not os.getenv("FS_RESEARCH_DATA_ROOT"):
+            _on_railway = bool(
+                os.getenv("RAILWAY_ENVIRONMENT")
+                or os.getenv("RAILWAY_PROJECT_ID")
+                or os.getenv("RAILWAY_SERVICE_ID")
+            )
+            if _on_railway:
+                _default_root = "/data/fs_research_corpus"
+                os.environ["FS_RESEARCH_DATA_ROOT"] = _default_root
+                log_info(f"📂 FS_RESEARCH_DATA_ROOT defaulted to {_default_root} (Railway environment detected)")
+
+        # FS_RESEARCH_BOOTSTRAP_FROM_S3: opt-in via env, OR auto-on when
+        # running on Railway with S3 creds present. Bootstrap itself short-
+        # circuits when local data is already populated, so this is safe to
+        # leave on permanently.
+        _bootstrap_explicit = os.getenv("FS_RESEARCH_BOOTSTRAP_FROM_S3", "").lower() in ("1", "true", "yes")
+        _bootstrap_auto = (
+            bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+            and bool(os.getenv("RAILWAY_BUCKET_ENDPOINT"))
+            and bool(os.getenv("RAILWAY_BUCKET_ACCESS_KEY_ID"))
+            and bool(os.getenv("RAILWAY_BUCKET_NAME"))
+        )
+        if _bootstrap_explicit or _bootstrap_auto:
+            try:
+                _why = "explicit env" if _bootstrap_explicit else "auto (Railway + S3 creds detected)"
+                log_info(f"📦 Bootstrapping fs_research_agent corpus from S3 (if missing) — {_why}...")
+                # Import is local so this dependency is optional in environments
+                # that don't use the FS research agent at all.
+                from fs_research_agent.bootstrap import bootstrap_if_missing
+                did_bootstrap = await asyncio.to_thread(bootstrap_if_missing)
+                if did_bootstrap:
+                    log_info("✅ fs_research_agent corpus bootstrapped from S3")
+                else:
+                    log_info("ℹ fs_research_agent corpus already populated; skipped bootstrap")
+            except Exception as e:
+                log_info(f"⚠ fs_research_agent S3 bootstrap failed (non-fatal): {e}")
+
         # STAGE 6: Financial Analyzer & RAG Systems
         log_stage_header(6, "🤖", "FINANCIAL ANALYZER & RAG SYSTEMS")
         await initialize_analyzer_and_rag()

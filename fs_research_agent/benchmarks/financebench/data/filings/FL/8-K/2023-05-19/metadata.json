@@ -1,0 +1,29 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-05-19",
+  "period_of_report": "2023-05-17",
+  "accession": "000143774923015183",
+  "filing_chars": 15750,
+  "section_keys": [
+    "2.02",
+    "5.02",
+    "5.07",
+    "7.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 33402
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 29
+    }
+  ]
+}

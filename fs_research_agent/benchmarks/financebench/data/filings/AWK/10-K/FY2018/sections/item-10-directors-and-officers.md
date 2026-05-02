@@ -1,0 +1,4 @@
+## ITEM 10.
+### DIRECTORS, EXECUTIVE OFFICERS AND CORPORATE GOVERNANCE
+The information required by this item and not given below or in Item 1—Business—Executive Officers of this Form 10\-K, is incorporated by reference from the Company’s Proxy Statement for the 2019 Annual Meeting of Shareholders, to be filed with the SEC within 120 days following the end of the fiscal year covered by this report, under the captions entitled “Board of Directors and Corporate Governance,” “Proposal 1—Election of Directors” and “Certain Beneficial Ownership Matters—Section 16\(a\) Beneficial Ownership Reporting Compliance\.”
+We have adopted a Code of Ethics, which applies to directors, officers and employees\. The full text of the Code of Ethics is publicly available on our website at https://amwater\.com\. We intend to post on our website any amendments to our Code of Ethics and any waivers of such provisions granted to certain principal officers\.

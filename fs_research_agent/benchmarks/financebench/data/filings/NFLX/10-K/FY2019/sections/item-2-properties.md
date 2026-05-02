@@ -1,0 +1,4 @@
+## Item 2.
+### Properties
+We have leased principal properties in both Los Gatos, California, which is the location of our corporate headquarters, and in Los Angeles, California, and have entered into leases for additional space in these locations to become available over the next year\.  In addition, we lease various office and production space throughout the world\.
+We believe that our existing facilities are adequate to meet current requirements, and that suitable additional or substitute space will be available as needed to accommodate any further physical expansion of operations and for any additional offices\.

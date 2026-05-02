@@ -1,0 +1,38 @@
+## Item 6.
+### Exhibits
+
+| 4.1     | Indenture governing the 4.75% senior notes due 2027, dated as of March 31, 2021, between MGM China Holdings Limited and Wilmington Savings Fund Society, FSB, as trustee (incorporated by reference to Exhibit 4.1 of MGM Resorts International’s Current Report on Form 8-K filed with the Commission on March 31, 2021).  |
+|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 10.1    | Employment Agreement, effective as of January11, 2021, by and between the Company and Jonathan Halkyard (incorporated by reference to Exhibit10.1 of MGM Resorts International’s Current Report on Form 8-K filed with the Commission on January6, 2021).                                                                   |
+| 10.2    | Second Amendment to Credit Agreement, dated as of February 26, 2021, among the Company, Bank of America, N.A., as administrative agent, and certain lenders party thereto (incorporated by reference to Exhibit 10.1 of MGM Resorts International’s Current Report on Form 8-K filed with the Commission on March 1, 2021). |
+| 10.3    | Amendment Letter to the 2019 Revolving Credit Facility, dated February 24, 2021, by and among MGM China Holdings Limited and certain Arrangers and Lenders Party thereto.                                                                                                                                                   |
+| 10.4    | Amendment Letter to the 2020 Revolving Credit Facility, dated February 24, 2021, by and among MGM China Holdings Limited and certain Arrangers and Lenders Party thereto.                                                                                                                                                   |
+| 10.5    | Form of Omnibus Amendment to Relative Performance Share Unit Agreements                                                                                                                                                                                                                                                     |
+| 22      | Subsidiary Guarantors.                                                                                                                                                                                                                                                                                                      |
+| 31.1    | Certification of Chief Executive Officer of Periodic Report Pursuant to Rule 13a-14(a) and Rule 15d-14(a).                                                                                                                                                                                                                  |
+| 31.2    | Certification of Chief Financial Officer of Periodic Report Pursuant to Rule 13a-14(a) and Rule 15d-14(a).                                                                                                                                                                                                                  |
+| 32.1    | Certification of Chief Executive Officer Pursuant to 18 U.S.C. Section 1350.                                                                                                                                                                                                                                                |
+| 32.2    | Certification of Chief Financial Officer Pursuant to 18 U.S.C. Section 1350.                                                                                                                                                                                                                                                |
+| 101.INS | Inline XBRL Instance Document – the instance document does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                                                                                                                      |
+| 101.SCH | Inline XBRL Taxonomy Extension Schema Document.                                                                                                                                                                                                                                                                             |
+| 101.CAL | Inline XBRL Taxonomy Extension Calculation Linkbase Document.                                                                                                                                                                                                                                                               |
+| 101.DEF | Inline XBRL Taxonomy Extension Definition Linkbase Document.                                                                                                                                                                                                                                                                |
+| 101.LAB | Inline XBRL Taxonomy Extension Label Linkbase Document.                                                                                                                                                                                                                                                                     |
+| 101.PRE | Inline XBRL Taxonomy Extension Presentation Linkbase Document.                                                                                                                                                                                                                                                              |
+| 104     | The cover page from this Quarterly Report on Form 10-Q for the quarter ended March 31, 2021, has been formatted in Inline XBRL.                                                                                                                                                                                             |
+
+
+*In accordance with Rule 402 of Regulation S\-T, the XBRL information included in Exhibit 101 and Exhibit 104 to this Form 10\-Q shall not be deemed to be filed for purposes of Section 18 of the Securities Exchange Act of 1934, as amended \(the “Exchange Act”\), or otherwise subject to the liability of that section, and shall not be incorporated by reference into any registration statement or other document filed under the Securities Act of 1933, as amended, or the Exchange Act, except as shall be expressly set forth by specific reference in such filing\.*
+
+# SIGNATURES
+
+*Pursuant to the requirements of the Securities Exchange Act of 1934, the Registrant has duly caused this report to be signed on its behalf by the undersigned thereunto duly authorized\.*
+
+
+| MGM Resorts International /s/ WILLIAM J. HORNBUCKLE |
+| --------------------------------------------------------------------- |
+| William J. Hornbuckle |
+| Chief Executive Officer and President (Principal Executive Officer) |
+| /s/ JONATHAN S. HALKYARD |
+| Jonathan S. Halkyard |
+| Chief Financial Officer and Treasurer (Principal Financial Officer) |

@@ -1,0 +1,28 @@
+{
+  "ticker": "MGM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": "Q2",
+  "filing_date": "2023-08-02",
+  "period_of_report": "2023-06-30",
+  "accession": "000078957023000019",
+  "filing_chars": 233203,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 9106
+    },
+    {
+      "type": "EX-10.2",
+      "file": "EX-10.2.md",
+      "chars": 9865
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+On April 18, 2023, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the first quarter ended April 2, 2023\.

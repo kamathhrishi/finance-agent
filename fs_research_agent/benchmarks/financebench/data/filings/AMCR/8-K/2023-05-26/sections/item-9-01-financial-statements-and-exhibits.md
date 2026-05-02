@@ -1,0 +1,34 @@
+# Item 9.01
+## Financial Statements and Exhibits.
+
+| Exhibit No. | Description                                                                                                                                                                                                                                                                                                                                                    |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1.1         | Underwriting Agreement, dated May 17, 2023, by and among Amcor Finance (USA), Inc., Amcor plc, Amcor Flexibles North America, Inc., Amcor UK Finance plc and Amcor Pty Ltd and J.P. Morgan Securities LLC, BofA Securities, Inc., Citigroup Global Markets Inc. and Wells Fargo Securities, LLC, as representatives of the several underwriters named therein. |
+| 4.1         | Indenture, dated as of May 26, 2023, among Amcor Finance (USA), Inc., Amcor plc, Amcor UK Finance plc, Amcor Pty Ltd and Amcor Flexibles North America, Inc. and Deutsche Bank Trust Company Americas, as trustee (including the guarantees).                                                                                                                  |
+| 4.2         | Officer’s Certificate of Amcor Finance (USA), Inc., dated May 26, 2023.                                                                                                                                                                                                                                                                                        |
+| 4.3         | Form of 5.625% Guaranteed Senior Note due 2033.                                                                                                                                                                                                                                                                                                                |
+| 5.1         | Opinion of Perkins Coie LLP.                                                                                                                                                                                                                                                                                                                                   |
+| 5.2         | Opinion of Herbert Smith Freehills LLP (English law).                                                                                                                                                                                                                                                                                                          |
+| 5.3         | Opinion of Armstrong Teasdale LLP.                                                                                                                                                                                                                                                                                                                             |
+| 5.4         | Opinion of Ogier (Jersey) LLP.                                                                                                                                                                                                                                                                                                                                 |
+| 5.5         | Opinion of Herbert Smith Freehills (Australian law).                                                                                                                                                                                                                                                                                                           |
+| 23.1        | Consent of Perkins Coie LLP (included in Exhibit 5.1 hereto).                                                                                                                                                                                                                                                                                                  |
+| 23.2        | Consent of Herbert Smith Freehills LLP (English law) (included in Exhibit 5.2 hereto).                                                                                                                                                                                                                                                                         |
+| 23.3        | Consent of Armstrong Teasdale LLP (included in Exhibit 5.3 hereto).                                                                                                                                                                                                                                                                                            |
+| 23.4        | Consent of Ogier (Jersey) LLP (included in Exhibit 5.4 hereto).                                                                                                                                                                                                                                                                                                |
+| 23.5        | Consent of Herbert Smith Freehills (Australian law) (included in Exhibit 5.5 hereto).                                                                                                                                                                                                                                                                          |
+| 104         | Cover Page Interactive Data File. The cover page XBRL tags are embedded within the inline XBRL document.                                                                                                                                                                                                                                                       |
+
+# SIGNATURES
+
+*Pursuant to the requirements of the Securities
+Exchange Act of 1934, the registrant has duly caused this report to be signed on its behalf by the undersigned hereunto duly authorized\.*
+
+
+| AMCOR PLC /s/ Damien Clayton |
+| ------------------------------ |
+| Name: Damien Clayton |
+| Title: Company Secretary |
+
+
+*Dated: May 26, 2023*

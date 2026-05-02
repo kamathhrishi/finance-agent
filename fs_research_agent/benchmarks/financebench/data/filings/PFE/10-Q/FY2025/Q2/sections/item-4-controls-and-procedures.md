@@ -1,0 +1,50 @@
+## ITEM 4. CONTROLS AND PROCEDURES
+As of the end of the period covered by this Form 10\-Q, we carried out an evaluation, under the supervision and with the participation of our management, including our principal executive officer and principal financial officer, of the effectiveness of the design and operation of our disclosure controls and procedures \(as such term is defined in Rules 13a\-15\(e\) and 15d\-15\(e\) under the Exchange Act\)\. Based on this evaluation, our principal executive officer and principal financial officer concluded that our disclosure controls and procedures are effective in alerting them in a timely manner to material information required to be disclosed in our periodic reports filed with the SEC\.
+During our most recent fiscal quarter, there has not been any change in our internal control over financial reporting \(as such term is defined in Rules 13a\-15\(f\) and 15d\-15\(f\) under the Exchange Act\) that has materially affected, or is reasonably likely to materially affect, our internal control over financial reporting\.
+### PART II.  OTHER INFORMATION
+### PART II.  OTHER INFORMATIONPART II.  OTHER INFORMATION
+## ITEM 1. LEGAL PROCEEDINGS
+Certain legal proceedings in which we are involved are discussed in Note 12A\.
+## ITEM 1A. RISK FACTORS
+We refer to the Overview of Our Performance, Operating Environment, Strategy and Outlook—Our Operating Environment and —The Global Economic Environment sections and the Forward\-Looking Information and Factors That May Affect Future Results section within MD&A of this Form 10\-Q and of our 2024 Form 10\-K and to the Item 1A\. Risk Factors section of our 2024 Form 10\-K\.
+## ITEM 2. UNREGISTERED SALES OF EQUITY SECURITIES AND USE OF PROCEEDS
+
+*The following summarizes purchases of our common stock during the second quarter of 2025:*
+
+
+| Period                          | Total Number of Shares Purchased(a) | Average Price Paid per Share(a) | Total Number of Shares Purchased as Part of Publicly Announced Plan | Approximate Value of Shares That May Yet Be Purchased Under the Plan(b) |
+|---------------------------------|-------------------------------------|---------------------------------|---------------------------------------------------------------------|-------------------------------------------------------------------------|
+| March 31 through April 27, 2025 | 19,218                              | $25.12                          | —                                                                   | $3,292,882,444                                                          |
+| April 28 through May 25, 2025   | 20,678                              | $23.62                          | —                                                                   | $3,292,882,444                                                          |
+| May 26 through June29, 2025     | 40,109                              | $23.42                          | —                                                                   | $3,292,882,444                                                          |
+| Total                           | 80,005                              | $23.88                          | —                                                                   |                                                                         |
+
+
+*Represents \(i\) 76,550 shares of common stock surrendered to the Company to satisfy tax withholding obligations in connection with the vesting of awards under our long\-term incentive programs and \(ii\) the open market purchase by the trustee of 3,455 shares of common stock in connection with the reinvestment of dividends paid on common stock held in trust for employees who deferred receipt of performance share awards\. \(b\)See Note 12 in our 2024 Form 10\-K\.*
+
+## ITEM 5. OTHER INFORMATION
+During the three months ended June 29, 2025, none of our directors or officers adopted or terminated a “Rule 10b5\-1 trading arrangement” or “non\-Rule 10b5\-1 trading arrangement,” as each term is defined in Item 408 of Regulation S\-K\.
+## ITEM 6. EXHIBITS
+
+| Exhibit 10.6                                           | Acknowledgement and Consent and Summary of Key Terms for Grants of RSUs, TSRUs, PPSs and PSAs.                                                                                                                                                  |
+|--------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Exhibit 10.7                                           | Form of Executive Grant Letter.                                                                                                                                                                                                                 |
+| Exhibit 22                                             | Subsidiary Issuers of Guaranteed Securities.                                                                                                                                                                                                    |
+| Exhibit 31.1                                           | Certification by the Chief Executive Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                         |
+| Exhibit 31.2                                           | Certification by the Chief Financial Officer Pursuant to Section 302 of the Sarbanes-Oxley Act of 2002.                                                                                                                                         |
+| Exhibit 32.1                                           | Certification by the Chief Executive Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                          |
+| Exhibit 32.2                                           | Certification by the Chief Financial Officer Pursuant to 18 U.S.C. Section 1350, as Adopted Pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.                                                                                          |
+| Exhibit 101:                                           |                                                                                                                                                                                                                                                 |
+| EX-101.INS                                             | XBRL Instance Document - the instance document does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                                                 |
+| EX-101.SCH EX-101.CAL EX-101.LAB EX-101.PRE EX-101.DEF | Inline XBRL Taxonomy Extension Schema Inline XBRL Taxonomy Extension Calculation Linkbase Inline XBRL Taxonomy Extension Label Linkbase Inline XBRL Taxonomy Extension Presentation Linkbase Inline XBRL Taxonomy Extension Definition Document |
+| Exhibit 104                                            | Cover Page Interactive Data File––the cover page interactive data file does not appear in the Interactive Data File because its XBRL tags are embedded within the Inline XBRL document.                                                         |
+
+# SIGNATURE
+
+*Pursuant to the requirements of the Securities Exchange Act of 1934, the registrant has duly caused this report to be signed on its behalf by the undersigned thereunto duly authorized\.*
+
+
+|  | Pfizer Inc. (Registrant) |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| August 5, 2025 | /s/ Jennifer B. Damico |
+|  | Jennifer B. Damico Senior Vice President and Controller (Principal Accounting Officer and Duly Authorized Officer) |

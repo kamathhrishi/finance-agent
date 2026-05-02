@@ -1,0 +1,37 @@
+{
+  "ticker": "COST",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2022-10-05",
+  "period_of_report": "2022-08-28",
+  "accession": "000090983222000021",
+  "filing_chars": 260790,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "7",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-3.1",
+      "file": "EX-3.1.md",
+      "chars": 19772
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 2026
+    }
+  ]
+}

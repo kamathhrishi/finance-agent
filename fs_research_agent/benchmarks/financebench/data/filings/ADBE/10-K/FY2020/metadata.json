@@ -1,0 +1,49 @@
+{
+  "ticker": "ADBE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2021-01-15",
+  "period_of_report": "2020-11-27",
+  "accession": "000079634321000004",
+  "filing_chars": 549557,
+  "section_keys": [
+    "1",
+    "10",
+    "12",
+    "13",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 49179
+    },
+    {
+      "type": "EX-10.3E",
+      "file": "EX-10.3E.md",
+      "chars": 141318
+    },
+    {
+      "type": "EX-10.12",
+      "file": "EX-10.12.md",
+      "chars": 4601
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 6431
+    }
+  ]
+}

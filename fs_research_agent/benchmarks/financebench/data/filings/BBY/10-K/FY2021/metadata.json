@@ -1,0 +1,48 @@
+{
+  "ticker": "BBY",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-03-19",
+  "period_of_report": "2021-01-30",
+  "accession": "000076447821000024",
+  "filing_chars": 405801,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.32",
+      "file": "EX-10.32.md",
+      "chars": 52420
+    },
+    {
+      "type": "EX-10.34",
+      "file": "EX-10.34.md",
+      "chars": 36180
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 7274
+    }
+  ]
+}

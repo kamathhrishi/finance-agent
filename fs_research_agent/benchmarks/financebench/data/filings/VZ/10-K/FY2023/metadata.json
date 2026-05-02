@@ -1,0 +1,39 @@
+{
+  "ticker": "VZ",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-02-09",
+  "period_of_report": "2023-12-31",
+  "accession": "000073271224000010",
+  "filing_chars": 612416,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2075
+    }
+  ]
+}

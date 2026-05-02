@@ -1,0 +1,36 @@
+{
+  "ticker": "NFLX",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2019",
+  "quarter_label": null,
+  "filing_date": "2020-01-29",
+  "period_of_report": "2019-12-31",
+  "accession": "000106528020000040",
+  "filing_chars": 350978,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 792
+    }
+  ]
+}

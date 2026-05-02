@@ -1,0 +1,15 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-06-01",
+  "period_of_report": "2021-06-01",
+  "accession": "000020040621000040",
+  "filing_chars": 4462,
+  "section_keys": [
+    "8.01"
+  ],
+  "exhibits": []
+}

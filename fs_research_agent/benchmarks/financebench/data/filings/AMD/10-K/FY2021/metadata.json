@@ -1,0 +1,39 @@
+{
+  "ticker": "AMD",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2022-02-03",
+  "period_of_report": "2021-12-25",
+  "accession": "000000248822000016",
+  "filing_chars": 412156,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.63",
+      "file": "EX-10.63.md",
+      "chars": 13868
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 6872
+    }
+  ]
+}

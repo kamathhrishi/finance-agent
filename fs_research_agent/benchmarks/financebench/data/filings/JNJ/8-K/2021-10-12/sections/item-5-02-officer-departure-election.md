@@ -1,0 +1,3 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+On October 12, 2021, Johnson & Johnson \(the “Company”\) issued a press release announcing that Paul Stoffels, Vice Chairman of the Executive Committee and Chief Scientific Officer, has elected to retire, effective December 31, 2021\.
+A copy of the Company's press release, dated October 12, 2021, is contained in Exhibit 99\.1 to this Report\.

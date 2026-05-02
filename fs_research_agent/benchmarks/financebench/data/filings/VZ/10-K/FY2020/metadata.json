@@ -1,0 +1,42 @@
+{
+  "ticker": "VZ",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2021-02-25",
+  "period_of_report": "2020-12-31",
+  "accession": "000073271221000012",
+  "filing_chars": 631664,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.I",
+      "file": "EX-10.I.md",
+      "chars": 18551
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2275
+    }
+  ]
+}

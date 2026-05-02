@@ -1,0 +1,5 @@
+## Item 3.  Legal Proceedings
+### I.  Legal Proceedings
+The information contained in Note 16 ‘‘Commitments and Contingencies’’ of the “Notes to Consolidated Financial Statements” in the Annual Report is incorporated by reference herein\.
+### II.  Environmental Matters
+Item 103 of SEC Regulation S\-K requires disclosure of environmental legal proceedings with a governmental authority if management reasonably believes that the proceedings involve potential monetary sanctions of $100,000 or more\. The Company is in the process of negotiating with the New York State Department of Environmental Conservation to resolve claims of alleged historical noncompliance with hazardous waste regulations in connection with LTC pharmacies in the State of New York\. These proceedings are not material to the Company’s business or financial condition\.

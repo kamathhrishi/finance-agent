@@ -16,8 +16,14 @@ interface SECFilingPanelContent {
     sec_section?: string
     relevance_score?: number
     char_offset?: number
+    line_start?: number
+    line_end?: number
   }>
   primaryChunkId?: string
+  // When 'fs_research', the viewer hits /fs-research/document/with-highlights
+  // and uses `path` + line ranges instead of S3 + char offsets.
+  sourceBackend?: 'sec' | 'fs_research'
+  path?: string
 }
 
 interface TranscriptPanelContent {
@@ -61,7 +67,7 @@ export default function DocumentPanel({ isOpen, onClose, content, width }: Docum
         >
           {content.type === 'sec-filing' ? (
             <SECFilingViewer
-              key={`${content.ticker}-${content.filingType}-${content.fiscalYear}`}
+              key={`${content.sourceBackend || 'sec'}-${content.path || `${content.ticker}-${content.filingType}-${content.fiscalYear}`}`}
               isOpen={true}
               onClose={onClose}
               ticker={content.ticker}
@@ -71,6 +77,8 @@ export default function DocumentPanel({ isOpen, onClose, content, width }: Docum
               filingDate={content.filingDate}
               relevantChunks={content.relevantChunks}
               primaryChunkId={content.primaryChunkId}
+              sourceBackend={content.sourceBackend}
+              path={content.path}
               panelMode={true}
             />
           ) : (

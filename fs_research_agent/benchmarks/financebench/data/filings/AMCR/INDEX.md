@@ -1,0 +1,188 @@
+# AMCR — filing index
+
+## 10-K
+
+- **FY2025** (filed 2025-08-15) — `filings/AMCR/10-K/FY2025/`
+    - 12 sections, 2 exhibits
+- **FY2024** (filed 2024-08-16) — `filings/AMCR/10-K/FY2024/`
+    - 16 sections, 6 exhibits
+- **FY2023** (filed 2023-08-17) — `filings/AMCR/10-K/FY2023/`
+    - 15 sections, 1 exhibits
+- **FY2022** (filed 2022-08-18) — `filings/AMCR/10-K/FY2022/`
+    - 14 sections, 1 exhibits
+- **FY2021** (filed 2021-08-24) — `filings/AMCR/10-K/FY2021/`
+    - 14 sections, 2 exhibits
+- **FY2020** (filed 2020-08-27) — `filings/AMCR/10-K/FY2020/`
+    - 15 sections, 2 exhibits
+- **FY2019** (filed 2019-09-03) — `filings/AMCR/10-K/FY2019/`
+    - 15 sections, 1 exhibits
+
+## 10-Q
+
+- **FY2025 Q4** (filed 2026-02-04) — `filings/AMCR/10-Q/FY2025/Q4/`
+    - 4 sections, no exhibits
+- **FY2025 Q3** (filed 2025-11-06) — `filings/AMCR/10-Q/FY2025/Q3/`
+    - 4 sections, no exhibits
+- **FY2025 Q1** (filed 2025-05-01) — `filings/AMCR/10-Q/FY2025/Q1/`
+    - 4 sections, no exhibits
+- **FY2024 Q4** (filed 2025-02-05) — `filings/AMCR/10-Q/FY2024/Q4/`
+    - 4 sections, no exhibits
+- **FY2024 Q3** (filed 2024-11-01) — `filings/AMCR/10-Q/FY2024/Q3/`
+    - 4 sections, no exhibits
+- **FY2024 Q1** (filed 2024-05-01) — `filings/AMCR/10-Q/FY2024/Q1/`
+    - 4 sections, 2 exhibits
+- **FY2023 Q4** (filed 2024-02-07) — `filings/AMCR/10-Q/FY2023/Q4/`
+    - 4 sections, no exhibits
+- **FY2023 Q3** (filed 2023-11-01) — `filings/AMCR/10-Q/FY2023/Q3/`
+    - 4 sections, no exhibits
+- **FY2023 Q1** (filed 2023-05-03) — `filings/AMCR/10-Q/FY2023/Q1/`
+    - 4 sections, no exhibits
+- **FY2022 Q4** (filed 2023-02-08) — `filings/AMCR/10-Q/FY2022/Q4/`
+    - 4 sections, no exhibits
+- **FY2022 Q3** (filed 2022-11-02) — `filings/AMCR/10-Q/FY2022/Q3/`
+    - 4 sections, no exhibits
+- **FY2022 Q1** (filed 2022-05-04) — `filings/AMCR/10-Q/FY2022/Q1/`
+    - 4 sections, no exhibits
+- **FY2021 Q4** (filed 2022-02-03) — `filings/AMCR/10-Q/FY2021/Q4/`
+    - 4 sections, no exhibits
+- **FY2021 Q3** (filed 2021-11-04) — `filings/AMCR/10-Q/FY2021/Q3/`
+    - 4 sections, no exhibits
+- **FY2021 Q1** (filed 2021-05-06) — `filings/AMCR/10-Q/FY2021/Q1/`
+    - 4 sections, no exhibits
+
+## 8-K
+
+- **FY2026** (filed 2026-03-10) — `filings/AMCR/8-K/2026-03-10/`
+    - 4 sections, no exhibits
+- **FY2026** (filed 2026-02-03) — `filings/AMCR/8-K/2026-02-03/`
+    - 2 sections, 1 exhibits
+- **FY2026** (filed 2026-01-15) — `filings/AMCR/8-K/2026-01-15/`
+    - 3 sections, 2 exhibits
+- **FY2025** (filed 2025-12-11) — `filings/AMCR/8-K/2025-12-11/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-11-17) — `filings/AMCR/8-K/2025-11-17/`
+    - 4 sections, no exhibits
+- **FY2025** (filed 2025-11-10) — `filings/AMCR/8-K/2025-11-10/`
+    - 1 sections, no exhibits
+- **FY2025** (filed 2025-11-05) — `filings/AMCR/8-K/2025-11-05/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-10-09) — `filings/AMCR/8-K/2025-10-09/`
+    - 3 sections, 3 exhibits
+- **FY2025** (filed 2025-10-02) — `filings/AMCR/8-K/2025-10-02/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-09-25) — `filings/AMCR/8-K/2025-09-25/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-08-14) — `filings/AMCR/8-K/2025-08-14/`
+    - 2 sections, 2 exhibits
+- **FY2025** (filed 2025-04-30) — `filings/AMCR/8-K/2025-04-30/`
+    - 2 sections, 2 exhibits
+- **FY2024** (filed 2025-04-29) — `filings/AMCR/8-K/2025-04-29/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-04-25) — `filings/AMCR/8-K/2025-04-25/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-03-17) — `filings/AMCR/8-K/2025-03-17/`
+    - 3 sections, no exhibits
+- **FY2025** (filed 2025-03-13) — `filings/AMCR/8-K/2025-03-13/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-03-11) — `filings/AMCR/8-K/2025-03-11/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-03-10) — `filings/AMCR/8-K/2025-03-10/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-03-06) — `filings/AMCR/8-K/2025-03-06/`
+    - 5 sections, 2 exhibits
+- **FY2025** (filed 2025-02-26) — `filings/AMCR/8-K/2025-02-26/`
+    - 3 sections, 1 exhibits
+- **FY2025** (filed 2025-02-14) — `filings/AMCR/8-K/2025-02-14/`
+    - 1 sections, no exhibits
+- **FY2025** (filed 2025-02-04) — `filings/AMCR/8-K/2025-02-04/`
+    - 2 sections, 2 exhibits
+- **FY2025** (filed 2025-01-23) — `filings/AMCR/8-K/2025-01-23/`
+    - 2 sections, 1 exhibits
+- **FY2025** (filed 2025-01-06) — `filings/AMCR/8-K/2025-01-06/`
+    - 2 sections, 1 exhibits
+- **FY2024** (filed 2024-11-19) — `filings/AMCR/8-K/2024-11-19/`
+    - 4 sections, 2 exhibits
+- **FY2024** (filed 2024-11-08) — `filings/AMCR/8-K/2024-11-08/`
+    - 1 sections, no exhibits
+- **FY2024** (filed 2024-10-31) — `filings/AMCR/8-K/2024-10-31/`
+    - 2 sections, 2 exhibits
+- **FY2024** (filed 2024-09-05) — `filings/AMCR/8-K/2024-09-05/`
+    - 2 sections, 3 exhibits
+- **FY2024** (filed 2024-09-04) — `filings/AMCR/8-K/2024-09-04/`
+    - 2 sections, 2 exhibits
+- **FY2024** (filed 2024-08-15) — `filings/AMCR/8-K/2024-08-15/`
+    - 2 sections, 2 exhibits
+- **FY2024** (filed 2024-05-29) — `filings/AMCR/8-K/2024-05-29/`
+    - 2 sections, no exhibits
+- **FY2024** (filed 2024-05-23) — `filings/AMCR/8-K/2024-05-23/`
+    - 2 sections, no exhibits
+- **FY2024** (filed 2024-04-30) — `filings/AMCR/8-K/2024-04-30/`
+    - 2 sections, 2 exhibits
+- **FY2024** (filed 2024-04-25) — `filings/AMCR/8-K/2024-04-25/`
+    - 3 sections, 1 exhibits
+- **FY2024** (filed 2024-03-19) — `filings/AMCR/8-K/2024-03-19/`
+    - 2 sections, 3 exhibits
+- **FY2024** (filed 2024-02-06) — `filings/AMCR/8-K/2024-02-06/`
+    - 2 sections, 2 exhibits
+- **FY2023** (filed 2023-11-13) — `filings/AMCR/8-K/2023-11-13/`
+    - 1 sections, no exhibits
+- **FY2023** (filed 2023-10-31) — `filings/AMCR/8-K/2023-10-31/`
+    - 2 sections, 2 exhibits
+- **FY2023** (filed 2023-08-16) — `filings/AMCR/8-K/2023-08-16/`
+    - 2 sections, 2 exhibits
+- **FY2023** (filed 2023-05-26) — `filings/AMCR/8-K/2023-05-26/`
+    - 2 sections, no exhibits
+- **FY2023** (filed 2023-05-02) — `filings/AMCR/8-K/2023-05-02/`
+    - 2 sections, 2 exhibits
+- **FY2023** (filed 2023-02-07) — `filings/AMCR/8-K/2023-02-07/`
+    - 3 sections, 2 exhibits
+- **FY2022** (filed 2022-11-10) — `filings/AMCR/8-K/2022-11-10/`
+    - 1 sections, no exhibits
+- **FY2022** (filed 2022-11-01) — `filings/AMCR/8-K/2022-11-01/`
+    - 2 sections, 2 exhibits
+- **FY2022** (filed 2022-08-17) — `filings/AMCR/8-K/2022-08-17/`
+    - 3 sections, 2 exhibits
+- **FY2022** (filed 2022-07-01) — `filings/AMCR/8-K/2022-07-01/`
+    - 2 sections, no exhibits
+- **FY2022** (filed 2022-05-17) — `filings/AMCR/8-K/2022-05-17/`
+    - 2 sections, no exhibits
+- **FY2022** (filed 2022-05-03) — `filings/AMCR/8-K/2022-05-03/`
+    - 2 sections, 2 exhibits
+- **FY2022** (filed 2022-04-28) — `filings/AMCR/8-K/2022-04-28/`
+    - 4 sections, 2 exhibits
+- **FY2022** (filed 2022-02-01) — `filings/AMCR/8-K/2022-02-01/`
+    - 3 sections, 2 exhibits
+- **FY2021** (filed 2021-11-12) — `filings/AMCR/8-K/2021-11-12/`
+    - 1 sections, no exhibits
+- **FY2021** (filed 2021-11-02) — `filings/AMCR/8-K/2021-11-02/`
+    - 2 sections, 2 exhibits
+- **FY2021** (filed 2021-08-17) — `filings/AMCR/8-K/2021-08-17/`
+    - 3 sections, 2 exhibits
+- **FY2021** (filed 2021-05-25) — `filings/AMCR/8-K/2021-05-25/`
+    - 2 sections, no exhibits
+- **FY2021** (filed 2021-05-04) — `filings/AMCR/8-K/2021-05-04/`
+    - 2 sections, 2 exhibits
+- **FY2021** (filed 2021-03-31) — `filings/AMCR/8-K/2021-03-31/`
+    - 2 sections, 3 exhibits
+- **FY2021** (filed 2021-02-02) — `filings/AMCR/8-K/2021-02-02/`
+    - 3 sections, 2 exhibits
+- **FY2021** (filed 2021-01-05) — `filings/AMCR/8-K/2021-01-05/`
+    - 1 sections, no exhibits
+- **FY2020** (filed 2020-11-09) — `filings/AMCR/8-K/2020-11-09/`
+    - 1 sections, no exhibits
+- **FY2020** (filed 2020-11-05) — `filings/AMCR/8-K/2020-11-05/`
+    - 3 sections, 2 exhibits
+- **FY2020** (filed 2020-09-29) — `filings/AMCR/8-K/2020-09-29/`
+    - 2 sections, 1 exhibits
+- **FY2020** (filed 2020-08-18) — `filings/AMCR/8-K/2020-08-18/`
+    - 3 sections, 2 exhibits
+- **FY2020** (filed 2020-06-23) — `filings/AMCR/8-K/2020-06-23/`
+    - 2 sections, no exhibits
+- **FY2020** (filed 2020-06-19) — `filings/AMCR/8-K/2020-06-19/`
+    - 2 sections, no exhibits
+- **FY2020** (filed 2020-05-11) — `filings/AMCR/8-K/2020-05-11/`
+    - 2 sections, 2 exhibits
+- **FY2020** (filed 2020-03-23) — `filings/AMCR/8-K/2020-03-23/`
+    - 2 sections, 1 exhibits
+- **FY2020** (filed 2020-03-09) — `filings/AMCR/8-K/2020-03-09/`
+    - 2 sections, 4 exhibits

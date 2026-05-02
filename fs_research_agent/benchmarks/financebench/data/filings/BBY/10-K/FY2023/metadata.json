@@ -1,0 +1,36 @@
+{
+  "ticker": "BBY",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-03-17",
+  "period_of_report": "2023-01-28",
+  "accession": "000076447823000006",
+  "filing_chars": 402499,
+  "section_keys": [
+    "1",
+    "10",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 7351
+    }
+  ]
+}

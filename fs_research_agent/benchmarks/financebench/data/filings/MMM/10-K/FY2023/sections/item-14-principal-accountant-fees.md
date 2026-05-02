@@ -1,0 +1,3 @@
+## Item 14. Principal Accounting Fees and Services
+The information relating to principal accounting fees and services is set forth in the section entitled “Audit committee matters” under the designation “Audit committee policy on pre\-approval of audit and permissible non\-audit services of the independent accounting firm” and “Fees of the independent accounting firm” in the 3M Proxy Statement and such information is incorporated by reference herein\.
+# PART IV

@@ -1,0 +1,3 @@
+## ITEM 7A.
+### QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK
+The information required by this item is incorporated by reference to all information under the sub\-caption "Market Risk" under the caption "Management's Discussion and Analysis of Financial Condition and Results of Operations" included in our Annual Report to Shareholders\.  Such information is included in Exhibit 13 to this Annual Report on Form 10\-K\.

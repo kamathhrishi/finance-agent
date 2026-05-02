@@ -1,0 +1,18 @@
+{
+  "ticker": "BBY",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": "Q4",
+  "filing_date": "2021-12-03",
+  "period_of_report": "2021-10-30",
+  "accession": "000076447821000068",
+  "filing_chars": 173343,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

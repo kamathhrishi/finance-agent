@@ -1,0 +1,22 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2022-02-03",
+  "period_of_report": "2022-02-03",
+  "accession": "000153949722000239",
+  "filing_chars": 5653,
+  "section_keys": [
+    "5.02",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 2753
+    }
+  ]
+}

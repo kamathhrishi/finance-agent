@@ -1,0 +1,75 @@
+{
+  "ticker": "GIS",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2018",
+  "quarter_label": null,
+  "filing_date": "2018-06-29",
+  "period_of_report": "2018-05-27",
+  "accession": "000119312518209377",
+  "filing_chars": 584880,
+  "section_keys": [
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.11",
+      "file": "EX-10.11.md",
+      "chars": 45791
+    },
+    {
+      "type": "EX-10.12",
+      "file": "EX-10.12.md",
+      "chars": 41499
+    },
+    {
+      "type": "EX-10.18",
+      "file": "EX-10.18.md",
+      "chars": 14849
+    },
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 12198
+    },
+    {
+      "type": "EX-10.20",
+      "file": "EX-10.20.md",
+      "chars": 12858
+    },
+    {
+      "type": "EX-10.23",
+      "file": "EX-10.23.md",
+      "chars": 47670
+    },
+    {
+      "type": "EX-10.24",
+      "file": "EX-10.24.md",
+      "chars": 41190
+    },
+    {
+      "type": "EX-10.34",
+      "file": "EX-10.34.md",
+      "chars": 24325
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 19167
+    }
+  ]
+}

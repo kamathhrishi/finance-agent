@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+Johnson & Johnson completed an exchange offer to finalize the separation of Kenvue Inc\. \(the "Kenvue Separation"\)\. On August 30, 2023, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) providing updated financials and 2023 guidance following completion of the Kenvue Separation\.

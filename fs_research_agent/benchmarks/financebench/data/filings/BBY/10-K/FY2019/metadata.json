@@ -1,0 +1,37 @@
+{
+  "ticker": "BBY",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2019",
+  "quarter_label": null,
+  "filing_date": "2019-03-28",
+  "period_of_report": "2019-02-02",
+  "accession": "000076447819000009",
+  "filing_chars": 488779,
+  "section_keys": [
+    "1",
+    "10",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 6659
+    }
+  ]
+}

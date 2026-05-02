@@ -1,0 +1,2 @@
+## Item 7.    Management’s Discussion and Analysis of Financial Condition and Results of Operations
+Information required by this item is included in the 2019 Verizon Annual Report to Shareholders under the heading "Management’s Discussion and Analysis of Financial Condition and Results of Operations," which is incorporated herein by reference\.

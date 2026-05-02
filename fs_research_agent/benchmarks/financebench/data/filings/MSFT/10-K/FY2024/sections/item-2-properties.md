@@ -1,0 +1,10 @@
+## ITEM 2. PROPERTIES
+
+*Our corporate headquarters are located in Redmond, Washington\. We have approximately 15 million square feet of space located in King County, Washington that is used for engineering, sales, marketing, and operations, among other general and administrative purposes\. These facilities include approximately 12 million square feet of owned space situated on approximately 530 acres of land we own at our corporate headquarters, and approximately 3 million square feet of space we lease\. We own and lease other facilities domestically and internationally, primarily for offices, datacenters, and research and development\. The largest owned international properties include space in the following locations: China, India, Ireland, and the Netherlands\. The largest leased international properties include space in the following locations: Australia, Canada, China, France, Germany, India, Ireland, Israel, Japan, the Netherlands, and the United Kingdom\. Refer to Research and Development \(Part I, Item 1 of this Form 10\-K\) for further discussion of our research and development facilities\. The table below shows a summary of the square footage of our properties owned and leased domestically and internationally as of June 30, 2024:*
+
+
+| (Square feet in millions) Location | (Square feet in millions) Owned | (Square feet in millions) Leased | (Square feet in millions) Total |
+|------------------------------------|---------------------------------|----------------------------------|---------------------------------|
+| U.S.                               | 30                              | 20                               | 50                              |
+| International                      | 10                              | 25                               | 35                              |
+| Total                              | 40                              | 45                               | 85                              |

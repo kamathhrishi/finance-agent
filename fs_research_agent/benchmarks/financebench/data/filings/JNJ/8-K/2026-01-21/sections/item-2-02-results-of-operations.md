@@ -1,0 +1,2 @@
+# Item 2.02 Results of operations and financial condition
+On January 21, 2026, Johnson & Johnson \(the “Company”\) issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the fourth quarter and full year ended December 28, 2025\.

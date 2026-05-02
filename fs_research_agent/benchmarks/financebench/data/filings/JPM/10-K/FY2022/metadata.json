@@ -1,0 +1,24 @@
+{
+  "ticker": "JPM",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-02-21",
+  "period_of_report": "2022-12-31",
+  "accession": "000001961723000231",
+  "filing_chars": 2130372,
+  "section_keys": [],
+  "exhibits": [
+    {
+      "type": "EX-10.18",
+      "file": "EX-10.18.md",
+      "chars": 240594
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2713
+    }
+  ]
+}

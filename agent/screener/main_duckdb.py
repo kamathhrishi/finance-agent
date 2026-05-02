@@ -211,7 +211,6 @@ class FinancialDataAnalyzer:
                 if config['provider'] == 'openai':
                     config['llm'] = ChatOpenAI(
                         model=config['model'],
-                        temperature=config['temperature'],
                         openai_api_key=self.api_key,
                         max_completion_tokens=2000,
                         request_timeout=self.llm_timeout
@@ -1682,9 +1681,9 @@ JSON:
                 )
                 model_temperature = groq_temperature
             else:
-                # Use OpenAI API
+                # Use OpenAI API (reasoning models don't support temperature)
                 client = OpenAI(api_key=self.api_key)
-                model_temperature = intent_config['temperature']
+                model_temperature = None
             
             prompt_text = intent_prompt.format(
                 question=question,
@@ -1705,15 +1704,15 @@ JSON:
             yield {'type': 'reasoning', 'event': ReasoningEvent('info', 'Processing your financial question...', {'step': 'intent_analysis'}).__dict__}
             
             # Start streaming response from the appropriate API
-            stream = client.chat.completions.create(
+            create_kwargs = dict(
                 model=intent_config['model'],
-                messages=[
-                    {"role": "user", "content": prompt_text}
-                ],
-                temperature=model_temperature,
-                max_completion_tokens=1000,  # Reduced for efficiency
-                stream=True
+                messages=[{"role": "user", "content": prompt_text}],
+                max_completion_tokens=1000,
+                stream=True,
             )
+            if model_temperature is not None:
+                create_kwargs["temperature"] = model_temperature
+            stream = client.chat.completions.create(**create_kwargs)
             
             # Stream the response token by token
             response_text = ""

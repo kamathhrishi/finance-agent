@@ -1,0 +1,5 @@
+## Item 2.
+### Properties
+Our global streaming headquarters are located in Los Gatos, California and consist of leased space aggregating approximately 250,000 square feet\. In the third quarter of 2013, the Company entered into lease agreements to expand its Los Gatos, California headquarters by 263,000 square feet with 124 month lease terms commencing after construction of the facilities, which is expected in 2015\.
+In the United States, we lease other offices in various locations, including Beverly Hills, California for global content acquisition, marketing and general and administrative operations and Fremont, California for our DVD operations\.  We also lease office space in other countries to support international streaming operations\.
+We believe that our existing facilities are adequate to meet current requirements, and that suitable additional or substitute space will be available as needed to accommodate any further physical expansion of operations and for any additional offices\.

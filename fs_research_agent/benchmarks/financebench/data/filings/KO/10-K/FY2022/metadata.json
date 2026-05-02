@@ -1,0 +1,49 @@
+{
+  "ticker": "KO",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-02-21",
+  "period_of_report": "2022-12-31",
+  "accession": "000002134423000011",
+  "filing_chars": 734229,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.13 6",
+      "file": "EX-10.13-6.md",
+      "chars": 32020
+    },
+    {
+      "type": "EX-10.40 1",
+      "file": "EX-10.40-1.md",
+      "chars": 3794
+    },
+    {
+      "type": "EX-10.42",
+      "file": "EX-10.42.md",
+      "chars": 4162
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 8880
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "ticker": "AMD",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2013",
+  "quarter_label": null,
+  "filing_date": "2014-02-18",
+  "period_of_report": "2013-12-28",
+  "accession": "000119312514057240",
+  "filing_chars": 536178,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 5771
+    }
+  ]
+}

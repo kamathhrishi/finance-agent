@@ -1,0 +1,5 @@
+## ITEM 9B.
+### OTHER INFORMATION
+On February 23, 2018, the Compensation Committee of the Board of Directors approved a special cash bonus award to each of Mr\. Murren, Mr\. Baldwin, Mr\. Hornbuckle, Mr\. Sanders and Mr\. D’Arrigo of $833,000, $333,000, $500,000, $500,000 and $333,000, respectively\. The Compensation Committee approved these one\-time awards in recognition of the extraordinary leadership efforts displayed by each of the executives during 2017\. The Company paid these amounts in a lump sum in February 2018\.
+Because this report is being filed within four business days from the date of the reportable event, we have made the foregoing disclosure in this report rather than in a Form 8\-K under Item 5\.02 \(Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers\)\.
+# PART III

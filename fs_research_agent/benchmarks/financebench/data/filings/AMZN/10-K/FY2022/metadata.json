@@ -1,0 +1,37 @@
+{
+  "ticker": "AMZN",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-02-03",
+  "period_of_report": "2022-12-31",
+  "accession": "000101872423000004",
+  "filing_chars": 321670,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 1032
+    }
+  ]
+}

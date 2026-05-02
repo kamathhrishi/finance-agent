@@ -1,0 +1,52 @@
+{
+  "ticker": "MSFT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2015",
+  "quarter_label": null,
+  "filing_date": "2015-07-31",
+  "period_of_report": "2015-06-30",
+  "accession": "000119312515272806",
+  "filing_chars": 413712,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1B",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.14",
+      "file": "EX-10.14.md",
+      "chars": 22097
+    },
+    {
+      "type": "EX-10.18",
+      "file": "EX-10.18.md",
+      "chars": 25134
+    },
+    {
+      "type": "EX-10.25",
+      "file": "EX-10.25.md",
+      "chars": 23928
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 1124
+    }
+  ]
+}

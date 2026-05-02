@@ -1,0 +1,4 @@
+## Item 7A.   Quantitative and Qualitative Disclosures about Market Risk
+Market risk represents the risk of loss that may impact our financial position due to adverse changes in financial market prices and rates\. Our market risk exposure is primarily the result of fluctuations in interest rates and foreign currency exchange rates\. We do not hold or issue financial instruments for trading purposes\.
+### Interest rate risk
+We are exposed to interest rate risks primarily through borrowings under our credit facility\. Interest on our borrowings is based upon variable rates\. We did not have any outstanding borrowings on our credit facility as of January 29, 2022, January 30, 2021 or February 1, 2020\.

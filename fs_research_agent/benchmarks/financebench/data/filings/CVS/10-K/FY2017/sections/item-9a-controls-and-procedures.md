@@ -1,0 +1,9 @@
+## Item 9A. Controls and Procedures
+### Evaluation of disclosure controls and procedures:
+ The Company’s Chief Executive Officer and Chief Financial Officer, after evaluating the effectiveness of the design and operation of the Company’s disclosure controls and procedures \(as defined in Rules 13a\-15 \(f\) and 15d\-15\(f\) under the Securities Exchange Act of 1934\) as of December 31, 2017, have concluded that as of such date the Company’s disclosure controls and procedures were adequate and effective at a reasonable assurance level and designed to ensure that material information relating to the Company and its subsidiaries would be made known to such officers on a timely basis\.
+		
+### Internal control over financial reporting:
+ We refer you to “Management’s Report on Internal Control Over Financial Reporting” and “Report of Independent Registered Public Accounting Firm” of our Annual Report to Stockholders for the fiscal year ended December 31, 2017, which are incorporated by reference herein, for management’s report on the Company’s internal control over financial reporting and the Independent Registered Public Accounting Firm’s report with respect to the effectiveness of internal control over financial reporting\.
+		
+### Changes in internal control over financial reporting:
+ There have been no changes in our internal controls over financial reporting identified in connection with the evaluation required by paragraph \(d\) of Rule 13a\-15 or Rule 15d\-15 that occurred during the fourth quarter ended December 31, 2017 that have materially affected, or are reasonably likely to materially affect, our internal control over financial reporting\.

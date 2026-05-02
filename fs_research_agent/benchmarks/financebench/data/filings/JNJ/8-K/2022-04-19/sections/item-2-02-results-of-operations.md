@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+On April 19, 2022, Johnson & Johnson issued the attached press release announcing its sales and earnings for the first quarter ended April 3, 2022\.

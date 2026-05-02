@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+On July 20, 2023, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the second quarter ended July 2, 2023\.

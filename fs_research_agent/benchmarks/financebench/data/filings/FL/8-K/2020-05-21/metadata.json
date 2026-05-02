@@ -1,0 +1,15 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-05-21",
+  "period_of_report": "2020-05-20",
+  "accession": "000153949720000743",
+  "filing_chars": 6668,
+  "section_keys": [
+    "5.07"
+  ],
+  "exhibits": []
+}

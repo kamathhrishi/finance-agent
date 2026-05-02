@@ -1,0 +1,6 @@
+## ITEM 10. DIRECTORS, EXECUTIVE OFFICERS AND CORPORATE GOVERNANCE
+The following information is incorporated by reference from the Registrant's Proxy Statement for the Registrant's 2023 Annual Meeting of Stockholders which the Registrant expects will be filed on or around March 7, 2023 \(the "2023 Proxy Statement"\):
+•information regarding the directors required by this item found under the heading Board of Directors \- Biographies;
+•information regarding AES' Code of Ethics found under the heading Corporate Governance at AES \- Additional Governance Information; and
+•information regarding AES' Financial Audit Committee found under the heading Board and Committee Governance \- Board Committees \- Financial Audit Committee \(the “Audit Committee”\)\.
+Certain information regarding executive officers required by this Item is presented as a supplementary item in Part I hereof \(pursuant to Instruction 3 to Item 401\(b\) of Regulation S\-K\)\. The other information required by this Item, to the extent not included above, will be contained in our 2023 Proxy Statement and is herein incorporated by reference\.

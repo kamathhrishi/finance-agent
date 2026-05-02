@@ -78,6 +78,13 @@ class HighlightRequest(BaseModel):
     relevant_chunks: Optional[List[dict]] = None
 
 
+class ExhibitHighlightRequest(BaseModel):
+    ticker: str
+    fiscal_year: int
+    exhibit_type: str          # e.g. 'EX-19.1'
+    relevant_chunks: Optional[List[dict]] = None
+
+
 async def _fetch_filing_meta(ticker: str, filing_type: str, fiscal_year: int) -> dict:
     """Fetch filing metadata row from DB."""
     pool = await _get_pool()
@@ -154,6 +161,33 @@ async def get_filing(
         "filing_date": str(meta["filing_date"]) if meta.get("filing_date") else None,
         "document_text": "",
         "document_markdown": markdown,
+        "document_length": meta.get("document_length"),
+    })
+
+
+@router.post("/exhibit/with-highlights")
+async def get_exhibit_with_highlights(req: ExhibitHighlightRequest):
+    """Fetch an exhibit document and inject highlight marks around relevant chunks."""
+    # Exhibits are stored in complete_sec_filings with filing_type = exhibit_type
+    meta = await _fetch_filing_meta(req.ticker, req.exhibit_type, req.fiscal_year)
+
+    bucket_key = meta.get("bucket_key")
+    if not bucket_key:
+        raise HTTPException(status_code=404, detail=f"Exhibit {req.exhibit_type} document not available")
+
+    markdown = await _fetch_markdown_from_bucket(bucket_key)
+    highlighted = _inject_highlights(markdown, req.relevant_chunks or [])
+
+    return ORJSONResponse({
+        "success": True,
+        "ticker": meta["ticker"],
+        "company_name": meta.get("company_name"),
+        "filing_type": req.exhibit_type,
+        "fiscal_year": meta["fiscal_year"],
+        "filing_date": str(meta["filing_date"]) if meta.get("filing_date") else None,
+        "document_text": "",
+        "document_markdown": markdown,
+        "highlighted_markdown": highlighted,
         "document_length": meta.get("document_length"),
     })
 

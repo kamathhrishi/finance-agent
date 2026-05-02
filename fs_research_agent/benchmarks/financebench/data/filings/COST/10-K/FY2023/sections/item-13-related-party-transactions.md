@@ -1,0 +1,2 @@
+## Item 13—Certain Relationships and Related Transactions, and Director Independence
+The information required by this Item is incorporated herein by reference to the sections entitled “Proposal 1: Election of Directors,” “Directors,” “Committees of the Board,” “Shareholder Communications to the Board,” “Meeting Attendance,” “Report of the Compensation Committee of the Board of Directors,” “Certain Relationships and Transactions” and “Report of the Audit Committee” in Costco’s Proxy Statement\.

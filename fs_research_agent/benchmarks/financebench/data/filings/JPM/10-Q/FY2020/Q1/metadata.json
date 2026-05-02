@@ -1,0 +1,18 @@
+{
+  "ticker": "JPM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": "Q1",
+  "filing_date": "2020-05-07",
+  "period_of_report": "2020-03-31",
+  "accession": "000001961720000299",
+  "filing_chars": 1652950,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

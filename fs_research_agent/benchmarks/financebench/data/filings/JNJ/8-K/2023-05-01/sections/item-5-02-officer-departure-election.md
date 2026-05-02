@@ -1,0 +1,2 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+Upon the closing of the initial public offering of Kenvue Inc\., Thibaut Mongon will cease to be Executive Vice President, Worldwide Chairman, Consumer Health and member of the Executive Committee of Johnson & Johnson and will continue his role as Chief Executive Officer of Kenvue Inc\.

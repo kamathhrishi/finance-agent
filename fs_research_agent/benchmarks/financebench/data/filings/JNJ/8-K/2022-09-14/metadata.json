@@ -1,0 +1,22 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2022-09-14",
+  "period_of_report": "2022-09-14",
+  "accession": "000020040622000076",
+  "filing_chars": 7218,
+  "section_keys": [
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 4656
+    }
+  ]
+}

@@ -43,6 +43,13 @@ class ChatCitation(BaseModel):
     section: Optional[str] = Field(None, description="SEC section for 10-K citations")
     path: Optional[str] = Field(None, description="Document path for 10-K citations")
     chunk_type: Optional[str] = Field(None, description="Chunk type for 10-K citations")
+    exhibit_type: Optional[str] = Field(None, description="Exhibit type for exhibit citations (e.g. 'EX-19.1')")
+    filing_type: Optional[str] = Field(None, description="Filing form type (e.g. '10-K')")
+
+    # Filesystem-research agent fields (line-range citations into local markdown)
+    source_backend: Optional[str] = Field(None, description="Citation source: 'sec' (DB+S3) or 'fs_research' (local markdown corpus)")
+    line_start: Optional[int] = Field(None, description="Start line (1-based) for fs_research citations")
+    line_end: Optional[int] = Field(None, description="End line (1-based, inclusive) for fs_research citations")
 
     # Marker/source number
     marker: Optional[str] = Field(None, description="Citation marker (e.g., [1], [N1])")
@@ -52,12 +59,25 @@ class ChatCitation(BaseModel):
         extra = "allow"  # Allow additional fields not defined in schema
 
 
+class ScopedFiling(BaseModel):
+    """One filing the user has explicitly pinned to chat scope from the
+    Companies/Latest tabs. The agent is told to prefer these over
+    auto-discovery."""
+    ticker: str
+    form: str
+    period_label: str = ""
+    filing_date: str = ""
+    path: str  # e.g. "filings/NVDA/10-K/FY2025"
+
+
 class ChatMessage(BaseModel):
     """Chat message model"""
     message: str = Field(..., min_length=1, max_length=1000, description="User message (max 1000 characters)")
     comprehensive: bool = Field(True, description="Whether to use comprehensive search")
     session_id: Optional[str] = Field(None, description="Client-generated session ID for anonymous users")
     conversation_id: Optional[str] = Field(None, description="Conversation thread ID (None for new conversation)")
+    scoped_filings: Optional[List[ScopedFiling]] = Field(None, description="Filings user has pinned to chat scope")
+    model: Optional[str] = Field(None, description="Display model id selected in the UI (e.g. 'gpt-5.4-mini'). Server resolves to a dated OpenAI model id.")
 
 
 class ChatResponse(BaseModel):

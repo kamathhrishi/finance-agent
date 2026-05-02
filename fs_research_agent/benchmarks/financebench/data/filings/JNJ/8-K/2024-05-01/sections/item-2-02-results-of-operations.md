@@ -1,0 +1,2 @@
+# Item 2.02     Results of Operations and Financial Condition
+On May 1, 2024, Johnson & Johnson issued the attached earnings schedules for the first quarter ended March 31, 2024\. These schedules have been amended to reflect the information referenced in Item 7\.01

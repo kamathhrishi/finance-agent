@@ -1,0 +1,47 @@
+{
+  "ticker": "ULTA",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2025-03-27",
+  "period_of_report": "2025-02-01",
+  "accession": "000155837025003810",
+  "filing_chars": 339416,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 34093
+    },
+    {
+      "type": "EX-19",
+      "file": "EX-19.md",
+      "chars": 27951
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 869
+    }
+  ]
+}

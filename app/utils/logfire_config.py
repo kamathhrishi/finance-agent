@@ -6,7 +6,6 @@ Handles observability setup with environment-based configuration
 import os
 import logging
 from typing import Optional
-import logfire
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +45,10 @@ def configure_logfire(
         return False
     
     try:
+        import logfire  # lazy import — fails gracefully if package is broken
         # Determine environment
         env = environment or os.getenv("ENVIRONMENT", "production")
-        
+
         # Configure Logfire
         logfire.configure(
             token=logfire_token,
@@ -81,6 +81,7 @@ def instrument_all():
     IMPORTANT: For OpenAI instrumentation to capture prompts/completions,
     this must be called BEFORE any OpenAI client is instantiated.
     """
+    import logfire  # lazy import
     # Enable capturing of message content (prompts/completions) for GenAI instrumentation
     # This is REQUIRED for OpenAI prompts to show in Logfire
     os.environ.setdefault("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true")

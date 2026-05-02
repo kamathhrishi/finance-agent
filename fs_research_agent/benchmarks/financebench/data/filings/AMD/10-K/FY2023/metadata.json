@@ -1,0 +1,56 @@
+{
+  "ticker": "AMD",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-01-31",
+  "period_of_report": "2023-12-30",
+  "accession": "000000248824000012",
+  "filing_chars": 444969,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.76",
+      "file": "EX-10.76.md",
+      "chars": 16071
+    },
+    {
+      "type": "EX-10.77",
+      "file": "EX-10.77.md",
+      "chars": 31851
+    },
+    {
+      "type": "EX-10.78",
+      "file": "EX-10.78.md",
+      "chars": 52605
+    },
+    {
+      "type": "EX-10.79",
+      "file": "EX-10.79.md",
+      "chars": 38854
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 12468
+    }
+  ]
+}

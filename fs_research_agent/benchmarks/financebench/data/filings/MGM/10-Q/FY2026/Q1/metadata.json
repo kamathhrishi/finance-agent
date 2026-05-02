@@ -1,0 +1,23 @@
+{
+  "ticker": "MGM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2026",
+  "quarter_label": "Q1",
+  "filing_date": "2026-04-29",
+  "period_of_report": "2026-03-31",
+  "accession": "000078957026000035",
+  "filing_chars": 156611,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.2",
+      "file": "EX-10.2.md",
+      "chars": 8438
+    }
+  ]
+}

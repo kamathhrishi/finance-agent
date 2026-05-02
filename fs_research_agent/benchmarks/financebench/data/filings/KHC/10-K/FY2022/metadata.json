@@ -1,0 +1,59 @@
+{
+  "ticker": "KHC",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-02-16",
+  "period_of_report": "2022-12-31",
+  "accession": "000163745923000009",
+  "filing_chars": 658790,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.10",
+      "file": "EX-10.10.md",
+      "chars": 49268
+    },
+    {
+      "type": "EX-10.35",
+      "file": "EX-10.35.md",
+      "chars": 115594
+    },
+    {
+      "type": "EX-10.36",
+      "file": "EX-10.36.md",
+      "chars": 134407
+    },
+    {
+      "type": "EX-10.37",
+      "file": "EX-10.37.md",
+      "chars": 119658
+    },
+    {
+      "type": "EX-10.38",
+      "file": "EX-10.38.md",
+      "chars": 124340
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 15721
+    }
+  ]
+}

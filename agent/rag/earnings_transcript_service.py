@@ -108,12 +108,25 @@ class EarningsTranscriptService:
         temperature: float = 0.1,
         max_tokens: int = 2000,
     ) -> str:
-        """Async LLM call: Cerebras with retries → OpenAI gpt-5-nano → Gemini."""
-        from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
+        """Async LLM call: OpenAI gpt-5-nano → Cerebras → Gemini."""
         last_error = None
 
-        # --- Cerebras with retries ---
+        # --- OpenAI primary ---
+        if self.openai_available:
+            try:
+                result = self.openai_client.complete(
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    reasoning_effort="low",
+                )
+                return result
+            except Exception as e:
+                last_error = e
+                rag_logger.warning(f"[Transcript] OpenAI failed: {e}, falling back to Cerebras")
+
+        # --- Cerebras fallback ---
         if self.cerebras_available:
+            from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
             for attempt in range(3):
                 try:
                     response = self.cerebras_client.chat.completions.create(
@@ -122,6 +135,7 @@ class EarningsTranscriptService:
                         temperature=temperature,
                         max_tokens=max_tokens,
                     )
+                    rag_logger.info("[Transcript] Cerebras fallback succeeded")
                     return response.choices[0].message.content
                 except CerebrasRateLimitError as e:
                     last_error = e
@@ -130,7 +144,7 @@ class EarningsTranscriptService:
                         rag_logger.warning(f"[Transcript] Cerebras 429 (attempt {attempt + 1}/3). Retrying in {wait_time}s...")
                         await asyncio.sleep(wait_time)
                     else:
-                        rag_logger.warning("[Transcript] Cerebras 429 after max retries — falling back to OpenAI gpt-5-nano")
+                        rag_logger.warning("[Transcript] Cerebras 429 after max retries — falling back to Gemini")
                 except Exception as e:
                     last_error = e
                     if is_retryable_error(e) and attempt < 2:
@@ -138,20 +152,6 @@ class EarningsTranscriptService:
                     else:
                         rag_logger.warning(f"[Transcript] Cerebras failed: {e}")
                         break
-
-        # --- OpenAI fallback ---
-        if self.openai_available:
-            try:
-                result = self.openai_client.complete(
-                    messages=messages,
-                    max_tokens=max_tokens,
-                    reasoning_effort="medium",
-                )
-                rag_logger.info("[Transcript] OpenAI gpt-5-nano fallback succeeded")
-                return result
-            except Exception as e:
-                last_error = e
-                rag_logger.warning(f"[Transcript] OpenAI fallback failed: {e}, trying Gemini")
 
         # --- Gemini fallback ---
         if self.gemini_available:
@@ -403,12 +403,7 @@ OTHER RULES:
 - Do not use emojis
 - No external knowledge — only use the provided passages
 
-End your answer with:
-
-**You might also ask:**
-- [Write a specific follow-up question using the actual company name and ticker (no $ prefix, e.g. "Datadog" or "DDOG") — related metric or trend]
-- [Write a specific follow-up question using the actual company name and ticker (no $ prefix) — different analytical angle]
-- [Write a specific follow-up question using the actual company name and ticker (no $ prefix) — deeper on a key finding]"""
+"""
 
         messages = [
             {"role": "system", "content": "You are a precise financial analyst. Answer only from the provided sources. No emojis. CRITICAL: Always cite facts with [TC-N] bracket markers — never use bare numbers alone as citations."},
@@ -416,7 +411,7 @@ End your answer with:
         ]
 
         try:
-            return await self._make_llm_call_async(messages, temperature=0.1, max_tokens=2000)
+            return await self._make_llm_call_async(messages, temperature=0.1, max_tokens=8000)
         except Exception as e:
             rag_logger.error(f"[Transcript] Answer generation failed: {e}")
             return f"Unable to generate answer from transcript data: {e}"
@@ -643,10 +638,20 @@ Return ONLY valid JSON:
         Post-process synthesis output to fix bare citation numbers the LLM emitted
         despite instructions.
 
-        Two patterns fixed:
+        Three patterns fixed:
+        0. Year-as-citations: "[TC-2][TC-25]" → "2025" (LLM splits year digits into citation pairs)
         1. Concatenated: "1112" → "[TC-11][TC-12]" (split into two valid TC indices)
         2. Standalone at end of clause: "grew 27% 4." → "grew 27% [TC-4]."
         """
+        # Step 0: reverse year-as-citation pairs that the LLM generates for 20XX years
+        # "2025" gets written as [TC-2][TC-25] because int("025")=25 during expand_concat
+        def reverse_year_pair(m):
+            b = int(m.group(1))
+            year = 2000 + b
+            if 2000 <= year <= 2099:
+                return str(year)
+            return m.group(0)
+        text = re.sub(r'\[TC-2\]\[TC-(\d{1,2})\]', reverse_year_pair, text)
         # Step 1: fix concatenated 3-4 digit numbers that split into two valid TC indices
         def expand_concat(m):
             num_str = m.group(1)
@@ -735,7 +740,8 @@ PER-SOURCE ANALYSES:
 
 SYNTHESIS REQUIREMENTS:
 - Write a single coherent answer — do NOT reproduce the `=== SOURCE ===` section headers from the input
-- Use ## markdown headings to organize your answer into logical sections (by metric, time period, theme, or company comparison)
+- For multi-company questions: organize by **company name** (e.g. ## Equinix, ## Digital Realty). Use the full company name as the heading, not just the ticker.
+- For single-company questions: organize by theme or time period using ## headings
 - Use markdown tables to compare periods or companies where numbers are involved
 - If the user's question requests a specific format (e.g. bullet points, table, brief summary, detailed breakdown, numbered list), follow that format exactly
 
@@ -743,17 +749,24 @@ CITATION FORMAT — ABSOLUTE REQUIREMENT:
 The input analyses use citation markers like [TC-11], [TC-12], [TC-28], [10K-3].
 You MUST copy these EXACTLY — with square brackets, TC- prefix, and the number.
 
+⚠️ YEARS ARE NOT CITATIONS — calendar years like 2023, 2024, 2025 are plain text, NOT citation markers.
+  - Write "in 2025" not "[TC-2][TC-25]"
+  - Write "FY2024" not "[TC-2][TC-24]"
+  - Never split a year number into citation markers
+
 ❌ WRONG — NEVER do this:
   - "Azure grew 39% year-over-year 1112"      ← bare concatenated numbers, no brackets
   - "Cloud revenue grew 27% 4"                 ← bare number, no brackets
   - "grew 23% year-over-year 1624"             ← bare numbers, no brackets
   - "revenue was $168B 16 24"                  ← numbers with spaces, no brackets
+  - "in [TC-2][TC-25]"                         ← year split into citation markers
 
 ✅ CORRECT — always do this:
   - "Azure grew 39% year-over-year [TC-11][TC-12]"
   - "Cloud revenue grew 27% [TC-4]"
   - "grew 23% year-over-year [TC-16][TC-24]"
   - "revenue was $168B [TC-16][TC-24]"
+  - "in 2025" or "in FY2024" ← years written as plain text
 
 Every single fact you write MUST have a [TC-N] or [10K-N] marker with brackets.
 
@@ -762,12 +775,7 @@ OTHER RULES:
 - Do not use emojis
 - Do not cite sources not present in the analyses above
 
-End your answer with:
-
-**You might also ask:**
-- [Question specific to the same company/ticker(s) and a related metric or trend — include the $TICKER(s)]
-- [Question specific to the same company/ticker(s) from a different analytical angle — include the $TICKER(s)]
-- [Question specific to the same company/ticker(s) that goes deeper on a key finding — include the $TICKER(s)]"""
+"""
 
         messages = [
             {
@@ -776,7 +784,8 @@ End your answer with:
                     "You are a financial analyst synthesizing multiple data-source analyses. "
                     "CRITICAL: Citation markers like [TC-11], [TC-12], [10K-3] MUST appear with their full brackets and prefix. "
                     "NEVER output bare numbers as citations (e.g. '1112' or '4' or '1624'). "
-                    "Always write [TC-11][TC-12] — never 1112."
+                    "Always write [TC-11][TC-12] — never 1112. "
+                    "CRITICAL: Calendar years (2023, 2024, 2025 etc.) are plain text — NEVER split them into citation markers like [TC-2][TC-25]."
                 ),
             },
             {"role": "user", "content": prompt},
@@ -829,12 +838,7 @@ OTHER RULES:
 - Do not use emojis
 - Do not cite sources that are not present in the analyses above
 
-End your answer with:
-
-**You might also ask:**
-- [Question comparing the same companies on a related metric — include all $TICKERs]
-- [Question about one of the companies from a different analytical angle — include the $TICKER]
-- [Question that goes deeper on a key finding from the comparison — include the relevant $TICKER(s)]"""
+"""
 
         messages = [
             {
@@ -854,7 +858,7 @@ End your answer with:
         )
 
         try:
-            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=2000)
+            result = await self._make_llm_call_async(messages, temperature=0.1, max_tokens=8000)
             return self._fix_bare_tc_citations(result, max_tc)
         except Exception as e:
             rag_logger.error(f"[Transcript] Multi-ticker synthesis failed: {e}")

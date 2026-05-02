@@ -1,0 +1,63 @@
+{
+  "ticker": "WMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2026",
+  "quarter_label": null,
+  "filing_date": "2026-03-13",
+  "period_of_report": "2026-01-31",
+  "accession": "000010416926000055",
+  "filing_chars": 478082,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.3",
+      "file": "EX-10.3.md",
+      "chars": 137714
+    },
+    {
+      "type": "EX-10.7",
+      "file": "EX-10.7.md",
+      "chars": 53334
+    },
+    {
+      "type": "EX-10.8(A)",
+      "file": "EX-10.8-A-.md",
+      "chars": 3092
+    },
+    {
+      "type": "EX-10.19",
+      "file": "EX-10.19.md",
+      "chars": 41877
+    },
+    {
+      "type": "EX-19",
+      "file": "EX-19.md",
+      "chars": 32030
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2820
+    }
+  ]
+}

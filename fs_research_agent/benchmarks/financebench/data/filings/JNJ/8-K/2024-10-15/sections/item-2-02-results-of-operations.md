@@ -1,0 +1,2 @@
+# Item 2.02 Results of operations and financial condition
+On October 15, 2024, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the third quarter ended September 29, 2024\.

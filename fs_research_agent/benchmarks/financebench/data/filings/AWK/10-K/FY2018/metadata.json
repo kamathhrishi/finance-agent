@@ -1,0 +1,56 @@
+{
+  "ticker": "AWK",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2018",
+  "quarter_label": null,
+  "filing_date": "2019-02-19",
+  "period_of_report": "2018-12-31",
+  "accession": "000141063619000041",
+  "filing_chars": 853726,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.7",
+      "file": "EX-10.7.md",
+      "chars": 42597
+    },
+    {
+      "type": "EX-10.6.2",
+      "file": "EX-10.6.2.md",
+      "chars": 2883
+    },
+    {
+      "type": "EX-10.9.2",
+      "file": "EX-10.9.2.md",
+      "chars": 89953
+    },
+    {
+      "type": "EX-10.9.3",
+      "file": "EX-10.9.3.md",
+      "chars": 90354
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 6598
+    }
+  ]
+}

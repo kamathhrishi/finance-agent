@@ -1,0 +1,2 @@
+## ITEM 3. QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK
+Information required by this item is incorporated by reference from the discussion in the Analysis of Financial Condition, Liquidity, Capital Resources and Market Risk section within MD&A of our 2022 Form 10\-K\.

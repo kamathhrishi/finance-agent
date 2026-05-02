@@ -1,0 +1,37 @@
+{
+  "ticker": "MSFT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-07-27",
+  "period_of_report": "2023-06-30",
+  "accession": "000095017023035122",
+  "filing_chars": 424685,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1B",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 810
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": "Q1",
+  "filing_date": "2023-04-25",
+  "period_of_report": "2023-03-31",
+  "accession": "000006674023000028",
+  "filing_chars": 421428,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

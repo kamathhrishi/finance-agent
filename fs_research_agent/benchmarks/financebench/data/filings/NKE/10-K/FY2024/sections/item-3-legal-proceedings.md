@@ -1,0 +1,2 @@
+## ITEM 3. LEGAL PROCEEDINGS
+We do not believe there are any material pending legal proceedings, other than ordinary routine litigation incidental to our business, to which we are a party or of which any of our property is the subject\. Refer to Note 16 — Commitments and Contingencies in the accompanying Notes to the Consolidated Financial Statements for additional information\.

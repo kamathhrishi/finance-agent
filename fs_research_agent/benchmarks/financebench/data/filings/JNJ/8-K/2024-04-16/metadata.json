@@ -1,0 +1,33 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2024-04-16",
+  "period_of_report": "2024-04-16",
+  "accession": "000020040624000031",
+  "filing_chars": 5261,
+  "section_keys": [
+    "2.02",
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 19094
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 1413106
+    },
+    {
+      "type": "EX-99.3",
+      "file": "EX-99.3.md",
+      "chars": 1670
+    }
+  ]
+}

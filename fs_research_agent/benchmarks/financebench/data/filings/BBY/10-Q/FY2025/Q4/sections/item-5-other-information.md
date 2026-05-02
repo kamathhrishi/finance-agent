@@ -1,0 +1,3 @@
+## Item 5.    Other Information
+### Rule 10b5-1 Plan Elections
+During the fiscal quarter ended November 1, 2025, none of the Company’s directors or officers \(as defined in Rule 16\(a\)\-1\(f\) of the Securities Exchange Act of 1934, as amended\) adopted, terminated or modified a Rule 10b5\-1 trading arrangement or non\-Rule 10b5\-1 trading arrangement \(as such terms are defined in Item 408 of Regulation S\-K of the Securities Act of 1933, as amended\)\.

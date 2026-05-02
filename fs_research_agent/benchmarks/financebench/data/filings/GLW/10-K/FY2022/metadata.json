@@ -1,0 +1,50 @@
+{
+  "ticker": "GLW",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-02-13",
+  "period_of_report": "2022-12-31",
+  "accession": "000143774923003123",
+  "filing_chars": 563259,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.40",
+      "file": "EX-10.40.md",
+      "chars": 42245
+    },
+    {
+      "type": "EX-10.41",
+      "file": "EX-10.41.md",
+      "chars": 45556
+    },
+    {
+      "type": "EX-10.42",
+      "file": "EX-10.42.md",
+      "chars": 34994
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 12972
+    }
+  ]
+}

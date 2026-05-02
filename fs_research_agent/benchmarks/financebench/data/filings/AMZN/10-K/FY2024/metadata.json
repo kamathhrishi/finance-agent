@@ -1,0 +1,43 @@
+{
+  "ticker": "AMZN",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2025-02-07",
+  "period_of_report": "2024-12-31",
+  "accession": "000101872425000004",
+  "filing_chars": 360207,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-19.1",
+      "file": "EX-19.1.md",
+      "chars": 13548
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 1137
+    }
+  ]
+}

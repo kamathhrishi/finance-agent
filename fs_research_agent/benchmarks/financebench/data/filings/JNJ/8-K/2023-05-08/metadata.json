@@ -1,0 +1,47 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-05-08",
+  "period_of_report": "2023-05-03",
+  "accession": "000119312523138287",
+  "filing_chars": 9599,
+  "section_keys": [
+    "1.01",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 214482
+    },
+    {
+      "type": "EX-10.2",
+      "file": "EX-10.2.md",
+      "chars": 98068
+    },
+    {
+      "type": "EX-10.3",
+      "file": "EX-10.3.md",
+      "chars": 90619
+    },
+    {
+      "type": "EX-10.4",
+      "file": "EX-10.4.md",
+      "chars": 136136
+    },
+    {
+      "type": "EX-10.5",
+      "file": "EX-10.5.md",
+      "chars": 35289
+    },
+    {
+      "type": "EX-10.6",
+      "file": "EX-10.6.md",
+      "chars": 81393
+    }
+  ]
+}

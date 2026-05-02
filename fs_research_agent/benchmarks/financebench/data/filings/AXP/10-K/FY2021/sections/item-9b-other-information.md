@@ -1,0 +1,17 @@
+## ITEM 9B.    OTHER INFORMATION
+Not applicable\.
+## ITEM 9C.    DISCLOSURE REGARDING FOREIGN JURISDICTIONS THAT PREVENT INSPECTIONS
+Not applicable\.
+# PART III
+## ITEMS 10, 11, 12 and 13. DIRECTORS, EXECUTIVE OFFICERS AND CORPORATE GOVERNANCE; EXECUTIVE COMPENSATION; SECURITY OWNERSHIP OF CERTAIN BENEFICIAL OWNERS AND MANAGEMENT AND RELATED STOCKHOLDER MATTERS; CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS, AND DIRECTOR INDEPENDENCE
+We expect to file with the SEC in March 2022 \(and, in any event, not later than 120 days after the close of our last fiscal year\), a definitive proxy statement, pursuant to SEC Regulation 14A in connection with our Annual Meeting of Shareholders to be held May 3, 2022, which involves the election of directors\. The following information to be included in such proxy statement is incorporated herein by reference:
+•Information included under the caption “Corporate Governance at American Express — Our Corporate Governance Framework — Our Board’s Independence”
+•Information included under the caption “Corporate Governance at American Express — Our Board Committees — Board Committee Responsibilities”
+•Information included under the caption “Corporate Governance at American Express — Our Corporate Governance Framework — Director Attendance”
+•Information included under the caption “Corporate Governance at American Express — Compensation of Directors”
+•Information included under the caption “Stock Ownership Information”
+•Information included under the caption “Corporate Governance at American Express — Item 1 — Election of Directors for a Term of One Year”
+•Information included under the caption “Executive Compensation”
+•Information under the caption “Corporate Governance at American Express — Certain Relationships and Transactions”
+In addition, the information regarding executive officers called for by Item 401\(b\) of Regulation S\-K may be found under the caption “Information About Our Executive Officers” in this Report\.
+We have adopted a set of Corporate Governance Principles, which together with the charters of the four standing committees of the Board of Directors \(Audit and Compliance; Compensation and Benefits; Nominating, Governance and Public Responsibility; and Risk\), our Code of Conduct \(which constitutes our code of ethics\) and the Code of Business Conduct for the Members of the Board of Directors, provide the framework for our governance\. A complete copy of our Corporate Governance Principles, the charters of each of the Board committees, the Code of Conduct \(which applies not only to our Chief Executive Officer, Chief Financial Officer and Controller, but also to all our other colleagues\) and the Code of Business Conduct for the Members of the Board of Directors may be found by clicking on the “Corporate Governance” link found on our Investor Relations website at http://ir\.americanexpress\.com\. We also intend to disclose any amendments to our Code of Conduct, or waivers of our Code of Conduct on behalf of our Chief Executive Officer, Chief Financial Officer or Controller, on our website\. You may also access our Investor Relations website through our main website at www\.americanexpress\.com by clicking on the “Investor Relations” link, which is located at the bottom of the Company’s homepage\. \(Information from such sites is not incorporated by reference into this report\.\) You may also obtain free copies of these materials by writing to our Corporate Secretary at our headquarters\.

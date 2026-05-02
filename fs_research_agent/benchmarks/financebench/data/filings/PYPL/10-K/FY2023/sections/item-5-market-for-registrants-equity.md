@@ -1,0 +1,22 @@
+## ITEM 5. MARKET FOR REGISTRANT’S COMMON EQUITY, RELATED STOCKHOLDER MATTERS, AND ISSUER PURCHASES OF EQUITY SECURITIES
+### COMMON STOCK
+PayPal common stock is quoted on the NASDAQ Global Select Market under the ticker symbol “PYPL\.”
+As of February 1, 2024, there were 3,942 holders of record of our common stock\. The actual number of stockholders is significantly greater than this number of record holders, and includes stockholders who are beneficial owners but whose shares are held in street name by brokers and other nominees\.
+### DIVIDEND POLICY
+We have never paid any cash dividends and we currently do not anticipate paying any cash dividends in the foreseeable future\.
+### STOCK REPURCHASE ACTIVITY
+
+*In June 2022, our Board of Directors authorized a stock repurchase program that provides for the repurchase of up to $15 billion of our common stock, with no expiration from the date of authorization\. Our stock repurchase program is intended to offset the impact of dilution from our equity compensation programs and, subject to market conditions and other factors, may also be used to make opportunistic repurchases of our common stock to reduce outstanding share count\. Any share repurchases under our stock repurchase program may be made through open market transactions, block trades, privately negotiated transactions, including accelerated share repurchase agreements or other means at times and in such amounts as management deems appropriate, and will be funded from our working capital or other financing alternatives\. Moreover, any stock repurchases are subject to market conditions and other uncertainties and we cannot predict if or when any stock repurchases will be made\. We may terminate our stock repurchase program at any time without prior notice\. The stock repurchase activity under our stock repurchase program during the three months ended December 31, 2023 is summarized as follows:*
+
+
+|                                            | Total number of shares purchased        | Average price paid per share(1)         | Total number of shares purchased as part of publicly announced plans or programs | Approximate dollar value of shares that may yet be purchased under the plans or programs |
+|--------------------------------------------|-----------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+|                                            | (In millions, except per share amounts) | (In millions, except per share amounts) | (In millions, except per share amounts)                                          | (In millions, except per share amounts)                                                  |
+| Balance as of September 30, 2023           |                                         |                                         |                                                                                  | $11,466                                                                                  |
+| October 1, 2023 through October 31, 2023   | 1.8                                     | $58.13                                  | 1.8                                                                              | 11,359                                                                                   |
+| November 1, 2023 through November 30, 2023 | 1.9                                     | $57.45                                  | 1.9                                                                              | 11,247                                                                                   |
+| December 1, 2023 through December 31, 2023 | 6.4                                     | $60.37                                  | 6.4                                                                              | 10,859                                                                                   |
+| Balance as of December 31, 2023            | 10.1                                    |                                         | 10.1                                                                             | $10,859                                                                                  |
+
+
+*Average price paid per share for open market purchases includes broker commissions, but excludes excise tax\.*

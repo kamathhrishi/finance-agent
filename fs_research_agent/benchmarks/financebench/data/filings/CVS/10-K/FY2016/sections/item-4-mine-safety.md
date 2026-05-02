@@ -1,0 +1,31 @@
+## Item 4. Mine Safety Disclosures
+Not applicable\.
+### Executive Officers of the Registrant
+#### Executive Officers of the Registrant
+The following sets forth the name, age and biographical information for each of our executive officers as of February 9, 2017\. In each case the officer’s term of office extends to the date of the board of directors meeting following the next annual meeting of stockholders of the Company\. Previous positions and responsibilities held by each of the executive officers over the past five years are indicated below:
+##### Lisa G. Bisaccia
+, age 60, Executive Vice President of CVS Health Corporation since March 2015 and Chief Human Resources Officer of CVS Health Corporation since January 2010; Senior Vice President of CVS Health Corporation from January 2010 through February 2015; Vice President, Human Resources of CVS Pharmacy, Inc\. from September 2004 through December 2009\. Ms\. Bisaccia is also a member of the Board of Directors of Aramark, a leading global provider of food, facilities and uniform services\. 
+##### Eva C. Boratto
+, age 50, Senior Vice President \- Controller and Chief Accounting Officer of CVS Health Corporation since July 2013; Senior Vice President of PBM Finance from July 2010 through June 2013; Vice President, U\.S\. Market Finance Leader of Merck & Co\., Inc\. from June 2009 through June 2010\.
+##### Troyen A. Brennan, M.D
+\., age 62, Executive Vice President and Chief Medical Officer of CVS Health Corporation since November 2008; Executive Vice President and Chief Medical Officer of Aetna, Inc\. from February 2006 through November 2008\.
+##### David M. Denton
+, age 51, Executive Vice President and Chief Financial Officer of CVS Health Corporation since January 2010; Senior Vice President and Controller/Chief Accounting Officer of CVS Health Corporation from March 2008 until December 2009; Senior Vice President, Financial Administration of CVS Health Corporation and CVS Pharmacy, Inc\. from April 2007 to March 2008\. Mr\. Denton is also a member of the Board of Directors of Coach, Inc\., a leading retailer of premium bags and luxury accessories\.
+##### Helena B. Foulkes
+, age 52, Executive Vice President of CVS Health Corporation and President of CVS Pharmacy since January 2014; Executive Vice President and Chief Health Care Strategy and Marketing Officer of CVS Health Corporation from March 2011 through December 2013; Executive Vice President and Chief Marketing Officer of CVS Health Corporation from January 2009 through February 2011\. Ms\. Foulkes is also a member of the Board of Directors of The Home Depot, Inc\., a leading home improvement retailer\.
+##### Stephen J. Gold
+, age 57, Executive Vice President of CVS Health Corporation since March 2015 and Chief Information Officer of CVS Health Corporation since July 2012; Senior Vice President of CVS Health Corporation from July 2012 through February 2015; Senior Vice President and Chief Information Officer of Avaya, Inc\. from May 2010 through June 2012; Executive Vice President, Chief Information Officer and Chief Technology Officer of GSI Commerce, Inc\. from February 2005 through April 2010\.
+##### J. David Joyner
+, age 52, Executive Vice President of CVS Health Corporation since March 2011 and Executive Vice President of Sales and Account Services, CVS Caremark since March 2004\.
+##### Robert O. Kraft
+, age 46, Executive Vice President of CVS Health Corporation and President \- Omnicare since August 2015; Senior Vice President and Chief Financial Officer of Omnicare from September 2012 through August 2015; Senior Vice President \- Finance of Omnicare from November 2010 through September 2012; PricewaterhouseCoopers LLP from September 1992 to November 2010, where he was a partner\. Mr\. Kraft is also a member of the Board of Directors of Medpace Holdings, Inc\. a global clinical contract research organization providing Phase I\-IV clinical development services to the biotechnology, pharmaceutical and medical device industries\.
+##### Larry J. Merlo,
+ age 61, President and Chief Executive Officer of CVS Health Corporation since March 2011; President and Chief Operating Officer of CVS Health Corporation from May 2010 through March 2011; President of CVS Pharmacy from January 2007 through August 2011; Executive Vice President of CVS Health Corporation from January 2007 through May 2010; also a director of CVS Health Corporation since May 2010\.
+##### Thomas M. Moriarty
+, age 53, Executive Vice President and General Counsel of CVS Health Corporation since October 2012 and Chief Strategy Officer since March 2014; General Counsel of Celgene Corporation, a global biopharmaceutical company, from May 2012 through September 2012; General Counsel and Corporate Secretary of Medco 
+Health Solutions, Inc\. \(“Medco”\), a pharmacy benefit management company, from March 2008 through April 2012; also President of Global Pharmaceutical Strategies of Medco from March 2011 through April 2012; Senior Vice President, Pharmaceutical Strategies and Solutions of Medco from September 2007 through March 2011\.
+##### Jonathan C. Roberts
+, age 61, Executive Vice President of CVS Health Corporation and President of CVS Caremark since September 2012; Executive Vice President of CVS Health Corporation and Chief Operating Officer of CVS Caremark from October 2010 through August 2011; Executive Vice President, Rx Purchasing, Pricing and Network Relations of CVS Health Corporation from January 2009 through October 2010\.
+##### Andrew J. Sussman, M.D.
+, age 51, Executive Vice President of CVS Health Corporation since March 2015, Associate Chief Medical Officer of CVS Health Corporation since March 2011 and President of CVS MinuteClinic since September 2009; Senior Vice President of CVS Health Corporation from March 2011 through March 2015; Executive Vice President and Chief Operating Officer of the University of Massachusetts Memorial Medical Center, the major teaching affiliate of UMass Medical School, from May 2004 through August 2009\.
+# PART II

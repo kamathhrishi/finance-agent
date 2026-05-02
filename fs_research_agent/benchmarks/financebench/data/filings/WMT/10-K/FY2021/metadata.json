@@ -1,0 +1,47 @@
+{
+  "ticker": "WMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-03-19",
+  "period_of_report": "2021-01-31",
+  "accession": "000010416921000033",
+  "filing_chars": 447663,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.18",
+      "file": "EX-10.18.md",
+      "chars": 39922
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 3430
+    },
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 24976
+    }
+  ]
+}

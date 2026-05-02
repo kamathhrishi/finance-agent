@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Query, Request as FastAPIRequest, 
 from fastapi.responses import StreamingResponse
 
 # Local imports
-from app.auth.auth_utils import get_current_user, get_current_user_for_stream
+from app.auth.auth_utils import get_screener_user
 from db.db_utils import get_db
 from app.utils import rate_limiter, RATE_LIMIT_PER_MONTH, ADMIN_RATE_LIMIT_PER_MONTH, record_successful_query_usage
 from app.utils.logging_utils import log_info, log_error, log_warning
@@ -38,6 +38,7 @@ except ImportError:
 
 # Global analyzer instance (will be set by main server)
 analyzer_instance = None
+qualitative_screener_instance = None
 
 # Global dictionary to track active screening requests
 active_screening_requests = {}
@@ -46,6 +47,15 @@ def set_analyzer_instance(analyzer):
     """Set the analyzer instance from the main server"""
     global analyzer_instance
     analyzer_instance = analyzer
+
+def set_qualitative_screener_instance(screener):
+    """Set the qualitative screener instance from the main server"""
+    global qualitative_screener_instance
+    qualitative_screener_instance = screener
+
+def get_qualitative_screener():
+    """Get the qualitative screener instance (may be None)."""
+    return qualitative_screener_instance
 
 def get_analyzer() -> FinancialDataAnalyzer:
     """Get the analyzer instance"""
@@ -58,23 +68,26 @@ def get_analyzer() -> FinancialDataAnalyzer:
 # Create router
 router = APIRouter(prefix="/screener", tags=["screener"])
 
+@router.get("/smart/stream")
 @router.get("/query/stream")
 async def stream_query(
     request: FastAPIRequest,
     question: str = Query(..., min_length=1, max_length=1000, description="Natural language question about financial data (max 1000 characters)"),
     page: int = Query(1, ge=1, description="Page number for pagination"),
     page_size: Optional[int] = Query(None, ge=1, le=1000, description="Number of records per page"),
-    current_user: dict = Depends(get_current_user_for_stream),
+    top_n: Optional[int] = Query(None, ge=1, le=500, description="Max companies to return for qualitative screening"),
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """Execute a financial data query and stream reasoning events with rate limiting."""
     user_id = current_user["id"]
     is_admin = current_user.get("is_admin", False)
-    
+    is_guest = current_user.get("is_guest", False)
+
     # UNIFIED RATE LIMIT CHECK - both minute and monthly limits together
     try:
         # Check both minute and monthly limits together
-        allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db)
+        allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db) if not is_guest else (True, {})
         
         if not allowed:
             # Rate limit exceeded (either minute or monthly)
@@ -128,8 +141,15 @@ async def stream_query(
         }
         return StreamingResponse(rate_limit_error_generator(), headers=headers)
     
-    analyzer = get_analyzer()
-    
+    # Ensure at least one screener is available
+    if qualitative_screener_instance is None:
+        analyzer = get_analyzer()  # raises 503 if unavailable
+    else:
+        try:
+            analyzer = get_analyzer()
+        except HTTPException:
+            analyzer = None
+
     # Track this request for potential cancellation
     request_id = str(uuid.uuid4())
     active_screening_requests[user_id] = {
@@ -138,38 +158,53 @@ async def stream_query(
         "question": question,
         "cancelled": False
     }
-    
+
     log_info(f"Starting stream query for user {current_user['id']}: '{question}'")
     
     async def event_generator():
         query_successful = False
         try:
             log_info(f"User {current_user['id']} starting stream for: '{question}'")
+
+            # Route through QualitativeScreener if available (handles both financial and qualitative)
+            if qualitative_screener_instance is not None:
+                stream = qualitative_screener_instance.screen_with_streaming(
+                    question=question,
+                    top_n=top_n or page_size,
+                    page=page,
+                    page_size=page_size,
+                )
+                async for event in stream:
+                    if user_id in active_screening_requests and active_screening_requests[user_id].get("cancelled", False):
+                        log_info(f"Request {request_id} was cancelled, stopping stream")
+                        break
+                    if await request.is_disconnected():
+                        log_warning(f"Client disconnected for user {current_user['id']}. Stopping stream.")
+                        break
+                    if event.get('type') == 'result' and not event.get('error'):
+                        query_successful = True
+                    yield f"data: {json.dumps(event)}\n\n"
+                    await asyncio.sleep(0.02)
+            else:
+                # Fallback: financial-only screener
+                for event in analyzer.query_with_streaming(
+                    question=question,
+                    page=page,
+                    page_size=page_size
+                ):
+                    if user_id in active_screening_requests and active_screening_requests[user_id].get("cancelled", False):
+                        log_info(f"Request {request_id} was cancelled, stopping stream")
+                        break
+                    if await request.is_disconnected():
+                        log_warning(f"Client disconnected for user {current_user['id']}. Stopping stream.")
+                        break
+                    if event.get('type') == 'result' and not event.get('error'):
+                        query_successful = True
+                    yield f"data: {json.dumps(event)}\n\n"
+                    await asyncio.sleep(0.02)
             
-            # Use the streaming query functionality
-            for event in analyzer.query_with_streaming(
-                question=question,
-                page=page,
-                page_size=page_size
-            ):
-                # Check if request was cancelled
-                if user_id in active_screening_requests and active_screening_requests[user_id].get("cancelled", False):
-                    log_info(f"Request {request_id} was cancelled, stopping stream")
-                    break
-                
-                if await request.is_disconnected():
-                    log_warning(f"Client disconnected for user {current_user['id']}. Stopping stream.")
-                    break
-                
-                # Check if this is a successful result event
-                if event.get('type') == 'result' and not event.get('error'):
-                    query_successful = True
-                
-                yield f"data: {json.dumps(event)}\n\n"
-                await asyncio.sleep(0.02)  # Small sleep to prevent tight loop
-            
-            # Record usage only if query was successful
-            if query_successful:
+            # Record usage only if query was successful and user is authenticated
+            if query_successful and not is_guest:
                 await record_successful_query_usage(current_user['id'], db, 0.02)  # COST_PER_REQUEST from main server
         
         except Exception as e:
@@ -196,7 +231,8 @@ async def stream_query(
 @router.post("/query/sort", response_model=SortResponse)
 async def sort_query_results(
     sort_request: SortRequest,
-    current_user: dict = Depends(get_current_user),
+    request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -210,35 +246,40 @@ async def sort_query_results(
     
     analyzer = get_analyzer()
     
+    is_guest = current_user.get("is_guest", False)
+
     try:
         # For now, we'll need the original question to find cached data
         # In a production system, you might want to store query_id -> question mapping
-        
-        # Get the last query from user's history if query_id not provided
-        if not sort_request.query_id:
+
+        if sort_request.question and (is_guest or not sort_request.query_id):
+            # Use question directly when provided (guest users or when no query_id)
+            question = sort_request.question
+            log_info(f"🔍 SCREENER SORT: Using provided question: '{question}'")
+        elif not sort_request.query_id:
             # Get the most recent query from this user
             recent_query = await db.fetchrow('''
-                SELECT question FROM query_history 
-                WHERE user_id = $1 
-                ORDER BY created_at DESC 
+                SELECT question FROM query_history
+                WHERE user_id = $1
+                ORDER BY created_at DESC
                 LIMIT 1
             ''', uuid.UUID(current_user["id"]))
-            
+
             if not recent_query:
                 raise HTTPException(status_code=404, detail="No recent query found to sort")
-            
+
             question = recent_query['question']
             log_info(f"🔍 SCREENER SORT: Using most recent question from DB: '{question}'")
         else:
             # Get question from query_id
             query_record = await db.fetchrow('''
-                SELECT question FROM query_history 
+                SELECT question FROM query_history
                 WHERE id = $1 AND user_id = $2
             ''', uuid.UUID(sort_request.query_id), uuid.UUID(current_user["id"]))
-            
+
             if not query_record:
                 raise HTTPException(status_code=404, detail="Query not found or access denied")
-            
+
             question = query_record['question']
             log_info(f"🔍 SCREENER SORT: Using question from query_id {sort_request.query_id}: '{question}'")
         
@@ -293,66 +334,63 @@ async def sort_query_results(
 @router.post("/query/complete-dataset", response_model=QueryResponse)
 async def get_complete_dataset_for_screen(
     query_request: QueryRequest,
-    current_user: dict = Depends(get_current_user),
+    request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """Get complete dataset for screen saving (bypasses page_size limits)"""
-    
+
     # SIMPLE RATE LIMIT CHECK - directly in the function
     user_id = current_user["id"]
     is_admin = current_user.get("is_admin", False)
-    
+    is_guest = current_user.get("is_guest", False)
+
     try:
-        # Check minute limit (in-memory only)
-        allowed, limit_info = rate_limiter.check_rate_limit(user_id, is_admin)
+        if not is_guest:
+            # Check minute limit (in-memory only)
+            rate_limiter.check_rate_limit(user_id, is_admin)
+
+            # Check monthly limit from database (persistent)
+            today = date.today()
+            month_start = today.replace(day=1)
+            monthly_limit = ADMIN_RATE_LIMIT_PER_MONTH if is_admin else RATE_LIMIT_PER_MONTH
+
+            # Get monthly count from database
+            monthly_count = await db.fetchval('''
+                SELECT COALESCE(SUM(request_count), 0)
+                FROM user_usage
+                WHERE user_id = $1 AND request_date >= $2
+            ''', uuid.UUID(user_id), month_start)
         
-        # Check monthly limit from database (persistent)
-        today = date.today()
-        month_start = today.replace(day=1)
-        monthly_limit = ADMIN_RATE_LIMIT_PER_MONTH if is_admin else RATE_LIMIT_PER_MONTH
-        
-        # Get monthly count from database
-        monthly_count = await db.fetchval('''
-            SELECT COALESCE(SUM(request_count), 0) 
-            FROM user_usage 
-            WHERE user_id = $1 AND request_date >= $2
-        ''', uuid.UUID(user_id), month_start)
-        
-        # Check if monthly limit exceeded
-        if monthly_count >= monthly_limit:
-            # Calculate next month's start time for reset
-            if today.month == 12:
-                next_month = today.replace(year=today.year + 1, month=1, day=1)
-            else:
-                next_month = today.replace(month=today.month + 1, day=1)
-            
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Monthly limit exceeded. Maximum {monthly_limit} requests per month.",
-                headers={
-                    "X-RateLimit-Limit": str(monthly_limit),
-                    "X-RateLimit-Reset": next_month.isoformat(),
-                    "X-RateLimit-Remaining": "0"
-                }
-            )
-        
-        # Record the request for rate limiting purposes only (not for billing)
-        rate_limiter.record_request(user_id)
-        
+            # Check if monthly limit exceeded
+            if monthly_count >= monthly_limit:
+                if today.month == 12:
+                    next_month = today.replace(year=today.year + 1, month=1, day=1)
+                else:
+                    next_month = today.replace(month=today.month + 1, day=1)
+
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Monthly limit exceeded. Maximum {monthly_limit} requests per month.",
+                    headers={
+                        "X-RateLimit-Limit": str(monthly_limit),
+                        "X-RateLimit-Reset": next_month.isoformat(),
+                        "X-RateLimit-Remaining": "0"
+                    }
+                )
+
+            # Record the request for rate limiting purposes only (not for billing)
+            rate_limiter.record_request(user_id)
+
     except HTTPException:
         raise
     except Exception as e:
         log_error(f"Rate limit check failed for user {user_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit check failed. Please try again later.",
-            headers={
-                "X-RateLimit-Limit": str(monthly_limit),
-                "X-RateLimit-Reset": "unknown",
-                "X-RateLimit-Remaining": "0"
-            }
+            detail="Rate limit check failed. Please try again later."
         )
-    
+
     try:
         start_time = time.time()
         
@@ -388,10 +426,10 @@ async def get_complete_dataset_for_screen(
             used_pipeline_cache=result.get('cache_type_hit') == "pipeline_cache" if result.get('cache_type_hit') else False
         )
         
-        # Record usage for successful queries
-        if not bool(result.get('error')):
+        # Record usage for successful queries (not for guests)
+        if not bool(result.get('error')) and not is_guest:
             await record_successful_query_usage(current_user["id"], db, 0.02)  # COST_PER_REQUEST from main server
-        
+
         return response_data
         
     except Exception as e:
@@ -406,7 +444,8 @@ async def get_complete_dataset_for_screen(
 @router.post("/query/expand-value", response_model=ExpandValueResponse)
 async def expand_truncated_value(
     expand_request: ExpandValueRequest,
-    current_user: dict = Depends(get_current_user),
+    request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """
@@ -480,7 +519,8 @@ async def expand_truncated_value(
 @router.post("/query/paginate", response_model=QueryResponse)
 async def paginate_cached_results(
     pagination_request: PaginationRequest,
-    current_user: dict = Depends(get_current_user),
+    request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """Paginate cached results without triggering full query processing"""
@@ -549,24 +589,29 @@ async def paginate_cached_results(
 @router.post("/query/parallel/quarters", response_model=QueryResponse)
 async def query_multiple_quarters_parallel(
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    http_request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """Query multiple quarters in parallel for comparative analysis"""
     user_id = current_user["id"]
     is_admin = current_user.get("is_admin", False)
-    
-    # Check rate limits
-    try:
-        allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db)
-        if not allowed:
-            raise HTTPException(
-                status_code=429,
-                detail=limit_info['message']
-            )
-    except Exception as e:
-        log_error(f"Rate limit check failed: {e}")
-        raise HTTPException(status_code=500, detail="Rate limit check failed")
+    is_guest = current_user.get("is_guest", False)
+
+    # Check rate limits (skip for guests)
+    if not is_guest:
+        try:
+            allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db)
+            if not allowed:
+                raise HTTPException(
+                    status_code=429,
+                    detail=limit_info['message']
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            log_error(f"Rate limit check failed: {e}")
+            raise HTTPException(status_code=500, detail="Rate limit check failed")
     
     if not ANALYZER_AVAILABLE:
         raise HTTPException(
@@ -602,10 +647,11 @@ async def query_multiple_quarters_parallel(
         )
         
         execution_time = time.time() - start_time
-        
-        # Record successful query usage
-        await record_successful_query_usage(user_id, db, 0.02)  # COST_PER_REQUEST from main server
-        
+
+        # Record successful query usage (skip for guests)
+        if not is_guest:
+            await record_successful_query_usage(user_id, db, 0.02)  # COST_PER_REQUEST from main server
+
         # Format response
         response_data = QueryResponse(
             success=True,
@@ -640,24 +686,29 @@ async def query_multiple_quarters_parallel(
 @router.post("/query/parallel/companies", response_model=QueryResponse)
 async def query_multiple_companies_parallel(
     request: dict,
-    current_user: dict = Depends(get_current_user),
+    http_request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user),
     db: asyncpg.Connection = Depends(get_db)
 ):
     """Query multiple companies in parallel for comparative analysis"""
     user_id = current_user["id"]
     is_admin = current_user.get("is_admin", False)
-    
-    # Check rate limits
-    try:
-        allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db)
-        if not allowed:
-            raise HTTPException(
-                status_code=429,
-                detail=limit_info['message']
-            )
-    except Exception as e:
-        log_error(f"Rate limit check failed: {e}")
-        raise HTTPException(status_code=500, detail="Rate limit check failed")
+    is_guest = current_user.get("is_guest", False)
+
+    # Check rate limits (skip for guests)
+    if not is_guest:
+        try:
+            allowed, limit_info = await rate_limiter.check_rate_limit_with_monthly(user_id, is_admin, db)
+            if not allowed:
+                raise HTTPException(
+                    status_code=429,
+                    detail=limit_info['message']
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            log_error(f"Rate limit check failed: {e}")
+            raise HTTPException(status_code=500, detail="Rate limit check failed")
     
     if not ANALYZER_AVAILABLE:
         raise HTTPException(
@@ -694,9 +745,10 @@ async def query_multiple_companies_parallel(
         
         execution_time = time.time() - start_time
         
-        # Record successful query usage
-        await record_successful_query_usage(user_id, db, 0.02)  # COST_PER_REQUEST from main server
-        
+        # Record successful query usage (skip for guests)
+        if not is_guest:
+            await record_successful_query_usage(user_id, db, 0.02)  # COST_PER_REQUEST from main server
+
         # Format response
         response_data = QueryResponse(
             success=True,
@@ -730,7 +782,8 @@ async def query_multiple_companies_parallel(
 
 @router.post("/cancel")
 async def cancel_screening_request(
-    current_user: dict = Depends(get_current_user)
+    request: FastAPIRequest,
+    current_user: dict = Depends(get_screener_user)
 ):
     """Cancel the current active screening request for the user"""
     user_id = current_user.get('id')

@@ -1,0 +1,33 @@
+## Item 5. Market for Registrant's Common Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities.
+### Market Information and Dividends
+Our common stock is traded on the New York Stock Exchange \("NYSE"\) under the ticker symbol BBY\. In fiscal 2004, our Board initiated the payment of a regular quarterly cash dividend with respect to shares of our common stock\. A quarterly cash dividend has been paid in each subsequent quarter\. On February 25, 2021, we announced an increase in our regular quarterly dividend from $0\.55 per share to $0\.70 per share\. Future dividend payments will depend on our earnings, capital requirements, financial condition and other factors considered relevant by our Board\.
+### Holders
+As of March 18, 2021, there were 2,081 holders of record of our common stock\.
+### Purchases of Equity Securities by the Issuer and Affiliated Purchasers
+
+*On February 23, 2019, our Board authorized a $3\.0 billion share repurchase program\. On February 16, 2021, our Board approved a new $5\.0 billion share repurchase program, replacing the existing program, which had $1\.7 billion remaining available for repurchases as of January 30, 2021\. There is no expiration date governing the period over which we can repurchase shares under this authorization\. We temporarily suspended all share repurchases from March to November of fiscal 2021 to conserve liquidity in light of COVID\-19\-related uncertainties\. During fiscal 2021 we repurchased and retired 3\.1 million shares at a cost of $318 million\. Between the end of fiscal 2021 on January 30, 2021, and March 18, 2021, we repurchased an incremental 8\.1 million shares of our common stock at a cost of $873 million\. On February 25, 2021, we announced our plans to spend at least $2 billion on share repurchases in fiscal 2022\. The following table presents information regarding our repurchases of common stock during the fourth quarter of fiscal 2021:*
+
+
+| Fiscal Period                      | Total Number ‎of Shares ‎Purchased | Average Price ‎Paid per Share | Total Number of Shares ‎Purchased as Part of Publicly Announced Program | Approximate Value ‎of Shares that May Yet Be ‎Purchased Under the Program(1) |
+|------------------------------------|------------------------------------|-------------------------------|-------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| Nov. 1, 2020 through Nov. 28, 2020 | 103,308                            | $113.88                       | 103,308                                                                 | $1,923,000,000                                                               |
+| Nov. 29, 2020 through Jan. 2, 2021 | 1,316,868                          | $103.45                       | 1,316,868                                                               | $1,787,000,000                                                               |
+| Jan. 3, 2021 through Jan. 30, 2021 | 1,029,350                          | $110.76                       | 1,029,350                                                               | $1,673,000,000                                                               |
+| Total fiscal 2021 fourth quarter   | 2,449,526                          | $106.96                       | 2,449,526                                                               | $1,673,000,000                                                               |
+
+- **\(1\)**: At the beginning of the fourth quarter of fiscal 2021, there was $1\.9 billion available for share repurchases under our February 2019 $3\.0 billion share repurchase program\. The "Approximate Value of Shares that May Yet Be Purchased Under the Program" column reflects the $262 million we purchased in the fourth quarter of fiscal 2021 pursuant to such program\. Share repurchases prior to February 16, 2021, will be made under our February 2019 $3\.0 billion share repurchase program and thereafter will be made under our February 2021 $5\.0 billion share repurchase program\. For additional information, see Note 9, Shareholders' Equity, of the Notes to the Consolidated Financial Statements included in Item 8, Financial Statements and Supplementary Data, of this Annual Report on Form 10\-K\.
+#### ‎
+### Best Buy Stock Comparative Performance Graph
+#### The information contained in this Best Buy Stock Comparative Performance Graph section shall not be deemed to be "soliciting material" or "filed" or incorporated by reference in future filings with the SEC, or subject to the liabilities of Section 18 of the Exchange Act, except to the extent that we specifically incorporate it by reference into a document filed under the Securities Act or the Exchange Act.
+The graph below compares the cumulative total shareholder return on our common stock for the last five fiscal years with the cumulative total return on the Standard & Poor's 500 Index \("S&P 500"\), of which we are a component, and the Standard & Poor's Retailing Group Industry Index \("S&P Retailing Group"\), of which we are also a component\. The S&P Retailing Group is a capitalization\-weighted index of domestic equities traded on the NYSE and NASDAQ and includes high\-capitalization stocks representing the retail sector of the S&P 500\.
+The graph assumes an investment of $100 at the close of trading on January 30, 2016, the last trading day of fiscal 2016, in our common stock, the S&P 500 and the S&P Retailing Group\.
+##### COMPARISON OF 5 YEAR CUMULATIVE TOTAL RETURN*
+###### Among Best Buy Co., Inc., the S&P 500 and the S&P Retailing Group
+
+| Fiscal Years Ended  | January 30, 2016 | January 28, 2017 | February 3, 2018 | February 2, 2019 | February 1, 2020 | January 30, 2021 |
+|---------------------|------------------|------------------|------------------|------------------|------------------|------------------|
+| Best Buy Co., Inc.  | $100.00          | $162.91          | $273.68          | $230.58          | $343.49          | $453.59          |
+| S&P 500             | $100.00          | $120.04          | $151.74          | $148.23          | $180.37          | $211.48          |
+| S&P Retailing Group | $100.00          | $120.09          | $174.49          | $186.29          | $219.46          | $316.05          |
+
+- **\***: Cumulative total return assumes dividend reinvestment\. Source: Research Data Group, Inc\. ‎

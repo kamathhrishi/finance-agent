@@ -1,0 +1,27 @@
+## Item 4.   Mine Safety Disclosures
+None\.
+## Item 4A.  Executive Officers
+
+*The names of our executive officers, their ages and their positions \(as of February 1, 2025\) are shown below:*
+
+
+| Name              | Age | Position                                                                   |
+|-------------------|-----|----------------------------------------------------------------------------|
+| Kecia L. Steelman | 54  | President and Chief Executive Officer and member of the Board of Directors |
+| Paula M. Oyibo    | 45  | Chief Financial Officer and Treasurer                                      |
+| Jodi J. Caro      | 59  | General Counsel, Chief Risk & Compliance Officer and Corporate Secretary   |
+| Anita J. Ryan     | 60  | Chief Human Resources Officer                                              |
+
+
+*There is no family relationship between any of the directors or executive officers and any other director or executive officer of Ulta Beauty\.*
+
+### Kecia Steelman.
+ Ms\. Steelman was named President and Chief Executive Officer in January 2025, after having previously served as President and Chief Operating Officer since September 2023, and Chief Operating Officer since June 2021\. Previously, Ms\. Steelman served as Chief Store Operations Officer since September 2015 and as Senior Vice President, Store Operations since July 2014\. Prior to joining Ulta Beauty, Ms\. Steelman was Group Vice President at Family Dollar Stores from 2011 to 2014, after joining the company in 2009 as Vice President, Store Development and Store Operations\. From 2005 to 2009, Ms\. Steelman was Vice President, General Manager of Expo Design Center, 
+Home Depot Design Center, and YardBIRDs and Director of New Store Innovations at the Home Depot Corporation\. Ms\. Steelman began her career at Target Corporation and served in a variety of retail operations and merchandising roles with increasing responsibility from 1993 to 2005\. Ms\. Steelman currently serves on the board of directors for The Bay Club, a KKR portfolio company, World Business Chicago, and serves as the Chair of the Board of Directors for the Adler Planetarium\. She is also a member of The Economic Club of Chicago\.
+### Paula M. Oyibo. 
+Ms\. Oyibo was named Chief Financial Officer and Treasurer in April 2024, after serving in key leadership roles across the Finance organization since 2019\. Ms\. Oyibo oversees the company’s finance, accounting, tax, treasury, procurement, internal audit, and investor relations teams\. Previously, Ms\. Oyibo served as Senior Vice President, Finance since February 2022, where she had oversight of the Financial Planning & Analysis, Treasury and Non\-Merchandise Procurement functions, after serving as Vice President of Finance for Merchandising, Marketing, and eCommerce since 2019\. Prior to joining Ulta Beauty, Ms\. Oyibo served in finance and controller roles at Whirlpool Corporation and in senior level auditing and consulting positions with PricewaterhouseCoopers LLP\.  Ms\. Oyibo currently serves on the board of directors of Girls Inc\. of Chicago\. 
+### Jodi J. Caro. 
+Ms\. Caro was named General Counsel, Chief Risk & Compliance Officer in August 2015\. She also serves as Corporate Secretary and Chief Privacy Officer\. Ms\. Caro oversees Ulta Beauty’s Legal, Risk & Governance Services team in delivering legal, governance, compliance, risk management, and environmental, health and safety services\. Ms\. Caro also leads the Company’s Environmental, Social, and Governance efforts\. Prior to joining Ulta Beauty, she was Vice President, General Counsel and Secretary for Integrys Energy Group, in addition to holding the role of Integrys’ Chief Compliance and Ethics Officer\. Prior to joining Integrys in 2008, Ms\. Caro owned and operated her own law practice, which provided general counsel and corporate services to clients ranging from established multi\-million\-dollar companies to medium and small early\-stage enterprises\. Prior to opening her law practice in 2006, she was co\-founder and General Counsel of Looking Glass Networks, a privately held, facilities\-based telecommunications company, and served as an in\-house attorney with MCI/WORLDCOM\. Ms\. Caro serves on the Advisory Board for Markaaz, Inc\., a privately held financial services company\. She is also Vice\-Chair of the Retail Litigation Center and serves on the Chicago\-Kent College of Law Board of Advisors as well as the Leadership Council for Communities in Schools of Chicago\.
+### Anita J. Ryan. 
+Ms\. Ryan was named Chief Human Resources Officer in April 2022, after having previously served as Senior Vice President of Human Resources since 2018 and Vice President of Human Resources since 2016\. Ms\. Ryan is responsible for Ulta Beauty’s Human Resources strategy and innovation, including oversight of the Company’s people success business partner team and centers of excellence in talent acquisition; associate care and support; leadership and organization development; diversity, equity, and inclusion; compliance; internal communications and training for the enterprise\. Ms\. Ryan also serves as President and Chair for Ulta Beauty Charitable Foundation\. Prior to her more than 20\-year career at Ulta Beauty, Ms\. Ryan began her career in the grocery industry where she held numerous operations leadership roles before transitioning to human resources\. Ms\. Ryan currently serves on the board of directors of Skills for Chicagoland’s Future\.
+# Part II

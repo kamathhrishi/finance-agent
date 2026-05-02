@@ -16,6 +16,7 @@ import {
   FileText,
   Table,
   LinkIcon,
+  Clock,
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { config } from '../lib/config'
@@ -59,10 +60,10 @@ interface SortState {
 }
 
 const EXAMPLE_QUERIES = [
-  'Top 10 tech stocks by revenue growth',
-  'Companies with P/E under 15 and dividend yield over 3%',
   'Companies investing heavily in AI infrastructure',
-  'Tech stocks with revenue > $50B that are investing in AI',
+  'Semiconductor companies expanding into data center markets',
+  'Software companies with strong enterprise AI adoption commentary',
+  'Tech companies discussing supply chain risks in 2024',
 ]
 
 // Citation display component
@@ -347,6 +348,7 @@ export default function ScreenerPage() {
           column,
           direction: newDirection,
           query_id: result.query_id,
+          question: query,
         }),
       })
 
@@ -508,11 +510,25 @@ export default function ScreenerPage() {
       >
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-2xl font-semibold text-[#0a1628] mb-1">Stock Screener</h1>
             <p className="text-slate-500">
-              Screen stocks on financials, qualitative themes, or both at once
+              Screen stocks by qualitative themes from earnings calls and 10-K filings
             </p>
+          </div>
+
+          {/* Quantitative filters notice */}
+          <div className="flex items-center gap-4 bg-white border border-slate-200 rounded-xl px-5 py-4 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-slate-500" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-[#0a1628]">Quantitative filters — coming soon</p>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Screening by revenue, P/E, market cap, and other financial metrics will be available once real-time market data is integrated.
+              </p>
+            </div>
+            <span className="ml-auto shrink-0 text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap">In development</span>
           </div>
 
           {/* Search Input - unified card */}
@@ -525,7 +541,7 @@ export default function ScreenerPage() {
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && executeQuery()}
-                  placeholder="e.g., Tech stocks with revenue > $50B that are investing in AI"
+                  placeholder="e.g., Companies investing heavily in AI infrastructure"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-[#0a1628] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0083f1]/20 focus:border-[#0083f1] transition-colors"
                   disabled={isLoading}
                 />

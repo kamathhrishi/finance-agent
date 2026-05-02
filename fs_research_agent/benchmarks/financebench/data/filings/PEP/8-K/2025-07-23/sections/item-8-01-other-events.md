@@ -1,0 +1,44 @@
+# Item 8.01.
+## Other Events.
+## PepsiCo Senior Notes Offering.
+
+*On July 21, 2025, PepsiCo, Inc\. \(“PepsiCo”\) announced an
+offering of $750,000,000 aggregate principal amount of its 4\.100% Senior Notes due 2029 \(the “2029 Notes”\), $650,000,000 aggregate
+principal amount of its 4\.300% Senior Notes due 2030 \(the “2030 Notes”\), $850,000,000 aggregate principal amount of its 4\.650%
+Senior Notes due 2032 \(the “2032 Notes”\) and $1,250,000,000 aggregate principal amount of its 5\.000% Senior Notes due 2035
+\(the “2035 Notes,” and together with the 2029 Notes, 2030 Notes and 2032 Notes, the “Notes”\)\. BofA Securities,
+Inc\., Citigroup Global Markets Inc\. and J\.P\. Morgan Securities LLC were joint book\-running managers for the offering of the Notes\. PepsiCo received net proceeds of approximately
+$3,484 million, after deducting underwriting discounts and estimated offering expenses payable by PepsiCo\.
+The net proceeds will be used for general corporate purposes, including the repayment of commercial paper\. The Notes were offered
+and sold pursuant to a Terms Agreement \(the “Terms Agreement”\) dated July 21, 2025 \(incorporating the PepsiCo, Inc\.
+Underwriting Agreement Standard Provisions dated as of November 18, 2019 \(the “Standard Provisions”\)\) among PepsiCo and
+the representatives of the several underwriters, under PepsiCo’s automatic shelf registration statement on Form S\-3 \(File No\. 333\-277003\),
+filed with the Securities and Exchange Commission \(the “SEC”\) on February 12, 2024 \(the “Registration Statement”\)\.
+PepsiCo has filed with the SEC a prospectus supplement, dated July 21, 2025, together with the accompanying prospectus, dated February 12,
+2024, relating to the offer and sale of the Notes\. The Notes were issued on July 23, 2025 pursuant to an Indenture \(the “Indenture”\)
+dated as of February 12, 2024 between PepsiCo and U\.S\. Bank Trust Company, National Association, as Trustee\. The following
+table summarizes information about the Notes and the offering thereof\.*
+
+
+|                                     | 4.100% Senior Notes due 2029                                                                                                         | 4.300% Senior Notes due 2030                                                                                                  | 4.650% Senior Notes due 2032                                                                                                | 5.000% Senior Notes due 2035                                                                                                    |
+|-------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| Aggregate Principal Amount Offered: | $750,000,000                                                                                                                         | $650,000,000                                                                                                                  | $850,000,000                                                                                                                | $1,250,000,000                                                                                                                  |
+| Maturity Date:                      | January 15, 2029                                                                                                                     | July 23, 2030                                                                                                                 | July 23, 2032                                                                                                               | July 23, 2035                                                                                                                   |
+| Interest Payment Dates:             | Semi-annually in arrears on each January 15 and July 15, commencing January 15, 2026                                                 | Semi-annually in arrears on each January 23 and July 23, commencing January 23, 2026                                          | Semi-annually in arrears on each January 23 and July 23, commencing January 23, 2026                                        | Semi-annually in arrears on each January 23 and July 23, commencing January 23, 2026                                            |
+| Coupon:                             | 4.100%                                                                                                                               | 4.300%                                                                                                                        | 4.650%                                                                                                                      | 5.000%                                                                                                                          |
+| Optional Redemption:                | Prior to December 15, 2028, make-whole call at Treasury Rate plus 5 basis points; par call at any time on or after December 15, 2028 | Prior to June 23, 2030, make-whole call at Treasury Rate plus 10 basis points; par call at any time on or after June 23, 2030 | Prior to May 23, 2032, make-whole call at Treasury Rate plus 10 basis points; par call at any time on or after May 23, 2032 | Prior to April 23, 2035, make-whole call at Treasury Rate plus 10 basis points; par call at any time on or after April 23, 2035 |
+| Price to Public:                    | 99.879%                                                                                                                              | 99.822%                                                                                                                       | 99.970%                                                                                                                     | 99.984%                                                                                                                         |
+
+
+*The Notes are unsecured obligations of PepsiCo
+and rank equally with all of PepsiCo’s other unsecured senior indebtedness\. The Indenture also contains customary event of default
+provisions\. The above description of the Terms Agreement,
+the Indenture and the Notes is qualified in its entirety by reference to the Terms Agreement, the Indenture and the forms of Notes\. Each
+of the Terms Agreement, the Standard Provisions and the forms of the 2029 Note, the 2030 Note, the 2032 Note and the 2035 Note is incorporated
+by reference into the Registration Statement and is filed with this Current Report on Form 8\-K as Exhibit 1\.1, Exhibit 1\.2,
+Exhibit 4\.1, Exhibit 4\.2, Exhibit 4\.3 and Exhibit 4\.4, respectively\. The Board of Directors resolutions authorizing
+PepsiCo’s officers to establish the terms of the Notes have been filed as Exhibit 4\.9 to the Registration Statement\. The Indenture
+has been filed as Exhibit 4\.3 to the Registration Statement\. Opinions regarding the legality of the Notes are incorporated by reference
+into the Registration Statement and are filed with this Current Report on Form 8\-K as Exhibits 5\.1 and 5\.2; and consents relating
+to such incorporation of such opinions are incorporated by reference into the Registration Statement and are filed with this Current Report
+on Form 8\-K as Exhibits 23\.1 and 23\.2 by reference to their inclusion within Exhibits 5\.1 and 5\.2, respectively\.*

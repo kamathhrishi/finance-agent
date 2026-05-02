@@ -1,0 +1,47 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2022-02-09",
+  "period_of_report": "2021-12-31",
+  "accession": "000006674022000010",
+  "filing_chars": 774013,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.12",
+      "file": "EX-10.12.md",
+      "chars": 35954
+    },
+    {
+      "type": "EX-10.14",
+      "file": "EX-10.14.md",
+      "chars": 34110
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 8419
+    }
+  ]
+}

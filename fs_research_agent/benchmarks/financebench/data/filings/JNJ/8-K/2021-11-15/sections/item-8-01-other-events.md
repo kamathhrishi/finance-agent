@@ -1,0 +1,2 @@
+# Item 8.01 Other Events.
+On November 12, 2021, Johnson & Johnson \(the “Company”\) issued a press release announcing its intent to separate the Company's Consumer Health business\.  A copy of the Company's press release is attached to this Current Report on Form 8\-K as Exhibit 99\.1\.

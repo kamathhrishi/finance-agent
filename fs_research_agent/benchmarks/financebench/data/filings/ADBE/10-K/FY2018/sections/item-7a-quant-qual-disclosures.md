@@ -1,0 +1,53 @@
+## ITEM 7A.  QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK
+All market risk sensitive instruments were entered into for non\-trading purposes\.
+### Foreign Currency Risk
+#### Foreign Currency Exposures and Hedging Instruments
+
+*In countries outside the United States, we transact business in U\.S\. Dollars and various other currencies, which subject us to exposure from movements in exchange rates\. We may use foreign exchange purchased options or forward contracts to hedge our foreign currency revenue\. Additionally, we hedge our net recognized foreign currency assets and liabilities with foreign exchange forward contracts\. We hedge these exposures to reduce the risk that our earnings and cash flows will be adversely affected by changes in exchange rates\. Our significant foreign currency revenue exposures for fiscal 2018, 2017 and 2016 were as follows \(in millions, except Japanese Yen\):*
+
+
+| Euro                       | Fiscal 2018 € | Fiscal 2018 1,309.9 | Fiscal 2017 € | Fiscal 2017 1,044.7 | Fiscal 2016 € | Fiscal 2016 825.6 |
+|----------------------------|---------------|---------------------|---------------|---------------------|---------------|-------------------|
+| Japanese Yen (in billions) | ¥             | 60.8                | ¥             | 51.0                | ¥             | 38.7              |
+| British Pounds             | £             | 423.1               | £             | 338.4               | £             | 263.5             |
+
+
+*As of November 30, 2018, the total absolute value of all outstanding foreign exchange contracts, including options and forwards, was $1\.55 billion, which included the notional equivalent of $805\.0 million in Euros, $275\.3 million in British Pounds, $331\.8 million in Japanese Yen and $140\.3 million in other foreign currencies\. As of November 30, 2018, all contracts were set to expire at various dates through June 2019\. The bank counterparties in these contracts could expose us to credit\-related losses that would be largely mitigated with collateral security agreements that provide for collateral to be received or posted when the net fair value of these contracts fluctuates from contractually established thresholds\. In addition, we enter into master netting arrangements that have the ability to further limit credit\-related losses with the same counterparty by permitting net settlement transactions\. A sensitivity analysis was performed on all of our foreign exchange derivatives as of November 30, 2018\. This sensitivity analysis measures the hypothetical market value resulting from a 10% shift in the value of exchange rates relative to the U\.S\. Dollar\. For option contracts, the Black\-Scholes option pricing model was used\. A 10% increase in the value of the U\.S\. Dollar and a corresponding decrease in the value of the hedged foreign currency asset would lead to an increase in the fair value of our financial hedging instruments by $48\.2 million\. Conversely, a 10% decrease in the value of the U\.S\. Dollar would result in a decrease in the fair value of these financial instruments by $60\.7 million\. As a general rule, we do not use foreign exchange contracts to hedge local currency denominated operating expenses in countries where a natural hedge exists\. For example, in many countries, revenue in the local currencies substantially offsets the local currency denominated operating expenses\. We also have long\-term investment exposures consisting of the capitalization and retained earnings in our non\-U\.S\. Dollar functional currency foreign subsidiaries\. As of November 30, 2018 and December 1, 2017, this long\-term investment exposure totaled an absolute notional equivalent of $292\.3 million and $190\.5 million, respectively, with the year\-over\-year increase primarily driven by earnings growth\. At this time, we do not hedge these long\-term investment exposures\. We do not use foreign exchange contracts for speculative trading purposes, nor do we hedge our foreign currency exposure in a manner that entirely offsets the effects of changes in foreign exchange rates\. We regularly review our hedging program and assess the need to utilize financial instruments to hedge currency exposures on an ongoing basis\.*
+
+##### Cash Flow Hedging—Hedges of Forecasted Foreign Currency Revenue
+We may use foreign exchange purchased options or forward contracts to hedge foreign currency revenue denominated in Euros, British Pounds and Japanese Yen\.  We hedge these cash flow exposures to reduce the risk that our earnings and cash flows will be adversely affected by changes in exchange rates\. These foreign exchange contracts, carried at fair value, may have maturities between one and twelve months\. We enter into these foreign exchange contracts to hedge forecasted revenue in the normal course of business and accordingly, they are not speculative in nature\.
+We record changes in the intrinsic value of these cash flow hedges in accumulated other comprehensive income \(loss\) until the forecasted transaction occurs\. When the forecasted transaction occurs, we reclassify the related gain or loss on the cash flow hedge to revenue\. In the event the underlying forecasted transaction does not occur, or it becomes probable that it will not occur, we reclassify the gain or loss on the related cash flow hedge from accumulated other comprehensive income \(loss\) to interest and other income, net on our Consolidated Statements of Income at that time\. For the fiscal year ended November 30, 2018, there were no net gains or losses recognized in other income relating to hedges of forecasted transactions that did not occur\.
+##### Balance Sheet Hedging—Hedging of Foreign Currency Assets and Liabilities
+We hedge exposures related to our net recognized foreign currency assets and liabilities with foreign exchange forward contracts to reduce the risk that our earnings and cash flows will be adversely affected by changes in foreign currency exchange rates\. These foreign exchange contracts are carried at fair value with changes in the fair value recorded as interest and other income, net\. These foreign exchange contracts do not subject us to material balance sheet risk due to exchange rate movements because gains and losses on these contracts are intended to offset gains and losses on the assets and liabilities being hedged\. At November 30, 2018, the outstanding balance sheet hedging derivatives had maturities of 180 days or less\.
+##### See Note 5 of our Notes to Consolidated Financial Statements for information regarding our hedging activities.
+### Interest Rate Risk
+#### Short-Term Investments and Fixed Income Securities
+
+*At November 30, 2018, we had debt securities classified as short\-term investments of $1\.59 billion\. Changes in interest rates could adversely affect the market value of these investments\. The following table separates these investments, based on stated maturities, to show the approximate exposure to interest rates \(in millions\):*
+
+
+| Due within one year             | $612.1   |
+|---------------------------------|----------|
+| Due between one and two years   | 564.2    |
+| Due between two and three years | 282.2    |
+| Due after three years           | 127.7    |
+| Total                           | $1,586.2 |
+
+
+*A sensitivity analysis was performed on our investment portfolio as of November 30, 2018\. The analysis is based on an estimate of the hypothetical changes in market value of the portfolio that would result from an immediate parallel shift in the yield curve of various magnitudes\. The following tables present the hypothetical fair values of our debt securities classified as short\-term investments assuming immediate parallel shifts in the yield curve of 50 basis points \(“BPS”\), 100 BPS and 150 BPS\. The analysis is shown as of November 30, 2018 and December 1, 2017 \(dollars in millions\):*
+
+
+| -150 BPS | -100 BPS | -50 BPS  | Fair Value 11/30/18 | +50 BPS  | +100 BPS | +150 BPS |
+|----------|----------|----------|---------------------|----------|----------|----------|
+| $1,617.5 | $1,607.1 | $1,596.6 | $1,586.2            | $1,575.7 | $1,565.3 | $1,554.8 |
+| -150 BPS | -100 BPS | -50 BPS  | Fair Value 12/1/17  | +50 BPS  | +100 BPS | +150 BPS |
+| $3,595.2 | $3,568.1 | $3,540.9 | $3,513.7            | $3,486.5 | $3,459.3 | $3,432.1 |
+
+#### Term Loan
+As of November 30, 2018, our Term Loan’s carrying value was $2\.25 billion\. At our election, the Term Loan will bear interest at either \(i\) LIBOR plus a margin, based on our debt ratings, ranging from 0\.500% to 1\.000% or \(ii\) a base rate plus a margin, based on our debt ratings, ranging from 0\.040% to 0\.110%\. Interest is payable periodically, in arrears, at the end of each interest period we elect\.  An immediate hypothetical 50 basis points increase or decrease in market interest rates would not have a significant impact on our results of operations\.
+#### Senior Notes
+As of November 30, 2018, the amount outstanding under our Notes was $1\.9 billion\. In June 2014, we entered into interest rate swaps that effectively converted the fixed interest rate on our 2020 Notes to a floating interest rate based on LIBOR plus a fixed number of basis points through February 1, 2020\. Accordingly, our exposure to fluctuations in market interest rates is on the hedged fixed\-rate debt of $900 million\. An immediate hypothetical 50 basis points increase or decrease in market interest rates would not have a significant impact on our results of operations\.
+As of November 30, 2018, the total carrying amount of the Notes was $1\.88 billion and the related fair value based on  observable market prices in less active markets was $1\.89 billion\.
+### Other Market Risk
+#### Privately Held Long-Term Investments
+The privately held companies in which we invest can still be considered in the start\-up or development stages which are inherently risky\. The technologies or products these companies have under development are typically in the early stages and may never materialize, which could result in a loss of a substantial part of our initial investment in these companies\. The evaluation of privately held companies is based on information that we request from these companies, which is not subject to the same disclosure regulations as U\.S\. publicly traded companies, and as such, the basis for these evaluations is subject to the timing and accuracy of the data received from these companies\. We have immaterial exposure on our long\-term investments in privately held companies as these investments were not significant as of November 30, 2018 and December 1, 2017\.

@@ -1,0 +1,2 @@
+## ITEM 13.  CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS, AND DIRECTOR INDEPENDENCE
+The information required by this Item 13 of Form 10\-K will be included under the captions “Certain Relationships and Related Persons Transactions” and “Director Independence” in our 2026 Proxy Statement and is incorporated herein by reference\.

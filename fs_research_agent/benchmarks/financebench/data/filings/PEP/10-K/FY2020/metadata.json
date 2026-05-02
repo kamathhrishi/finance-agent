@@ -1,0 +1,61 @@
+{
+  "ticker": "PEP",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2021-02-11",
+  "period_of_report": "2020-12-26",
+  "accession": "000007747621000007",
+  "filing_chars": 544886,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1B",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.6",
+      "file": "EX-10.6.md",
+      "chars": 105910
+    },
+    {
+      "type": "EX-10.7",
+      "file": "EX-10.7.md",
+      "chars": 65935
+    },
+    {
+      "type": "EX-10.9",
+      "file": "EX-10.9.md",
+      "chars": 219727
+    },
+    {
+      "type": "EX-10.10",
+      "file": "EX-10.10.md",
+      "chars": 292507
+    },
+    {
+      "type": "EX-10.20",
+      "file": "EX-10.20.md",
+      "chars": 20235
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 49021
+    }
+  ]
+}

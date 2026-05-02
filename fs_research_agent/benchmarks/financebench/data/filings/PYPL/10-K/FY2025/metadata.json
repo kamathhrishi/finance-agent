@@ -1,0 +1,67 @@
+{
+  "ticker": "PYPL",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2026-02-03",
+  "period_of_report": "2025-12-31",
+  "accession": "000163391726000024",
+  "filing_chars": 655159,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.05",
+      "file": "EX-10.05.md",
+      "chars": 127834
+    },
+    {
+      "type": "EX-10.10",
+      "file": "EX-10.10.md",
+      "chars": 37168
+    },
+    {
+      "type": "EX-10.11",
+      "file": "EX-10.11.md",
+      "chars": 39302
+    },
+    {
+      "type": "EX-10.20",
+      "file": "EX-10.20.md",
+      "chars": 584811
+    },
+    {
+      "type": "EX-10.28",
+      "file": "EX-10.28.md",
+      "chars": 12761
+    },
+    {
+      "type": "EX-19.01",
+      "file": "EX-19.01.md",
+      "chars": 32285
+    },
+    {
+      "type": "EX-21.01",
+      "file": "EX-21.01.md",
+      "chars": 1684
+    }
+  ]
+}

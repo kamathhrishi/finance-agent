@@ -1,0 +1,38 @@
+## ITEM 5.       MARKET FOR REGISTRANT’S COMMON EQUITY, RELATED STOCKHOLDER MATTERS AND ISSUER PURCHASES OF EQUITY SECURITIES
+Our common stock is listed on The NASDAQ Global Select Market \(NASDAQ\) under the symbol “AMD”\. On January 28, 2022, there were 4,492 registered holders of our common stock, and the closing price of our common stock was $105\.24 per share as reported on NASDAQ\.
+### Issuer Purchases of Equity Securities
+
+*In May 2021, we announced that our Board of Directors approved a new stock repurchase program to purchase up to $4 billion of our outstanding common stock in the open market\. We expect to fund repurchases through cash generated from operations which have been strengthened by our strong operational results\. Our stock repurchase program does not obligate us to acquire any common stock, has no termination date and may be suspended or discontinued at any time\. The following table provides information relating to our repurchase of common stock for the year ended December 25, 2021:*
+
+
+|                                                 | Total Number of Shares Repurchased   | Average Price Paid per Share         | Total Number of Shares Repurchased as Part of Publicly Announced Program | Maximum Dollar Value of Shares That May Yet be Purchased Under the Program |
+|-------------------------------------------------|--------------------------------------|--------------------------------------|--------------------------------------------------------------------------|----------------------------------------------------------------------------|
+|                                                 | (In millions, except per share data) | (In millions, except per share data) | (In millions, except per share data)                                     | (In millions, except per share data)                                       |
+| Repurchases during each fiscal quarter of 2021: |                                      |                                      |                                                                          |                                                                            |
+| March 28, 2021 - June 26, 2021                  | 3,234,896                            | $79.14                               | 3,234,896                                                                | $3,744                                                                     |
+| June 27, 2021 - September 25, 2021              | 7,165,899                            | $104.66                              | 7,165,899                                                                | $2,994                                                                     |
+| September 26, 2021 - December 25, 2021          | 6,343,862                            | $119.20                              | 6,343,862                                                                | $2,238                                                                     |
+|                                                 | 16,744,657                           |                                      | 16,744,657                                                               |                                                                            |
+| Repurchases during last fiscal quarter of 2021: |                                      |                                      |                                                                          |                                                                            |
+| September 26, 2021 - October 30, 2021           | 4,226,341                            | $106.57                              | 4,226,341                                                                | $2,544                                                                     |
+| October 31, 2021 - November 27, 2021            | 2,117,521                            | $144.40                              | 2,117,521                                                                | $2,238                                                                     |
+| November 28, 2021 - December 25, 2021           | —                                    | $—                                   | —                                                                        | $2,238                                                                     |
+| Total                                           | 6,343,862                            |                                      | 6,343,862                                                                |                                                                            |
+
+### Equity Award Share Withholding
+Shares of common stock withheld as payment of withholding taxes in connection with the vesting or exercise of equity awards are also treated as common stock repurchases\. Those withheld shares of common stock are not considered common stock repurchases under an authorized common stock repurchase plan\. During fiscal year 2021, we withheld 2 million shares as payment of withholding taxes in connection with the vesting and exercise of equity awards\.
+For information about our equity compensation plans, see Part III, Item 11, below\.
+#### Performance Graph
+#### Comparison of Five-Year Cumulative Total Returns
+#### Advanced Micro Devices, S&P 500 Index and S&P 500 Semiconductor Index
+The following graph shows a five\-year comparison of cumulative total return on our common stock, the S&P 500 Index and the S&P 500 Semiconductor Index from December 31, 2016 through December 25, 2021\. The past performance of our common stock is no indication of future performance\.
+
+| Company / Index              | Base Period 12/31/2016 | Years Ended 12/30/2017 | Years Ended 12/29/2018 | Years Ended 12/28/2019 | Years Ended 12/26/2020 | Years Ended 12/25/2021 |
+|------------------------------|------------------------|------------------------|------------------------|------------------------|------------------------|------------------------|
+| Advanced Micro Devices, Inc. | 100                    | 91                     | 157                    | 407                    | 810                    | 1,289                  |
+| S&P 500 Index                | 100                    | 122                    | 115                    | 154                    | 179                    | 231                    |
+| S&P 500 Semiconductors Index | 100                    | 136                    | 127                    | 188                    | 264                    | 403                    |
+
+### Unregistered Sales of Equity Securities
+On December 14, 2021, we issued 109,807 shares of AMD’s common stock pursuant to an exercise in full by a commercial partner of a warrant to purchase up to 127,435 shares of AMD’s common stock at an exercise price of $20\.0423 per share \(the Warrant\)\. As a result, the Warrant is no longer outstanding\. The commercial partner acquired the Warrant on December 26, 2018 pursuant to a strategic arrangement with such partner\. The shares of common stock were issued pursuant to Section 3\(a\)\(9\) of the Securities Act of 1933\.
+On December 27, 2021, we issued warrants to purchase 63,226 shares of our common stock to a commercial partner pursuant to a strategic arrangement executed in 2018 with such partner\. The warrants have an exercise price of $25\.4994 per share and expire on December 27, 2024\. The warrants were issued pursuant to Section 4\(a\)\(2\) of the Securities Act of 1933\.

@@ -1,0 +1,16 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-06-19",
+  "period_of_report": "2020-06-12",
+  "accession": "000110465920075308",
+  "filing_chars": 10401,
+  "section_keys": [
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": []
+}

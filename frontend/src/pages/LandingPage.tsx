@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 import StrataLensLogo from '../components/StrataLensLogo'
 import AboutModal from '../components/AboutModal'
+import CoverageModal from '../components/CoverageModal'
+import ModelSelector from '../components/ModelSelector'
+import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
 
 // Mock data for 10-K Analysis Chat - Minimal card style with data extraction
@@ -90,11 +93,11 @@ const transcriptChatData = [
 ]
 
 const exampleQueries = [
-  "Analyze $PLTR’s 2024 and 2025 10-K filings and earnings transcripts, and explain why growth has been high but margins have been thin",
-  "Compile $DDOG billings from last 8 quarters",
-  "Compare $MSFT and $GOOGL cloud segment growth",
-  "compile $META AI capex commentary in last 3 quarters",
-  "Comment on $ORCL balance sheet and their usage of debt?",
+  "Analyze $PLTR's 2024 and 2025 10-K filings and explain why growth has been high but margins have been thin",
+  "How has $NVDA's gross margin changed across the last 4 fiscal years?",
+  "Compare $MSFT and $GOOGL cloud segment growth in their latest 10-Ks",
+  "Summarize $META's AI capex commentary across the last few 10-Q MD&A sections",
+  "Comment on $ORCL's balance sheet and their usage of debt in the latest 10-K",
 ]
 
 // Tech company tickers for the scrolling banner
@@ -111,7 +114,9 @@ export default function LandingPage() {
   const [chatIndex, setChatIndex] = useState(0)
   const [transcriptChatIndex, setTranscriptChatIndex] = useState(0)
   const [inputValue, setInputValue] = useState('')
+  const [landingModelId, setLandingModelId] = useState<ModelId>(getStoredModel())
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [coverageOpen, setCoverageOpen] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -217,29 +222,39 @@ export default function LandingPage() {
               </p>
 
               {/* Stats row - more muted */}
-              <div className="flex items-center justify-center gap-10 mb-8">
+              <div className="flex items-center justify-center gap-10 mb-5">
                 <div className="text-center">
-                  <div className="text-2xl font-semibold text-[#0a1628]">500+</div>
+                  <div className="text-2xl font-semibold text-[#0a1628]">100+</div>
                   <div className="text-sm text-slate-400">Tech Companies</div>
                 </div>
                 <div className="w-px h-12 bg-slate-200" />
                 <div className="text-center">
                   <div className="text-2xl font-semibold text-[#0a1628]">3 Years</div>
-                  <div className="text-sm text-slate-400">Earnings Data</div>
+                  <div className="text-sm text-slate-400">Filings History</div>
                 </div>
                 <div className="w-px h-12 bg-slate-200" />
                 <div className="text-center">
-                  <div className="text-2xl font-semibold text-[#0a1628]">10-K</div>
+                  <div className="text-2xl font-semibold text-[#0a1628]">10-K · 10-Q · 8-K</div>
                   <div className="text-sm text-slate-400">SEC Filings</div>
                 </div>
+              </div>
+
+              {/* Coverage button + expanding-soon note */}
+              <div className="flex flex-col items-center gap-1.5 mb-7">
+                <button
+                  onClick={() => setCoverageOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#0a1628] border-b border-dashed border-slate-300 hover:border-slate-500 pb-0.5 transition-colors"
+                >
+                  See full coverage
+                  <span aria-hidden>→</span>
+                </button>
+                <p className="text-[11px] text-slate-400">Coverage expanding soon</p>
               </div>
 
               {/* Coming Soon - subtle */}
               <div className="flex items-center justify-center gap-2 mb-10 text-xs text-slate-400">
                 <span className="font-medium">Expanding to:</span>
-                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">8-K</span>
-                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">10-Q</span>
-                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">Private Companies</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded">Earnings Calls</span>
               </div>
             </motion.div>
 
@@ -256,7 +271,7 @@ export default function LandingPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Query SEC filings and earnings transcripts..."
+                  placeholder="Query SEC filings (10-K, 10-Q, 8-K) for any covered tech company…"
                   className="w-full px-5 py-4 pr-14 text-base text-[#0a1628] placeholder:text-slate-400 bg-transparent resize-none focus:outline-none min-h-[56px] overflow-hidden"
                   rows={1}
                 />
@@ -267,6 +282,17 @@ export default function LandingPage() {
                 >
                   <Send className="w-4 h-4" />
                 </button>
+                <div className="px-3 pb-2 pt-0 flex items-center justify-between">
+                  <ModelSelector
+                    value={landingModelId}
+                    onChange={(id) => {
+                      setLandingModelId(id)
+                      setStoredModel(id)
+                    }}
+                    compact
+                  />
+                  <span />
+                </div>
               </div>
             </motion.div>
 
@@ -352,7 +378,7 @@ export default function LandingPage() {
                 10-K Filing Analysis
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 500+ tech companies. Risk factors, revenue breakdowns, competitive positioning—all extracted and structured.
+                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 500+ tech companies. Coverage spans 2022–2025 with risk factors, revenue breakdowns, and competitive positioning—all extracted and structured.
               </p>
               <ul className="space-y-3">
                 {[
@@ -770,6 +796,7 @@ export default function LandingPage() {
 
       {/* About Modal */}
       <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <CoverageModal isOpen={coverageOpen} onClose={() => setCoverageOpen(false)} />
 
       {/* Ticker scroll animation */}
       <style>{`

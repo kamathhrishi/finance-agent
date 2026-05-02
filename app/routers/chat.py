@@ -43,10 +43,48 @@ from db.db_utils import get_db, get_db_optional
 from app.utils import create_error_response, raise_sanitized_http_exception
 from analytics.analytics_utils import log_chat_analytics, get_analytics_summary, get_analytics_data
 from analytics.analytics import UserType, AnalyticsQuery, AnalyticsResponse, AnalyticsSummary
+from app.routers.screener import get_qualitative_screener
 
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+
+
+def _format_screener_result(rows: list, synthesis: str = "") -> tuple[str, list]:
+    """Convert screener data_rows + optional synthesis into a markdown answer + citations list."""
+    lines = [
+        f"Found **{len(rows)} companies** matching your criteria:\n",
+        "| Company | Relevance | Evidence |",
+        "|---------|-----------|----------|",
+    ]
+    citations = []
+    for row in rows:
+        sym = row.get('symbol', '')
+        score = row.get('relevance_score', 0)
+        pct = f"{round(score * 100)}%" if isinstance(score, float) else f"{score}%"
+        evidence = (row.get('evidence_summary') or '').replace('\n', ' ')[:150]
+        if len(row.get('evidence_summary', '')) > 150:
+            evidence += '…'
+        lines.append(f"| **{sym}** | {pct} | {evidence} |")
+        for c in row.get('citations', []):
+            citations.append({
+                'ticker': sym,
+                'chunk_text': c.get('chunk_text', ''),
+                'relevance_score': score,
+                'source_type': c.get('source_type', c.get('type', 'transcript')),
+                'year': c.get('year'),
+                'quarter': c.get('quarter'),
+                'section': c.get('section'),
+                'section_title': c.get('section_title'),
+                'index': c.get('index'),
+                'marker': c.get('marker'),
+            })
+    answer = '\n'.join(lines)
+    if synthesis:
+        answer += f"\n\n---\n\n## Space Analysis\n\n{synthesis}"
+    return answer, citations[:60]
 
 
 @asynccontextmanager
@@ -249,67 +287,60 @@ async def stream_chat_message_v2(
             # Set database connection for RAG system (request-scoped via contextvars)
             rag_system.set_database_connection(stream_db)
             
-            query_successful = False
             start_time = time.time()
-            
+
             try:
                 logger.info(f"Starting streaming chat for user {user_id}: '{message[:100]}...'")
                 logger.info(f"🔄 MAX_ITERATIONS parameter received: {max_iterations}")
-                
-                # Execute RAG flow with streaming - events are yielded directly
+
+                # Shared state for both paths
                 final_result = None
                 accumulated_reasoning = []
-                _REASONING_TYPES = {'reasoning','progress','analysis','search','news_search','10k_search','iteration_start','iteration_search','iteration_transcript_search','iteration_news_search','iteration_followup','iteration_complete','iteration_final','agent_decision','planning_start','planning_complete','retrieval_complete','evaluation_complete','search_complete','10k_planning','10k_retrieval','10k_evaluation','api_retry'}
+                query_successful = False
 
+                # Execute RAG flow with streaming - events are yielded directly
+                _REASONING_TYPES = {'reasoning','progress','analysis','search','news_search','10k_search','iteration_start','iteration_search','iteration_transcript_search','iteration_news_search','iteration_followup','iteration_complete','iteration_final','agent_decision','planning_start','planning_complete','retrieval_complete','evaluation_complete','search_complete','10k_planning','10k_retrieval','10k_evaluation','api_retry','reflection','wave2_search','screener_search'}
+
+                _scoped = [s.model_dump() for s in (chat_request.scoped_filings or [])]
                 async for event in rag_system.execute_rag_flow(
                     question=message,
                     show_details=False,
                     comprehensive=comprehensive,
                     max_iterations=max_iterations,
                     conversation_id=str(conversation_id),
-                    stream=True  # Enable streaming
+                    user_id=str(user_id),
+                    scoped_filings=_scoped,
+                    model=chat_request.model,
+                    stream=True
                 ):
-                    # Check if client disconnected
                     if await request.is_disconnected():
                         logger.warning(f"Client disconnected for user {user_id}")
                         break
 
-                    # Check for cancellation
                     if user_id in active_chat_requests and active_chat_requests[user_id].get("cancelled", False):
                         logger.info(f"Request cancelled for user {user_id}")
                         break
-                    
-                    # Filter out evaluation reasoning from events before sending
-                    # Remove evaluation text from message and data fields
+
                     if event.get('message') and isinstance(event['message'], str):
                         msg = event['message']
-                        # Check if it's evaluation reasoning
-                        if (('The answer' in msg or 'The response' in msg) and 
-                            ('omits' in msg or 'lacks' in msg or 'gaps' in msg or 'missing' in msg or 
-                             'does not provide' in msg or 'prevent' in msg)):
-                            # Replace with brief action message
-                            if 'iteration' in event.get('type', ''):
-                                event['message'] = 'Analyzing answer quality'
-                            else:
-                                event['message'] = 'Processing...'
-                    
-                    # Also filter data fields
+                        if (('The answer' in msg or 'The response' in msg) and
+                                ('omits' in msg or 'lacks' in msg or 'gaps' in msg or 'missing' in msg or
+                                 'does not provide' in msg or 'prevent' in msg)):
+                            event['message'] = 'Analyzing answer quality' if 'iteration' in event.get('type', '') else 'Processing...'
+
                     if event.get('data') and isinstance(event['data'], dict):
                         for field in ['reasoning', 'iteration_reasoning', 'evaluation_summary', 'reason']:
                             if field in event['data'] and isinstance(event['data'][field], str):
                                 reasoning_text = event['data'][field]
-                                if (('The answer' in reasoning_text or 'The response' in reasoning_text) and 
-                                    ('omits' in reasoning_text or 'lacks' in reasoning_text or 'gaps' in reasoning_text)):
-                                    # Clear evaluation reasoning
+                                if (('The answer' in reasoning_text or 'The response' in reasoning_text) and
+                                        ('omits' in reasoning_text or 'lacks' in reasoning_text or 'gaps' in reasoning_text)):
                                     event['data'][field] = ''
-                    
-                    # Log event being forwarded (skip noisy token events)
+
                     if event.get('type') != 'token':
                         logger.info(f"📡 ROUTER: Forwarding event to client: type={event.get('type')}, step={event.get('step')}")
 
                     event_type = event.get('type')
 
-                    # Accumulate reasoning steps for persistence
                     if event_type in _REASONING_TYPES and event.get('message'):
                         accumulated_reasoning.append({
                             'message': event['message'],
@@ -317,22 +348,15 @@ async def stream_chat_message_v2(
                             'data': event.get('data'),
                         })
 
-                    # Send event
                     if event_type == 'result':
                         final_result = event.get('data')
                         query_successful = True
                         logger.info(f"✅ ROUTER: Final result event - query successful")
-                        # Inject conversation_id into the final result
                         event['conversation_id'] = str(conversation_id)
                         logger.info(f"📂 Added conversation_id to result: {conversation_id}")
 
                     yield f"data: {json.dumps(event)}\n\n"
 
-                    # Flush delay by event type:
-                    # - tokens: 10ms cap for smooth streaming
-                    # - reasoning/progress: 80ms so each event is sent as a separate packet
-                    #   (without this, rapid-fire events from fast LLMs get TCP-batched together)
-                    # - everything else: minimal yield for context switching
                     if event_type == 'token':
                         await asyncio.sleep(0.01)
                     elif event_type in ('reasoning', 'progress', '10k_planning', '10k_retrieval',
@@ -626,12 +650,16 @@ async def stream_landing_demo_message_v2(
                 accumulated_reasoning = []
                 _DEMO_REASONING_TYPES = {'reasoning','progress','analysis','search','news_search','10k_search','iteration_start','iteration_search','iteration_transcript_search','iteration_news_search','iteration_followup','iteration_complete','iteration_final','agent_decision','planning_start','planning_complete','retrieval_complete','evaluation_complete','search_complete','10k_planning','10k_retrieval','10k_evaluation','api_retry'}
 
+                _scoped = [s.model_dump() for s in (chat_request.scoped_filings or [])]
                 async for event in rag_system.execute_rag_flow(
                     question=message,
                     show_details=False,
                     comprehensive=comprehensive,
                     max_iterations=max_iterations,
                     conversation_id=str(conversation_id),
+                    user_id=f"demo:{session_id}",
+                    scoped_filings=_scoped,
+                    model=chat_request.model,
                     stream=True  # Enable streaming
                 ):
                     # Check if client disconnected

@@ -1,0 +1,2 @@
+# Item 8.01             Other Events
+On April 18, 2023, Johnson & Johnson issued the attached press release \(Exhibit 99\.3\) announcing that its Board of Directors declared a 5\.3% increase in the quarterly dividend rate, from $1\.13 to $1\.19 per share\. At the new rate, the indicated dividend on an annual basis is $4\.76 per share compared to the previous rate of $4\.52 per share\. The next quarterly dividend is payable on June 6, 2023 to shareholders of record as of the close of business on May 23, 2023\.

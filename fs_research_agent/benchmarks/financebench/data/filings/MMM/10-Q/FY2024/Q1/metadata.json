@@ -1,0 +1,44 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": "Q1",
+  "filing_date": "2024-04-30",
+  "period_of_report": "2024-03-31",
+  "accession": "000006674024000053",
+  "filing_chars": 415213,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 22932
+    },
+    {
+      "type": "EX-10.11",
+      "file": "EX-10.11.md",
+      "chars": 38703
+    },
+    {
+      "type": "EX-10.12",
+      "file": "EX-10.12.md",
+      "chars": 46632
+    },
+    {
+      "type": "EX-10.13",
+      "file": "EX-10.13.md",
+      "chars": 51410
+    },
+    {
+      "type": "EX-10.14",
+      "file": "EX-10.14.md",
+      "chars": 59750
+    }
+  ]
+}

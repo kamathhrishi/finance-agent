@@ -13,6 +13,9 @@ interface SECFilingChunk {
   sec_section?: string
   relevance_score?: number
   char_offset?: number
+  // fs_research mode: line range into the source markdown file
+  line_start?: number
+  line_end?: number
 }
 
 interface HeadingNode {
@@ -38,6 +41,10 @@ interface SECFilingViewerProps {
   relevantChunks?: SECFilingChunk[]
   primaryChunkId?: string  // The specific citation that was clicked - scroll to this one
   panelMode?: boolean  // When true, renders as embedded panel content (no overlay)
+  // fs_research_agent mode: when 'fs_research', fetch from /fs-research/document/with-highlights
+  // using `path` + line ranges instead of /sec-filings/with-highlights + char offsets.
+  sourceBackend?: 'sec' | 'fs_research'
+  path?: string
 }
 
 interface SECFilingData {
@@ -254,7 +261,10 @@ export default function SECFilingViewer({
   relevantChunks = [],
   primaryChunkId,
   panelMode = false,
+  sourceBackend = 'sec',
+  path,
 }: SECFilingViewerProps) {
+  const isFsResearch = sourceBackend === 'fs_research'
   const [filing, setFiling] = useState<SECFilingData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -263,7 +273,9 @@ export default function SECFilingViewer({
   const contentRef = useRef<HTMLDivElement>(null)
 
   // Stable key derived from chunk identity — avoids refetch when parent re-renders with new array reference
-  const chunkKey = relevantChunks.map(c => c.chunk_id || c.chunk_text.slice(0, 20)).join('|')
+  const chunkKey = relevantChunks
+    .map(c => c.chunk_id || (c.line_start ? `L${c.line_start}-${c.line_end}` : (c.chunk_text || '').slice(0, 20)))
+    .join('|')
 
   // Fetch filing when modal opens
   useEffect(() => {
@@ -274,6 +286,37 @@ export default function SECFilingViewer({
       setError(null)
 
       try {
+        if (isFsResearch) {
+          // ── fs_research mode: line-range highlights from local markdown corpus ──
+          if (!path) {
+            throw new Error('fs_research mode requires `path`')
+          }
+          const fsChunks = (relevantChunks || [])
+            .filter(c => typeof c.line_start === 'number' && typeof c.line_end === 'number')
+            .map(c => ({
+              chunk_id: c.chunk_id || undefined,
+              line_start: c.line_start as number,
+              line_end: c.line_end as number,
+              primary: c.chunk_id === primaryChunkId,
+            }))
+          const response = await fetch(`${config.apiBaseUrl}/fs-research/document/with-highlights`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path, relevant_chunks: fsChunks }),
+          })
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}))
+            throw new Error(err.detail || 'fs_research document not found')
+          }
+          const data = await response.json()
+          setFiling({
+            ...data,
+            document_markdown: data.highlighted_markdown || data.document_markdown,
+            document_text: data.document_text || '',
+          })
+          return
+        }
+
         if (relevantChunks && relevantChunks.length > 0) {
           // Use with-highlights endpoint for rich highlighting
           const response = await fetch(`${config.apiBaseUrl}/sec-filings/with-highlights`, {
@@ -335,7 +378,7 @@ export default function SECFilingViewer({
 
     fetchFiling()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, ticker, filingType, fiscalYear, quarter, filingDate, chunkKey])
+  }, [isOpen, ticker, filingType, fiscalYear, quarter, filingDate, chunkKey, isFsResearch, path])
 
   // Scroll to the clicked citation's mark, falling back to the first mark
   useEffect(() => {

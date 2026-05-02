@@ -1,0 +1,15 @@
+{
+  "ticker": "PEP",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-11-06",
+  "period_of_report": "2023-11-01",
+  "accession": "000007747623000064",
+  "filing_chars": 6615,
+  "section_keys": [
+    "5.02"
+  ],
+  "exhibits": []
+}

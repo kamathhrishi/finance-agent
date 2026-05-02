@@ -1,0 +1,65 @@
+{
+  "ticker": "KHC",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2024-02-15",
+  "period_of_report": "2023-12-30",
+  "accession": "000163745924000018",
+  "filing_chars": 650373,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.7",
+      "file": "EX-10.7.md",
+      "chars": 26623
+    },
+    {
+      "type": "EX-10.41",
+      "file": "EX-10.41.md",
+      "chars": 57341
+    },
+    {
+      "type": "EX-10.42",
+      "file": "EX-10.42.md",
+      "chars": 78139
+    },
+    {
+      "type": "EX-10.43",
+      "file": "EX-10.43.md",
+      "chars": 60062
+    },
+    {
+      "type": "EX-10.44",
+      "file": "EX-10.44.md",
+      "chars": 60729
+    },
+    {
+      "type": "EX-10.45",
+      "file": "EX-10.45.md",
+      "chars": 25590
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 14995
+    }
+  ]
+}

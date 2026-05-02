@@ -1,0 +1,27 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": null,
+  "filing_date": "2024-03-06",
+  "period_of_report": "2024-03-06",
+  "accession": "000143774924006709",
+  "filing_chars": 7751,
+  "section_keys": [
+    "2.02",
+    "7.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 43805
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 29
+    }
+  ]
+}

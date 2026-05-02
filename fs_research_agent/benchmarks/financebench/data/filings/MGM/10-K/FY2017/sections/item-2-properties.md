@@ -1,0 +1,47 @@
+## ITEM 2.
+### PROPERTIES
+Our principal executive offices are located at Bellagio\. Our significant land holdings are described below; unless otherwise indicated, all properties are indirectly owned by us\. We also own or lease various other improved and unimproved properties in Las Vegas and other locations in the United States and certain foreign countries\.
+#### Domestic resorts and other land
+
+*The following table lists our domestic resorts land holdings, ground leases and other land holdings on a consolidated basis, including land held in connection with our proposed development properties and land and ground leases held by a subsidiary of the Operating Partnership, which we lease pursuant to the terms of the master lease\.*
+
+
+|                                                        | Approximate |                                                                                                                                        |
+|--------------------------------------------------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| Name and Location                                      | Acres       | Notes                                                                                                                                  |
+| Las Vegas, Nevada operations                           |             |                                                                                                                                        |
+| Bellagio                                               | 77          | Approximately two acres of the site are subject to two ground leases.                                                                  |
+| MGM Grand Las Vegas                                    | 102         |                                                                                                                                        |
+| Mandalay Bay                                           | 124         |                                                                                                                                        |
+| The Mirage                                             | 77          |                                                                                                                                        |
+| Luxor                                                  | 73          | Includes 15 acres of land located across the Las Vegas Strip from Luxor.                                                               |
+| Excalibur                                              | 51          |                                                                                                                                        |
+| New York-New York                                      | 23          | Includes three acres of land related to The Park entertainment district development located between Monte Carlo and New York-New York. |
+| Monte Carlo                                            | 21          |                                                                                                                                        |
+| Circus Circus Las Vegas                                | 102         | Includes 34 acres of land located north of Circus Circus Las Vegas.                                                                    |
+| Other domestic operations                              |             |                                                                                                                                        |
+| MGM Grand Detroit (Detroit, Michigan)                  | 27          |                                                                                                                                        |
+| Beau Rivage (Biloxi, Mississippi)                      | 42          | 10 acres are subject to a tidelands lease.                                                                                             |
+| Gold Strike (Tunica, Mississippi)                      | 24          |                                                                                                                                        |
+| MGM National Harbor (Prince George's County, Maryland) | 23          | All 23 acres are subject to a ground lease.                                                                                            |
+| Borgata (Atlantic City, New Jersey)                    | 46          | 11 acres are subject to ground leases.                                                                                                 |
+| Other                                                  |             |                                                                                                                                        |
+| T-Mobile Arena (Las Vegas, Nevada)                     | 17          | Located adjacent to New York-New York and leased under a 50 year ground lease to Las Vegas Arena Company.                              |
+| MGM Springfield (Springfield, Massachusetts)           | 14          |                                                                                                                                        |
+| Tunica, Mississippi                                    | 388         | We own an undivided 50% interest in this land with an unaffiliated, gaming company.                                                    |
+| Atlantic City, New Jersey                              | 125         | Approximately 74 acres are suitable for development.                                                                                   |
+| Shadow Creek Golf Course (North Las Vegas, Nevada)     | 310         | Includes 66 acres of land adjacent to the golf course.                                                                                 |
+| Fallen Oak Golf Course (Saucier, Mississippi)          | 511         |                                                                                                                                        |
+| Primm Valley Golf Club (Stateline, California)         | 573         | Located at the California state line, four miles from Primm, Nevada. Includes 125 acres of land adjacent to the golf club.             |
+
+
+*The land and substantially all of the assets of MGM Grand Las Vegas and Bellagio secure the obligations under our senior credit facility\. In addition, the senior credit facility is secured by a pledge of the equity or limited liability company interests of the subsidiaries that own MGM Grand Las Vegas and Bellagio\.*
+
+#### MGM China
+MGM Macau occupies an approximately 10 acre site and MGM Cotai occupies an approximately 18 acre site, both of which are possessed under separate 25\-year land use right agreements with the Macau government\. The MGM China credit facility is secured by MGM Grand Paradise’s interest in the Cotai and MGM Macau land use rights, and MGM China, MGM Grand Paradise and their guarantor subsidiaries have granted a security interest in substantially all of their assets to secure the facility\. As of December 31, 2017, approximately $2\.3 billion was outstanding under the MGM China credit facility\. These borrowings are non\-recourse to us\.
+##### Operating Partnership
+In connection with the initial public offering of MGP, the Borgata transaction and the MGM National Harbor transaction, the real estate assets of The Mirage, Mandalay Bay, Luxor, New York\-New York, Monte Carlo, Excalibur, The Park, Gold Strike Tunica, MGM Grand Detroit, Borgata, Beau Rivage and MGM National Harbor were transferred to a subsidiary of the Operating Partnership in which we have a controlling interest\. All of these properties, other than MGM National Harbor, secure the obligations under the Operating Partnership’s credit agreement and are leased by us under an amended master lease that expires in 2046 \(after giving effect to our renewal options\)\. These borrowings are non\-recourse to us\.
+#### Unconsolidated Affiliates
+CityCenter occupies approximately 67 acres of land between Bellagio and Monte Carlo\. The main site, along with substantially all of CityCenter’s assets, serves as collateral for CityCenter’s senior credit facility\. As of December 31, 2017, CityCenter had not drawn on its $125 million revolving credit facility and had $1\.6 billion in term loans outstanding\. These borrowings are non\-recourse to us\.
+The Las Vegas Arena Company leases under a long\-term ground lease approximately 17 acres of land owned by us and located between Frank Sinatra Drive and New York\-New York, adjacent to the Las Vegas Strip\. Substantially all of the assets of Las Vegas Arena Company are used as collateral for its senior secured credit facility\. In connection with this senior secured credit facility, we and Anschutz Entertainment Group, Inc\. \(“AEG”\) each entered into a repayment guarantee for the term loan B\. As of December 31, 2017, the outstanding principal balance under term loan A was $129 million and the outstanding principal balance under term loan B was $50 million\. See Note 12 to the accompanying consolidated financial statements for discussion of our repayment guarantee\.
+Other than as described above, none of our properties are subject to any major encumbrance\.

@@ -1,0 +1,18 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": "Q3",
+  "filing_date": "2021-11-04",
+  "period_of_report": "2021-09-30",
+  "accession": "000174879021000038",
+  "filing_chars": 144100,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

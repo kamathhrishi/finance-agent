@@ -1,0 +1,17 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2025-04-30",
+  "period_of_report": "2025-04-24",
+  "accession": "000020040625000141",
+  "filing_chars": 8254,
+  "section_keys": [
+    "5.02",
+    "5.07",
+    "9.01"
+  ],
+  "exhibits": []
+}

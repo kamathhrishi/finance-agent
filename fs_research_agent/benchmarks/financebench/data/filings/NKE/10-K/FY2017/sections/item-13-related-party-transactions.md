@@ -1,0 +1,2 @@
+## ITEM 13. Certain Relationships and Related Transactions and Director Independence
+The information required by Items 404 and 407\(a\) of Regulation S\-K is included under “Election of Directors — Transactions with Related Persons” and “Corporate Governance — Director Independence” in the definitive Proxy Statement for our 2017 Annual Meeting of Shareholders and is incorporated herein by reference\.

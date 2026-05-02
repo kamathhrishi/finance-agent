@@ -1,0 +1,41 @@
+{
+  "ticker": "JNJ",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-02-22",
+  "period_of_report": "2021-01-03",
+  "accession": "000020040621000008",
+  "filing_chars": 725534,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-3.1",
+      "file": "EX-3.1.md",
+      "chars": 39658
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 45919
+    }
+  ]
+}

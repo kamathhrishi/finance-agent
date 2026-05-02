@@ -1,0 +1,12 @@
+# Nixpacks build configuration for Railway.
+#
+# We need ripgrep (`rg`) on PATH at runtime — fs_research_agent's `grep` tool
+# shells out to it (see fs_research_agent/tools.py). Without `rg`, every grep
+# tool call returns "ripgrep not installed" and the agent grinds to a halt.
+#
+# Nixpacks auto-detects Python and provisions everything else; this file just
+# adds the system packages we need on top of those defaults. Any keys here
+# merge with (do not override) Nixpacks' detected defaults.
+
+[phases.setup]
+aptPkgs = ["ripgrep"]

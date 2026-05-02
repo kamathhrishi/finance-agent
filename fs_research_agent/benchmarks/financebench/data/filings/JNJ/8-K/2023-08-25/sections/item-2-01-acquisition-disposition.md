@@ -1,0 +1,2 @@
+# Item 2.01     Completion of Acquisition or Disposition of Assets
+On August 23, 2023, Johnson & Johnson completed its previously announced split\-off exchange offer of 1,533,830,450 shares of common stock of Kenvue Inc\. \(“Kenvue”\), pursuant to which Johnson & Johnson accepted an aggregate of 190,955,435 shares of Johnson & Johnson common stock from its shareholders in exchange for 1,533,830,450 shares of Kenvue common stock owned by Johnson & Johnson\.

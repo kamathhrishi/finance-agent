@@ -11,6 +11,8 @@ import {
   type SSEEvent,
   type Conversation,
 } from '../lib/api'
+import { _scopeStoreInternal } from '../lib/scopeStore'
+import { getStoredModel } from '../lib/models'
 
 interface UseChatReturn {
   messages: ChatMessage[]
@@ -136,9 +138,16 @@ export function useChat(): UseChatReturn {
       let accumulatedSources: Source[] = []
       let newConversationId = currentConversationId
 
+      // Snapshot the current user's scope at send time. Read directly from the
+      // singleton so the hook doesn't have to subscribe (avoids re-renders on
+      // every chip add/remove).
+      const scopedFilings = _scopeStoreInternal.getSnapshot()
+
       for await (const event of streamChat(content, {
         conversationId: currentConversationId || undefined,
         authToken,
+        scopedFilings: scopedFilings.length > 0 ? scopedFilings : undefined,
+        model: getStoredModel(),
       })) {
         // Capture conversation_id from first response
         if (event.conversation_id && !newConversationId) {

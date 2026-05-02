@@ -46,6 +46,30 @@ FINANCIAL_KEYWORDS = [
     'balance sheet', 'income statement', 'cash flow statement'
 ]
 
+# Boilerplate SOX/auditor exhibits — excluded from LLM selection (never substantive)
+BOILERPLATE_EXHIBITS = frozenset({
+    'EX-23.1', 'EX-23.2',
+    'EX-31.1', 'EX-31.2', 'EX-31.3',
+    'EX-32.1', 'EX-32.2',
+    'EX-24.1',
+})
+
+# Human-readable descriptions shown to LLM during exhibit selection
+EXHIBIT_DESCRIPTIONS = {
+    'EX-19':   'Insider trading / securities trading policy',
+    'EX-19.1': 'Insider trading / securities trading policy',
+    'EX-97':   'Compensation recovery / clawback policy',
+    'EX-97.1': 'Compensation recovery / clawback policy',
+    'EX-99.1': 'Earnings press release / supplemental financials',
+    'EX-99.2': 'Supplemental financial data',
+    'EX-13':   'Annual report to shareholders',
+    'EX-21':   'List of subsidiaries',
+    'EX-10':   'Material contracts (equity plans, leases, agreements)',
+    'EX-4':    'Debt instruments / rights of securities',
+    'EX-3.1':  'Articles of incorporation',
+    'EX-3.2':  'Bylaws',
+}
+
 
 class SmartParallelSECFilingsService:
     """
@@ -155,13 +179,13 @@ class SmartParallelSECFilingsService:
 
     def _make_llm_call(self, messages: List[Dict], temperature: float = 0.1,
                        max_tokens: int = 2000, expect_json: bool = False) -> str:
-        """Make LLM API call: Cerebras with retries → OpenAI gpt-5-nano → Gemini."""
-        from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
+        """Make LLM API call: Cerebras → OpenAI gpt-5-nano → Gemini."""
         self.current_session['api_calls'] = self.current_session.get('api_calls', 0) + 1
 
-        # --- Cerebras with retries ---
+        # --- Cerebras primary ---
         last_error = None
         if self.cerebras_available:
+            from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
             for attempt in range(3):
                 try:
                     response = self.cerebras_client.chat.completions.create(
@@ -178,7 +202,7 @@ class SmartParallelSECFilingsService:
                         rag_logger.warning(f"Cerebras 429 (attempt {attempt + 1}/3). Retrying in {wait_time}s...")
                         time.sleep(wait_time)
                     else:
-                        rag_logger.warning("Cerebras 429 after max retries — falling back to OpenAI gpt-5-nano")
+                        rag_logger.warning("Cerebras 429 after max retries — falling back to OpenAI")
                 except Exception as e:
                     last_error = e
                     if is_retryable_error(e) and attempt < 2:
@@ -186,7 +210,7 @@ class SmartParallelSECFilingsService:
                         rag_logger.warning(f"Cerebras failed (attempt {attempt + 1}/3): {e}. Retrying in {wait_time}s...")
                         time.sleep(wait_time)
                     else:
-                        rag_logger.warning(f"Cerebras failed: {e}")
+                        rag_logger.warning(f"Cerebras failed: {e}, falling back to OpenAI")
                         break
 
         # --- OpenAI fallback ---
@@ -197,11 +221,11 @@ class SmartParallelSECFilingsService:
                     max_tokens=max_tokens,
                     reasoning_effort="medium",
                 )
-                rag_logger.info("OpenAI gpt-5-nano fallback succeeded")
+                rag_logger.info("OpenAI fallback succeeded")
                 return result
             except Exception as e:
                 last_error = e
-                rag_logger.warning(f"OpenAI fallback failed: {e}, trying Gemini")
+                rag_logger.warning(f"OpenAI fallback failed: {e}")
 
         # --- Gemini fallback ---
         if self.gemini_available:
@@ -229,13 +253,13 @@ class SmartParallelSECFilingsService:
 
     async def _make_llm_call_async(self, messages: List[Dict], temperature: float = 0.1,
                                    max_tokens: int = 2000, expect_json: bool = False) -> str:
-        """Async LLM call: Cerebras with retries → OpenAI gpt-5-nano → Gemini."""
-        from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
+        """Async LLM call: Cerebras → OpenAI gpt-5-nano → Gemini."""
         self.current_session['api_calls'] = self.current_session.get('api_calls', 0) + 1
 
-        # --- Cerebras with retries ---
+        # --- Cerebras primary ---
         last_error = None
         if self.cerebras_available:
+            from cerebras.cloud.sdk import RateLimitError as CerebrasRateLimitError
             for attempt in range(3):
                 try:
                     response = self.cerebras_client.chat.completions.create(
@@ -252,7 +276,7 @@ class SmartParallelSECFilingsService:
                         rag_logger.warning(f"Cerebras 429 (attempt {attempt + 1}/3). Retrying in {wait_time}s...")
                         await asyncio.sleep(wait_time)
                     else:
-                        rag_logger.warning("Cerebras 429 after max retries — falling back to OpenAI gpt-5-nano")
+                        rag_logger.warning("Cerebras 429 after max retries — falling back to OpenAI")
                 except Exception as e:
                     last_error = e
                     if is_retryable_error(e) and attempt < 2:
@@ -260,7 +284,7 @@ class SmartParallelSECFilingsService:
                         rag_logger.warning(f"Cerebras failed (attempt {attempt + 1}/3): {e}. Retrying in {wait_time}s...")
                         await asyncio.sleep(wait_time)
                     else:
-                        rag_logger.warning(f"Cerebras failed: {e}")
+                        rag_logger.warning(f"Cerebras failed: {e}, falling back to OpenAI")
                         break
 
         # --- OpenAI fallback ---
@@ -271,11 +295,11 @@ class SmartParallelSECFilingsService:
                     max_tokens=max_tokens,
                     reasoning_effort="medium",
                 )
-                rag_logger.info("OpenAI gpt-5-nano fallback succeeded")
+                rag_logger.info("OpenAI fallback succeeded")
                 return result
             except Exception as e:
                 last_error = e
-                rag_logger.warning(f"OpenAI fallback failed: {e}, trying Gemini")
+                rag_logger.warning(f"OpenAI fallback failed: {e}")
 
         # --- Gemini fallback ---
         if self.gemini_available:
@@ -407,12 +431,31 @@ class SmartParallelSECFilingsService:
                 }
             }
 
-        # Get all tables upfront
-        all_tables = await self._get_all_tables_for_ticker(ticker, fiscal_year)
-        rag_logger.info(f"📊 {len(all_tables)} tables available")
+        # Get all tables upfront, split main body vs exhibit tables
+        all_tables_raw = await self._get_all_tables_for_ticker(ticker, fiscal_year)
+        all_tables = [t for t in all_tables_raw if not t.get('exhibit_type')]
+        rag_logger.info(f"📊 {len(all_tables)} main-body tables, {len(all_tables_raw) - len(all_tables)} exhibit tables available")
+
+        # Exhibit selection (once per query — covers both text and table paths)
+        available_exhibits = self._get_available_exhibits(ticker, fiscal_year)
+        selected_exhibits = self._select_relevant_exhibits(query, available_exhibits) if available_exhibits else []
+        # include_exhibits=None → no filtering (filing has no exhibits)
+        # include_exhibits=[]   → main body text only
+        # include_exhibits=[..] → main body + those exhibit text chunks
+        include_exhibits: Optional[List[str]] = selected_exhibits if available_exhibits else None
+
+        # Exhibit table selection — separate LLM call on exhibit-only table pool
+        exhibit_table_chunks: List[Dict] = []
+        if selected_exhibits:
+            exhibit_tables_pool = [t for t in all_tables_raw if t.get('exhibit_type') in selected_exhibits]
+            if exhibit_tables_pool:
+                rag_logger.info(f"📎 Running table selector on {len(exhibit_tables_pool)} exhibit tables for {selected_exhibits}")
+                exhibit_table_chunks = self._retrieve_tables_sync(
+                    query, exhibit_tables_pool, ticker=ticker, fiscal_year=fiscal_year, top_k=3
+                )
 
         # Initialize tracking
-        accumulated_chunks = []
+        accumulated_chunks = list(exhibit_table_chunks)  # seed with exhibit tables upfront
         current_answer = None
         seen_chunk_ids = set()
         next_chunk_idx = 1  # Global [10K-i] counter across iterations
@@ -440,7 +483,8 @@ class SmartParallelSECFilingsService:
                 ticker=ticker,
                 fiscal_year=fiscal_year,
                 all_tables=all_tables,
-                embedding_function=embedding_function
+                embedding_function=embedding_function,
+                include_exhibits=include_exhibits,
             )
 
             # Deduplicate and accumulate
@@ -603,6 +647,14 @@ Think about where in a 10-K the data physically lives and use vocabulary from th
 - Management commentary and trends: item_7 MD&A vocabulary
 - Financial line items and tables: item_8 Financial Statements vocabulary
 
+EXHIBIT TARGETING — some questions are best answered from attached exhibits, not the main body:
+- Insider trading / securities trading policy (blackout periods, pre-clearance, 10b5-1 rules): EX-19 vocabulary — "blackout period", "pre-clearance", "securities trading"
+- Compensation clawback / recovery policy (recoupment, incentive pay forfeiture): EX-97 vocabulary — "clawback", "recoupment", "incentive compensation recovery"
+- Material contracts (employment agreements, equity plans, lease terms): EX-10 vocabulary
+- Subsidiary list: EX-21 vocabulary — "subsidiaries", "wholly owned"
+- Earnings press release or supplemental data: EX-99 vocabulary
+For exhibit-targeted questions, use SHORT queries matching the exhibit's own language.
+
 SEARCH TYPES:
 - "table": For quantitative data (revenue, COGS, assets, any number/line item)
 - "text": For narrative data (workforce disclosures, strategy, explanations)
@@ -708,7 +760,8 @@ Now analyze the original question and create the search plan."""
         fiscal_year: int,
         all_tables: List[Dict],
         top_k: int = 20,
-        embedding_function=None
+        embedding_function=None,
+        include_exhibits: Optional[List[str]] = None,
     ) -> List[Dict]:
         """
         Execute multiple searches in PARALLEL.
@@ -750,7 +803,8 @@ Now analyze the original question and create the search plan."""
                     else:
                         sub_question_embedding = query_embedding
 
-                    chunks = self._retrieve_text_sync(query, sub_question_embedding, ticker, fiscal_year, top_k)
+                    chunks = self._retrieve_text_sync(query, sub_question_embedding, ticker, fiscal_year, top_k,
+                                                      include_exhibits=include_exhibits)
 
                 # Tag source and ensure ticker/fiscal_year are set
                 for chunk in chunks:
@@ -865,7 +919,8 @@ Return JSON with table indices (1-indexed), selecting up to {top_k} tables:
             return all_tables[:2] if all_tables else []
 
     def _retrieve_text_sync(self, query: str, query_embedding: np.ndarray,
-                            ticker: str, fiscal_year: int, top_k: int = 20) -> List[Dict]:
+                            ticker: str, fiscal_year: int, top_k: int = 20,
+                            include_exhibits: Optional[List[str]] = None) -> List[Dict]:
         """Synchronous text retrieval with section selection and reranking."""
         try:
             # STEP 1: Get available sections for this ticker/fiscal_year
@@ -876,20 +931,22 @@ Return JSON with table indices (1-indexed), selecting up to {top_k} tables:
             if available_sections:
                 selected_sections = self._select_relevant_sections(query, available_sections)
 
-            rag_logger.info(f"   🔍 TEXT query='{query}' → sections={selected_sections or 'ALL'}")
+            rag_logger.info(f"   🔍 TEXT query='{query}' → sections={selected_sections or 'ALL'}, exhibits={include_exhibits!r}")
 
-            # STEP 3: Get text chunks with optional section filtering
+            # STEP 3: Get text chunks with section + exhibit filtering
+            # include_exhibits is resolved at the top level (once per query, not per sub-question)
             chunks = self.database_manager.search_10k_filings(
                 query_embedding=query_embedding,
                 ticker=ticker,
                 fiscal_year=fiscal_year,
-                selected_sections=selected_sections if selected_sections else None
+                selected_sections=selected_sections if selected_sections else None,
+                include_exhibits=include_exhibits,
             )
 
             if not chunks:
                 return []
 
-            # Filter to text only (no tables)
+            # Filter to text only (no tables — exhibit tables handled by table selection pipeline)
             text_chunks = [c for c in chunks if c.get('chunk_type') != 'table']
             text_chunks = text_chunks[:top_k * 3]  # Limit candidates
 
@@ -1031,6 +1088,100 @@ IMPORTANT: Select 1-3 sections maximum. Be selective."""
             rag_logger.error(f"Section selection failed: {e}")
             return []  # Return empty to search all sections
 
+    def _get_available_exhibits(self, ticker: str, fiscal_year: int) -> List[str]:
+        """Return distinct substantive (non-boilerplate) exhibit types for this filing."""
+        try:
+            from psycopg2.extras import RealDictCursor
+            conn = self.database_manager._get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DISTINCT exhibit_type
+                FROM ten_k_chunks
+                WHERE UPPER(ticker) = %s AND fiscal_year = %s
+                  AND exhibit_type IS NOT NULL
+                ORDER BY exhibit_type
+            """, (ticker.upper(), fiscal_year))
+            all_exhibits = [r[0] for r in cursor.fetchall()]
+            self.database_manager._return_db_connection(conn)
+            substantive = [e for e in all_exhibits if e not in BOILERPLATE_EXHIBITS]
+            rag_logger.info(f"📎 Found {len(substantive)} substantive exhibits for {ticker} FY{fiscal_year}: {substantive}")
+            return substantive
+        except Exception as e:
+            rag_logger.error(f"Failed to get available exhibits: {e}")
+            return []
+
+    def _select_relevant_exhibits(self, query: str, available_exhibits: List[str]) -> List[str]:
+        """
+        Separate LLM call to select which specific exhibits are relevant to the query.
+
+        Args:
+            query: User's question
+            available_exhibits: List of substantive exhibit types (boilerplate already excluded)
+
+        Returns:
+            List of selected exhibit type strings (e.g., ['EX-97.1']), or [] if none relevant.
+        """
+        if not available_exhibits:
+            return []
+
+        exhibit_lines = []
+        for i, ex in enumerate(available_exhibits, 1):
+            desc = EXHIBIT_DESCRIPTIONS.get(ex, '')
+            # Match prefix descriptions (e.g. EX-10.1 matches EX-10)
+            if not desc:
+                for prefix, pdesc in EXHIBIT_DESCRIPTIONS.items():
+                    if ex.startswith(prefix):
+                        desc = pdesc
+                        break
+            line = f"{i}. {ex}" + (f" — {desc}" if desc else "")
+            exhibit_lines.append(line)
+
+        prompt = f"""Do not use emojis. A user is asking: {query}
+
+The 10-K filing has these substantive exhibits (boilerplate SOX/auditor certs excluded):
+{chr(10).join(exhibit_lines)}
+
+SEC Exhibit Guide — what each type contains:
+- EX-19 / EX-19.1: Full insider trading / securities trading policy text — blackout periods, pre-clearance requirements, 10b5-1 plan rules, prohibited transactions
+- EX-97 / EX-97.1: Full compensation clawback / recovery policy — recoupment triggers, covered executives, incentive pay forfeiture rules
+- EX-10.*: Material contracts — employment agreements, equity incentive plans, lease agreements, credit facilities
+- EX-21: Complete list of subsidiaries and their jurisdictions
+- EX-99.1 / EX-99.2: Earnings press releases, supplemental financial data, investor presentations
+- EX-13: Annual report to shareholders (narrative + financials)
+- EX-4.*: Debt instruments, indentures, rights of securities holders
+- EX-3.1 / EX-3.2: Certificate of incorporation / bylaws
+
+Decision rules:
+- SELECT the exhibit when the question asks for the FULL POLICY TEXT or SPECIFIC PROVISIONS (e.g. "what does the insider trading policy say about blackout periods?", "what are the clawback triggers?", "list all subsidiaries")
+- SELECT for earnings/supplemental data only if the question targets press-release-level detail not in the main filing
+- DO NOT select for standard financial metrics (revenue, margins, EPS) — those live in the main body item_8
+- DO NOT select for executive compensation tables — those are in item_11 of the main body
+- Return [] if the question is answerable from the main 10-K body
+
+Return JSON only:
+{{"selected_exhibits": [1, 2], "reasoning": "Brief explanation"}}"""
+
+        try:
+            messages = [
+                {"role": "system", "content": "Select relevant SEC exhibits. Return JSON only."},
+                {"role": "user", "content": prompt}
+            ]
+            response = self._make_llm_call(messages, temperature=0.1, max_tokens=300)
+            result = self._parse_json_with_retry(response, default_result={'selected_exhibits': []})
+
+            selected_indices = result.get('selected_exhibits', [])
+            selected = []
+            for idx in selected_indices:
+                if 1 <= idx <= len(available_exhibits):
+                    selected.append(available_exhibits[idx - 1])
+
+            rag_logger.info(f"📎 Exhibit selection for '{query[:50]}': {selected or 'none'}")
+            return selected
+
+        except Exception as e:
+            rag_logger.error(f"Exhibit selection failed: {e}")
+            return []
+
     async def _get_all_tables_for_ticker(self, ticker: str, fiscal_year: int = None) -> List[Dict]:
         """Get all available tables for a ticker.
 
@@ -1067,10 +1218,13 @@ IMPORTANT: Select 1-3 sections maximum. Be selective."""
             section = chunk.get('sec_section_title', chunk.get('path_string', 'SEC Filing'))
             fy = chunk.get('fiscal_year', '')
             fy_label = f" FY{fy}" if fy else ""
+            # Prepend exhibit label when the chunk comes from a filing exhibit
+            exhibit_type = chunk.get('exhibit_type') or (chunk.get('metadata') or {}).get('exhibit_type')
+            exhibit_label = f" [{exhibit_type}]" if exhibit_type else ""
             # Tables are never truncated — financial statements need full data
             raw_content = chunk.get('content', '')
             content = raw_content if chunk_type == 'TABLE' else raw_content[:2000]
-            context_parts.append(f"SOURCE [10K-{i}] [{chunk_type}]{fy_label} {section}\n{content}")
+            context_parts.append(f"SOURCE [10K-{i}] [{chunk_type}]{fy_label}{exhibit_label} {section}\n{content}")
 
         context = "\n---\n".join(context_parts)
 
@@ -1106,7 +1260,7 @@ DERIVED METRICS — CRITICAL: If the question asks for a ratio, per-unit figure,
 
         try:
             messages = [
-                {"role": "system", "content": "Expert financial analyst. ABSOLUTELY NO EMOJIS OR SPECIAL SYMBOLS — use plain text and markdown only. Cite sources with [10K-N] markers. Be precise. Bold ALL financial figures (dollar amounts, percentages, ratios, counts). Use markdown tables for multi-period or multi-metric comparisons. CRITICAL: If retrieved data is from a different fiscal year than requested, state this at the top. Never silently answer from a wrong period."},
+                {"role": "system", "content": "Expert financial analyst. ABSOLUTELY NO EMOJIS OR SPECIAL SYMBOLS — use plain text and markdown only. Cite sources with [10K-N] markers. Be precise. Bold ALL financial figures (dollar amounts, percentages, ratios, counts). Use markdown tables for multi-period or multi-metric comparisons. CRITICAL: If retrieved data is from a different fiscal year than requested, state this at the top. Never silently answer from a wrong period. When sources come from a named exhibit (e.g. EX-19.1, EX-97.1), mention the exhibit by name in your answer so the user knows where the information is from."},
                 {"role": "user", "content": prompt}
             ]
 
@@ -1235,8 +1389,9 @@ Return JSON with 2-4 NEW short searches:
             content = raw_content if chunk_type == 'TABLE' else raw_content[:1500]
             fy = chunk.get('fiscal_year', '')
             fy_label = f" FY{fy}" if fy else ""
-            # Use [10K-1], [10K-2] to match citation markers sent to frontend
-            parts.append(f"SOURCE [10K-{i}] [{chunk_type}]{fy_label} {section}\n{content}")
+            exhibit_type = chunk.get('exhibit_type') or (chunk.get('metadata') or {}).get('exhibit_type')
+            exhibit_label = f" [{exhibit_type}]" if exhibit_type else ""
+            parts.append(f"SOURCE [10K-{i}] [{chunk_type}]{fy_label}{exhibit_label} {section}\n{content}")
 
         return "\n\n---\n\n".join(parts)
 
@@ -1253,7 +1408,11 @@ Return JSON with 2-4 NEW short searches:
                 'type': '10-K',  # Explicitly mark as 10-K citation
                 'ticker': chunk.get('ticker', ''),
                 'fiscal_year': chunk.get('fiscal_year', ''),
-                'section': chunk.get('sec_section_title', chunk.get('section', 'SEC Filing')),
+                'section': (
+                    f"{chunk['exhibit_type']} — {EXHIBIT_DESCRIPTIONS.get(chunk['exhibit_type'], 'Exhibit')}"
+                    if chunk.get('exhibit_type')
+                    else chunk.get('sec_section_title', chunk.get('section', 'SEC Filing'))
+                ),
                 'path': chunk.get('path_string', 'Document'),
                 'chunk_text': full_content[:500],  # Include chunk text for frontend (truncated)
                 'chunk_type': chunk.get('type', 'text'),  # table or text
@@ -1262,6 +1421,7 @@ Return JSON with 2-4 NEW short searches:
                 'char_offset': chunk.get('char_offset'),  # Character offset for precise highlighting
                 'chunk_length': chunk.get('chunk_length') or len(full_content),
                 'chunk_id': chunk_id,  # Stable ID for per-chunk scroll targeting in the viewer
+                'exhibit_type': chunk.get('exhibit_type'),  # e.g. 'EX-19.1', None for main body
             })
         return citations
 

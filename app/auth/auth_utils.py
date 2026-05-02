@@ -31,6 +31,16 @@ DEV_USER = {
     "is_admin": True
 }
 
+# Guest user for unauthenticated access to public endpoints
+GUEST_USER = {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "username": "guest",
+    "email": None,
+    "full_name": "Guest",
+    "is_admin": False,
+    "is_guest": True
+}
+
 
 async def get_or_create_user_from_clerk(
     clerk_user_id: str,
@@ -337,6 +347,15 @@ async def get_optional_user(
         logger.info(f"🔓 Optional auth failed (this is ok for anonymous requests): {e}")
 
     return None
+
+
+async def get_screener_user(
+    request: Request,
+    db: asyncpg.Connection = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get current user for screener endpoints - falls back to GUEST_USER for unauthenticated requests."""
+    user = await get_optional_user(request, db)
+    return user if user is not None else GUEST_USER
 
 
 async def authenticate_user_by_id(user_id: str, db_pool) -> Dict[str, Any]:

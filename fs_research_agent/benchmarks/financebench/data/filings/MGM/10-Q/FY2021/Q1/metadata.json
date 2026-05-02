@@ -1,0 +1,36 @@
+{
+  "ticker": "MGM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": "Q1",
+  "filing_date": "2021-05-03",
+  "period_of_report": "2021-03-31",
+  "accession": "000156459021022697",
+  "filing_chars": 233146,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-4",
+    "p2-1A",
+    "p2-2",
+    "p2-6"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.3",
+      "file": "EX-10.3.md",
+      "chars": 7360
+    },
+    {
+      "type": "EX-10.4",
+      "file": "EX-10.4.md",
+      "chars": 6239
+    },
+    {
+      "type": "EX-10.5",
+      "file": "EX-10.5.md",
+      "chars": 3829
+    }
+  ]
+}

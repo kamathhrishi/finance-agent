@@ -1,0 +1,51 @@
+{
+  "ticker": "AMD",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2014",
+  "quarter_label": null,
+  "filing_date": "2015-02-19",
+  "period_of_report": "2014-12-27",
+  "accession": "000119312515054362",
+  "filing_chars": 537464,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.66",
+      "file": "EX-10.66.md",
+      "chars": 8620
+    },
+    {
+      "type": "EX-10.67",
+      "file": "EX-10.67.md",
+      "chars": 5126
+    },
+    {
+      "type": "EX-10.68",
+      "file": "EX-10.68.md",
+      "chars": 34101
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 5648
+    }
+  ]
+}

@@ -24,7 +24,13 @@ function getCitationType(source: Source): 'transcript' | '10k' | 'news' {
     rawType.includes('10k') ||
     rawType.includes('10-k') ||
     rawType.includes('10_k') ||
+    rawType.includes('10q') ||
+    rawType.includes('10-q') ||
+    rawType.includes('8k') ||
+    rawType.includes('8-k') ||
     marker.startsWith('[10K') ||
+    marker.startsWith('[10Q') ||
+    marker.startsWith('[8K') ||
     source.section ||
     source.fiscal_year
   ) {
@@ -97,7 +103,7 @@ function preprocessCitationMarkers(text: string, sources: Source[]): string {
   // [TC-1, TC-2] → [TC-1][TC-2], [10K-1, 10K-2] → [10K-1][10K-2]
   let expanded = text.replace(/\[([^\]]+,[^\]]+)\]/g, (match, inner) => {
     const parts = inner.split(/,\s*/)
-    if (parts.every((p: string) => /^(TC-?\d+|10[KQ]-?\d+|N\d+|\d+)$/.test(p.trim()))) {
+    if (parts.every((p: string) => /^(TC-?\d+|10[KQ]-?\d+|8K-?\d+|N\d+|\d+)$/.test(p.trim()))) {
       return parts.map((p: string) => `[${p.trim()}]`).join('')
     }
     return match
@@ -119,8 +125,8 @@ function preprocessCitationMarkers(text: string, sources: Source[]): string {
     })
   }
 
-  // Match [1], [N1], [TC-1], [TC1], [10K1], [10K-1], [10Q1], etc.
-  return expanded.replace(/\[(\d+|N\d+|TC-?\d+|10[KQ]-?\d+)\]/g, (match) => {
+  // Match [1], [N1], [TC-1], [TC1], [10K1], [10K-1], [10Q1], [8K-1], etc.
+  return expanded.replace(/\[(\d+|N\d+|TC-?\d+|10[KQ]-?\d+|8K-?\d+)\]/g, (match) => {
     const actual = markerMap.get(match)
     if (actual) {
       const targetInner = actual.slice(1, -1) // strip brackets from actual marker (scroll target)
@@ -538,6 +544,39 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
     const quarter = typeof source.quarter === 'number'
       ? source.quarter
       : source.quarter ? parseInt(source.quarter, 10) : undefined
+
+    // ── fs_research_agent: line-range citations against local markdown corpus ──
+    if (source.source_backend === 'fs_research' && source.path && source.line_start) {
+      const fsChunks = (message.sources || [])
+        .filter(s => s.source_backend === 'fs_research' && s.path === source.path && s.line_start)
+        .map(s => ({
+          chunk_text: s.chunk_text || '',
+          chunk_id: s.chunk_id,
+          line_start: s.line_start,
+          line_end: s.line_end || s.line_start,
+          relevance_score: s.relevance_score || 0.8,
+        }))
+      onOpenDocument({
+        type: 'sec-filing',
+        sourceBackend: 'fs_research',
+        path: source.path,
+        ticker: source.ticker || '',
+        filingType: source.filing_type || source.type || '10-K',
+        fiscalYear,
+        quarter,
+        filingDate: source.filing_date,
+        relevantChunks: fsChunks.length ? fsChunks : [{
+          chunk_text: source.chunk_text || '',
+          chunk_id: source.chunk_id,
+          line_start: source.line_start,
+          line_end: source.line_end || source.line_start,
+          relevance_score: source.relevance_score || 0.8,
+        }],
+        primaryChunkId: source.chunk_id,
+      })
+      return
+    }
+
     // Send only the clicked citation's chunk so only that section is highlighted
     const singleChunk = source.chunk_text ? [{
       chunk_text: source.chunk_text,

@@ -1,0 +1,32 @@
+{
+  "ticker": "ADBE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2022-01-21",
+  "period_of_report": "2021-12-03",
+  "accession": "000079634322000032",
+  "filing_chars": 420796,
+  "section_keys": [
+    "1",
+    "10",
+    "12",
+    "13",
+    "15",
+    "1A",
+    "2",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 6245
+    }
+  ]
+}

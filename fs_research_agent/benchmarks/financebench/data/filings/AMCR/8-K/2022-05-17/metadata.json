@@ -1,0 +1,16 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2022-05-17",
+  "period_of_report": "2022-05-10",
+  "accession": "000110465922061946",
+  "filing_chars": 12108,
+  "section_keys": [
+    "8.01",
+    "9.01"
+  ],
+  "exhibits": []
+}

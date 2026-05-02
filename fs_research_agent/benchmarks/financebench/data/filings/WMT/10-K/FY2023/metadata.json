@@ -1,0 +1,62 @@
+{
+  "ticker": "WMT",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": null,
+  "filing_date": "2023-03-17",
+  "period_of_report": "2023-01-31",
+  "accession": "000010416923000020",
+  "filing_chars": 454440,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1",
+      "file": "EX-10.1.md",
+      "chars": 82400
+    },
+    {
+      "type": "EX-10.5",
+      "file": "EX-10.5.md",
+      "chars": 37215
+    },
+    {
+      "type": "EX-10.7(A)",
+      "file": "EX-10.7-A-.md",
+      "chars": 3294
+    },
+    {
+      "type": "EX-10.10",
+      "file": "EX-10.10.md",
+      "chars": 154057
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 2984
+    },
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 37353
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
+On November 30, 2022, the Company announced that its Board of Directors elected Joaquin Duato Chairman, Board of Directors of Johnson & Johnson effective upon current Chairman Alex Gorsky’s retirement from the Board of Directors\. Mr\. Duato was appointed Chief Executive Officer of the Company in January 2022\. Current Chairman Alex Gorsky will step down from the Board in January 2023, following a brief transition period and will not stand for reelection in 2023\.
+The Company’s related press release is attached to this Report as Exhibit 99\.1\.

@@ -1,0 +1,2 @@
+## Item 13.  Certain Relationships and Related Transactions, and Director Independence.
+Information with respect to certain relationships and related transactions and director independence is contained under the captions “Corporate Governance at PepsiCo – Related Person Transactions” and “Corporate Governance at PepsiCo – Director Independence” in our 2022 Proxy Statement and is incorporated herein by reference\.

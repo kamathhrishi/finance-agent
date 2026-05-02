@@ -1,0 +1,3 @@
+# Item 8.01             Other Events
+On April 16, 2024, Johnson & Johnson issued the attached press release \(Exhibit 99\.3\) announcing that its Board of Directors declared a 4\.2% increase in the quarterly dividend rate, from $1\.19 to $1\.24 per share, marking the 62nd year of
+consecutive increases\. At the new rate, the indicated dividend on an annual basis is $4\.96 per share compared to the previous rate of $4\.76 per share\. The next quarterly dividend is payable on June 4, 2024 to shareholders of record as of the close of business on May 21, 2024\.  The ex\-dividend date is May 20, 2024\.

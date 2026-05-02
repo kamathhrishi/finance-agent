@@ -48,6 +48,11 @@ class RAGFlowContext:
     ten_k_results: List[Any] = field(default_factory=list)
     news_context_str: Optional[str] = None
     ten_k_context_str: Optional[str] = None
+    screener_context_str: Optional[str] = None
+    screener_data_rows: List[Dict[str, Any]] = field(default_factory=list)  # raw rows for reflection
+
+    # Wave 2: reflection + sub-planner results
+    reflection_result: Optional[Any] = None  # ReflectionResult
 
     # Stage 3: Transcript search
     skip_initial_transcript_search: bool = False

@@ -1,0 +1,46 @@
+{
+  "ticker": "PFE",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2019",
+  "quarter_label": null,
+  "filing_date": "2020-02-27",
+  "period_of_report": "2019-12-31",
+  "accession": "000007800320000014",
+  "filing_chars": 301778,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.15",
+      "file": "EX-10.15.md",
+      "chars": 855
+    },
+    {
+      "type": "EX-10.29",
+      "file": "EX-10.29.md",
+      "chars": 496
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 42382
+    }
+  ]
+}

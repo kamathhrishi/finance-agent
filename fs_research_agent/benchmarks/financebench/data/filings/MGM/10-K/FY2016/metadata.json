@@ -1,0 +1,70 @@
+{
+  "ticker": "MGM",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2016",
+  "quarter_label": null,
+  "filing_date": "2017-03-01",
+  "period_of_report": "2016-12-31",
+  "accession": "000156459017003007",
+  "filing_chars": 732953,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.1(5)",
+      "file": "EX-10.1-5-.md",
+      "chars": 10416
+    },
+    {
+      "type": "EX-10.4(3)",
+      "file": "EX-10.4-3-.md",
+      "chars": 302744
+    },
+    {
+      "type": "EX-10.4(4)",
+      "file": "EX-10.4-4-.md",
+      "chars": 81044
+    },
+    {
+      "type": "EX-10.4(5)",
+      "file": "EX-10.4-5-.md",
+      "chars": 16658
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 16097
+    },
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 17939
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 105938
+    },
+    {
+      "type": "EX-99.3",
+      "file": "EX-99.3.md",
+      "chars": 88345
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "ticker": "AES",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2025",
+  "quarter_label": null,
+  "filing_date": "2026-03-02",
+  "period_of_report": "2025-12-31",
+  "accession": "000087476126000063",
+  "filing_chars": 1164926,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "1C",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.17",
+      "file": "EX-10.17.md",
+      "chars": 95374
+    },
+    {
+      "type": "EX-10.25",
+      "file": "EX-10.25.md",
+      "chars": 11284
+    },
+    {
+      "type": "EX-10.26",
+      "file": "EX-10.26.md",
+      "chars": 10958
+    },
+    {
+      "type": "EX-10.28",
+      "file": "EX-10.28.md",
+      "chars": 11660
+    },
+    {
+      "type": "EX-10.29",
+      "file": "EX-10.29.md",
+      "chars": 76795
+    },
+    {
+      "type": "EX-19",
+      "file": "EX-19.md",
+      "chars": 38024
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 115595
+    }
+  ]
+}

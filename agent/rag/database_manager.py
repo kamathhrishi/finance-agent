@@ -946,7 +946,13 @@ class DatabaseManager:
             rag_logger.error(f"❌ Failed to get tables for {ticker}: {e}")
             return []
 
-    async def search_10k_filings_async(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None) -> List[Dict[str, Any]]:
+    async def search_10k_filings_async(
+        self,
+        query_embedding: np.ndarray,
+        ticker: str,
+        fiscal_year: int = None,
+        include_exhibits: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
         """Search 10-K filings using vector similarity (async)."""
         try:
             ticker = ticker.upper()  # Normalize ticker case to match DB storage
@@ -957,46 +963,44 @@ class DatabaseManager:
 
             async with self.pgvector_pool.acquire() as conn:
                 # Format embedding as PostgreSQL array string for asyncpg/pgvector
-                # asyncpg needs the vector as a string representation that PostgreSQL can parse
                 embedding_list = query_embedding.flatten().tolist()
                 embedding_str = '[' + ','.join(str(x) for x in embedding_list) + ']'
 
-                # Build query with optional fiscal year filtering
+                # Build dynamic WHERE clause (asyncpg uses positional $N params)
+                conditions = ["UPPER(ticker) = $2"]
+                params: list = [embedding_str, ticker]
+
                 if fiscal_year:
-                    query = """
+                    params.append(fiscal_year)
+                    conditions.append(f"fiscal_year = ${len(params)}")
+
+                if include_exhibits is not None:
+                    if len(include_exhibits) == 0:
+                        conditions.append("exhibit_type IS NULL")
+                    else:
+                        placeholders = []
+                        for ex in include_exhibits:
+                            params.append(ex)
+                            placeholders.append(f"${len(params)}")
+                        ph_str = ', '.join(placeholders)
+                        conditions.append(f"(exhibit_type IS NULL OR exhibit_type IN ({ph_str}))")
+
+                chunk_limit = self.config.get("chunks_per_quarter", 15)
+                params.append(chunk_limit)
+                limit_placeholder = f"${len(params)}"
+
+                where_clause = " AND ".join(conditions)
+                query = f"""
                     SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                            sec_section, sec_section_title, path_string, chunk_index,
-                           char_offset, chunk_length,
+                           char_offset, chunk_length, exhibit_type,
                            1 - (embedding <=> $1::vector) as similarity
                     FROM ten_k_chunks
-                    WHERE UPPER(ticker) = $2 AND fiscal_year = $3
+                    WHERE {where_clause}
                     ORDER BY embedding <=> $1::vector
-                    LIMIT $4
-                    """
-                    rows = await conn.fetch(
-                        query,
-                        embedding_str,
-                        ticker,
-                        fiscal_year,
-                        self.config.get("chunks_per_quarter", 15)
-                    )
-                else:
-                    query = """
-                    SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
-                           sec_section, sec_section_title, path_string, chunk_index,
-                           char_offset, chunk_length,
-                           1 - (embedding <=> $1::vector) as similarity
-                    FROM ten_k_chunks
-                    WHERE UPPER(ticker) = $2
-                    ORDER BY embedding <=> $1::vector
-                    LIMIT $3
-                    """
-                    rows = await conn.fetch(
-                        query,
-                        embedding_str,
-                        ticker,
-                        self.config.get("chunks_per_quarter", 15)
-                    )
+                    LIMIT {limit_placeholder}
+                """
+                rows = await conn.fetch(query, *params)
                 rag_logger.info(f"✅ Async 10-K search returned {len(rows)} results for ticker {ticker}")
 
                 # Convert to expected format
@@ -1026,6 +1030,7 @@ class DatabaseManager:
                             'path_string': row['path_string'],
                             'char_offset': row['char_offset'],
                             'chunk_length': row['chunk_length'],
+                            'exhibit_type': row['exhibit_type'],
                             'source_type': '10-K'  # Mark as 10-K source
                         }
                         chunks.append(chunk)
@@ -1229,7 +1234,8 @@ class DatabaseManager:
             return {}
 
     def search_10k_filings(self, query_embedding: np.ndarray, ticker: str, fiscal_year: int = None,
-                           selected_sections: List[str] = None) -> List[Dict[str, Any]]:
+                           selected_sections: List[str] = None,
+                           include_exhibits: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """Search 10-K filings using vector similarity with optional section filtering (sync)."""
         try:
             ticker = ticker.upper()  # Normalize ticker case to match DB storage
@@ -1244,7 +1250,7 @@ class DatabaseManager:
             base_select = """
                 SELECT chunk_text, metadata, ticker, fiscal_year, chunk_type,
                        sec_section, sec_section_title, path_string, chunk_index,
-                       char_offset, chunk_length,
+                       char_offset, chunk_length, exhibit_type,
                        1 - (embedding <=> %s::vector) as similarity
                 FROM ten_k_chunks
             """
@@ -1262,6 +1268,16 @@ class DatabaseManager:
                 section_placeholders = ','.join(['%s'] * len(selected_sections))
                 conditions.append(f"sec_section IN ({section_placeholders})")
                 params.extend(selected_sections)
+
+            if include_exhibits is not None:
+                if len(include_exhibits) == 0:
+                    conditions.append("exhibit_type IS NULL")
+                else:
+                    placeholders = ','.join(['%s'] * len(include_exhibits))
+                    conditions.append(
+                        f"(exhibit_type IS NULL OR exhibit_type IN ({placeholders}))"
+                    )
+                    params.extend(include_exhibits)
 
             where_clause = " AND ".join(conditions)
 
@@ -1314,6 +1330,7 @@ class DatabaseManager:
                         'path_string': row['path_string'],
                         'char_offset': row['char_offset'],
                         'chunk_length': row['chunk_length'],
+                        'exhibit_type': row['exhibit_type'],
                         'source_type': '10-K'  # Mark as 10-K source
                     }
                     chunks.append(chunk)

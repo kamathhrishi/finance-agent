@@ -1,0 +1,22 @@
+{
+  "ticker": "FL",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2021",
+  "quarter_label": null,
+  "filing_date": "2021-03-25",
+  "period_of_report": "2021-03-25",
+  "accession": "000153949721000396",
+  "filing_chars": 6838,
+  "section_keys": [
+    "5.02",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 4884
+    }
+  ]
+}

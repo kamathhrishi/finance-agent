@@ -1,0 +1,18 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2024",
+  "quarter_label": "Q3",
+  "filing_date": "2024-10-22",
+  "period_of_report": "2024-09-30",
+  "accession": "000006674024000101",
+  "filing_chars": 565458,
+  "section_keys": [
+    "p1-1",
+    "p1-2",
+    "p1-3",
+    "p1-4"
+  ],
+  "exhibits": []
+}

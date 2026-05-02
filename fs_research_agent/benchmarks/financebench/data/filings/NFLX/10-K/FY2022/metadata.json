@@ -1,0 +1,40 @@
+{
+  "ticker": "NFLX",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2022",
+  "quarter_label": null,
+  "filing_date": "2023-01-26",
+  "period_of_report": "2022-12-31",
+  "accession": "000106528023000035",
+  "filing_chars": 316493,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "5",
+    "7",
+    "7A",
+    "8",
+    "9A"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.11",
+      "file": "EX-10.11.md",
+      "chars": 25886
+    },
+    {
+      "type": "EX-21.1",
+      "file": "EX-21.1.md",
+      "chars": 2162
+    }
+  ]
+}

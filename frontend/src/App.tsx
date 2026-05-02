@@ -5,8 +5,11 @@ import ChatPage from './pages/ChatPage'
 import ScreenerPage from './pages/ScreenerPage'
 import CompaniesPage from './pages/CompaniesPage'
 import CompanyPage from './pages/CompanyPage'
+import LatestFilingsPage from './pages/LatestFilingsPage'
+import FilingViewerPage from './pages/FilingViewerPage'
 import PortfolioPage from './pages/PortfolioPage'
 import StrataLensLogo from './components/StrataLensLogo'
+import { Toaster } from './components/Toast'
 
 function MobileWarningModal({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -46,6 +49,7 @@ function App() {
       {showMobileWarning && (
         <MobileWarningModal onDismiss={() => setShowMobileWarning(false)} />
       )}
+      <Toaster />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/sign-in/*" element={<Navigate to="/" replace />} />
@@ -54,6 +58,8 @@ function App() {
         <Route path="/screener" element={<ScreenerPage />} />
         <Route path="/companies" element={<CompaniesPage />} />
         <Route path="/companies/:symbol" element={<CompanyPage />} />
+        <Route path="/latest-filings" element={<LatestFilingsPage />} />
+        <Route path="/filings/*" element={<FilingViewerPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
       </Routes>
     </>

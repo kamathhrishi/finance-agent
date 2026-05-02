@@ -1,0 +1,43 @@
+{
+  "ticker": "MMM",
+  "cik": "",
+  "form": "10-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2021-02-04",
+  "period_of_report": "2020-12-31",
+  "accession": "000155837021000737",
+  "filing_chars": 780341,
+  "section_keys": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "1A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "7A",
+    "8",
+    "9A",
+    "9B"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-10.6",
+      "file": "EX-10.6.md",
+      "chars": 40960
+    },
+    {
+      "type": "EX-21",
+      "file": "EX-21.md",
+      "chars": 8428
+    }
+  ]
+}

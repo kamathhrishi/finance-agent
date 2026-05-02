@@ -1,0 +1,19 @@
+## Item 6. Selected Financial Data
+
+| Five-Year Summary (Unaudited) (Dollars in millions, except per share data) | Five-Year Summary (Unaudited) 2017 | Five-Year Summary (Unaudited) 2016 | Five-Year Summary (Unaudited) 2015 | Five-Year Summary (Unaudited) 2014 | Five-Year Summary (Unaudited) 2013 |
+|----------------------------------------------------------------------------|------------------------------------|------------------------------------|------------------------------------|------------------------------------|------------------------------------|
+| Revenues                                                                   | $93,392                            | $94,571                            | $96,114                            | $90,762                            | $86,623                            |
+| Net earnings from continuing operations                                    | $8,197                             | $4,895                             | $5,176                             | $5,446                             | $4,586                             |
+| Basic earnings per share from continuing operations                        | $13.60                             | $7.70                              | $7.52                              | $7.47                              | $6.03                              |
+| Diluted earnings per share from continuing operations                      | 13.43                              | 7.61                               | 7.44                               | 7.38                               | 5.96                               |
+| Dividends declared per share(1)                                            | 5.97                               | 4.69                               | 3.82                               | 3.10                               | 2.185                              |
+| Cash and cash equivalents                                                  | $8,813                             | $8,801                             | $11,302                            | $11,733                            | $9,088                             |
+| Short-term and other investments                                           | 1,179                              | 1,228                              | 750                                | 1,359                              | 6,170                              |
+| Total assets                                                               | 92,333                             | 89,997                             | 94,408                             | 92,921                             | 90,014                             |
+| Total debt                                                                 | 11,117                             | 9,952                              | 9,964                              | 9,070                              | 9,635                              |
+| Operating cash flow                                                        | $13,344                            | $10,499                            | $9,363                             | $8,858                             | $8,179                             |
+| Total backlog                                                              | $488,145                           | $473,492                           | $489,299                           | $502,391                           | $440,928                           |
+| Year-end workforce                                                         | 140,800                            | 150,500                            | 161,400                            | 165,500                            | 168,400                            |
+
+
+*Cash dividends have been paid on common stock every year since 1942\.*

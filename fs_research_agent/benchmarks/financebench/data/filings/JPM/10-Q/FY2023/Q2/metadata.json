@@ -1,0 +1,15 @@
+{
+  "ticker": "JPM",
+  "cik": "",
+  "form": "10-Q",
+  "fiscal_year_label": "FY2023",
+  "quarter_label": "Q2",
+  "filing_date": "2023-08-03",
+  "period_of_report": "2023-06-30",
+  "accession": "000001961723000432",
+  "filing_chars": 1984935,
+  "section_keys": [
+    "p1-4"
+  ],
+  "exhibits": []
+}

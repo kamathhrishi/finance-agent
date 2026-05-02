@@ -1,0 +1,45 @@
+# Item 8.01.
+## Other Events.
+Effective
+May 24, 2024, PepsiCo, Inc\. \(“PepsiCo”\) terminated the $4,200,000,000 364 day unsecured revolving credit
+agreement, dated as of May 26, 2023, among PepsiCo, as borrower, the lenders party thereto, and Citibank, N\.A\., as administrative
+agent \(the “2023 364 Day Credit Agreement”\)\. There were no outstanding borrowings under the 2023 364 Day Credit Agreement
+at the time of its termination\.
+On
+May 24, 2024, PepsiCo entered into a new $5,000,000,000 364 day unsecured revolving credit agreement \(the “2024 364 Day
+Credit Agreement”\) among PepsiCo, as borrower, the lenders party thereto, and Citibank, N\.A\., as administrative agent\. The 2024
+364 Day Credit Agreement enables PepsiCo and its borrowing subsidiaries to borrow up to $5,000,000,000 in U\.S\. Dollars and/or Euros, subject
+to customary terms and conditions, and expires on May 23, 2025\. PepsiCo may also, upon the agreement of either the then existing
+lenders or of additional banks not currently party to the 2024 364 Day Credit Agreement, increase the commitments under the 2024 364 Day
+Credit Agreement to up to an aggregate amount of $5,750,000,000 in U\.S\. Dollars and/or Euros\. PepsiCo may request renewal of the 2024
+364 Day Credit Agreement for an additional 364 day period or convert any amounts outstanding into a term loan for a period of up to one
+year, which term loan would mature no later than the anniversary of the then effective termination date\. Subject to certain conditions
+stated in the 2024 364 Day Credit Agreement, PepsiCo and its borrowing subsidiaries may borrow, prepay and reborrow amounts under the
+2024 364 Day Credit Agreement at any time during the term of the 2024 364 Day Credit Agreement\. Funds borrowed under the 2024 364 Day
+Credit Agreement may be used for general corporate purposes of PepsiCo and its subsidiaries\. The 2024 364 Day Credit Agreement contains
+customary representations and warranties and events of default\. In the ordinary course of their respective businesses, the lenders under
+the 2024 364 Day Credit Agreement and their affiliates have engaged, and may in the future engage, in commercial banking and/or investment
+banking transactions with PepsiCo and its affiliates\.
+Effective
+May 24, 2024, PepsiCo terminated the $4,200,000,000 five year unsecured revolving credit agreement, dated as of May 26, 2023,
+among PepsiCo, as borrower, the lenders party thereto, and Citibank, N\.A\., as administrative agent \(the “2023 Five Year Credit
+Agreement”\)\. There were no outstanding borrowings under the 2023 Five Year Credit Agreement at the time of its termination\.
+On
+May 24, 2024, PepsiCo entered into a new $5,000,000,000 five year unsecured revolving credit agreement \(the “2024 Five Year
+Credit Agreement”\) among PepsiCo, as borrower, the lenders party thereto, and Citibank, N\.A\., as administrative agent\. The 2024
+Five Year Credit Agreement enables PepsiCo and its borrowing subsidiaries to borrow up to $5,000,000,000 in U\.S\. Dollars and/or Euros,
+including a $750,000,000 swing line subfacility for Euro\-denominated borrowings permitted to be borrowed on a same day basis, subject
+to customary terms and conditions, and expires on May 24, 2029\. PepsiCo may also, upon the agreement of either the then existing
+lenders or of additional banks not currently party to the 2024 Five Year Credit Agreement, increase the commitments under the 2024 Five
+Year Credit Agreement to up to an aggregate amount of $5,750,000,000 in U\.S\. Dollars and/or Euros\. PepsiCo may, up to two times during
+the term of the 2024 Five Year Credit Agreement, request extension of the 2024 Five Year Credit Agreement for an additional one year period\.
+Subject to certain conditions stated in the 2024 Five Year Credit Agreement, PepsiCo and its borrowing subsidiaries may borrow, prepay
+and reborrow amounts under the 2024 Five Year Credit Agreement at any time during the term of the 2024 Five Year Credit Agreement\. Funds
+borrowed under the 2024 Five Year Credit Agreement may be used for general corporate purposes of PepsiCo and its subsidiaries\. The 2024
+Five Year Credit Agreement contains customary representations and warranties and events of default\. In the ordinary course of their respective
+businesses, the lenders under the 2024 Five Year Credit Agreement and their affiliates have engaged, and may in the future engage, in
+commercial banking and/or investment banking transactions with PepsiCo and its affiliates\.
+The
+foregoing descriptions of the 2024 364 Day Credit Agreement and 2024 Five Year Credit Agreement do not purport to be complete and are
+qualified in their entirety by reference to the full text of the 2024 364 Day Credit Agreement and the 2024 Five Year Credit Agreement,
+as applicable, which are filed as Exhibits 99\.1 and 99\.2 to this Current Report on Form 8\-K and incorporated by reference herein\.

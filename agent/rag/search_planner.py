@@ -460,15 +460,24 @@ Return ONLY valid JSON with this structure:
         for ref in time_refs:
             ref_lower = ref.lower() if isinstance(ref, str) else ""
 
-            # Explicit calendar date (e.g., "July 19, 2024" or "19 July 2024") → extract year
+            # Extract all 4-digit years from a bare year string or combined string like "2024 and 2025"
             if isinstance(ref, str):
-                date_year = self._extract_year_from_date(ref)
-                if date_year:
-                    years.append(date_year)
-                    year_quarters = [f"{date_year}_q{q}" for q in [4, 3, 2, 1]]
-                    quarters.extend(year_quarters)
-                    context = "multiple"
-                    # Continue to next ref to avoid double-handling
+                import re as _re_yr
+                year_matches = [int(y) for y in _re_yr.findall(r'\b((?:19|20)\d{2})\b', ref)]
+                # Only treat as bare-year ref when the string is *only* years (no "last", "past", "to", "-", "Q" etc.)
+                # and at least one year was found. Compound strings like "2024 and 2025" are handled here too.
+                is_only_years = bool(year_matches) and not any(
+                    kw in ref_lower for kw in ['last', 'past', 'latest', 'recent', ' to ', 'through', 'q1', 'q2', 'q3', 'q4']
+                ) and '-' not in ref.strip()
+                if is_only_years:
+                    for y in year_matches:
+                        if y not in years:
+                            years.append(y)
+                        for q in [4, 3, 2, 1]:
+                            qid = f"{y}_q{q}"
+                            if qid not in quarters:
+                                quarters.append(qid)
+                    context = "multiple" if len(year_matches) > 1 else "specific"
                     continue
 
             # Latest/recent
@@ -914,7 +923,13 @@ Return ONLY valid JSON with this structure:
         source_desc = ", ".join(source_parts)
 
         # Generate reasoning
-        reasoning = f"Searching {source_desc} for {company_desc} ({time_desc})."
+        is_screener = not tickers and not transcript_searches and not ten_k_searches
+        if is_screener:
+            reasoning = f"Discovering companies matching the theme, then searching {source_desc or 'relevant sources'}."
+        elif not tickers:
+            reasoning = f"Searching {source_desc} across all companies ({time_desc})."
+        else:
+            reasoning = f"Searching {source_desc} for {company_desc} ({time_desc})."
 
         # Add specifics
         if transcript_searches and ten_k_searches:

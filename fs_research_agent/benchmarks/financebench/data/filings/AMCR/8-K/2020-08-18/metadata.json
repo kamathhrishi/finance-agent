@@ -1,0 +1,28 @@
+{
+  "ticker": "AMCR",
+  "cik": "",
+  "form": "8-K",
+  "fiscal_year_label": "FY2020",
+  "quarter_label": null,
+  "filing_date": "2020-08-18",
+  "period_of_report": "2020-08-18",
+  "accession": "000174879020000022",
+  "filing_chars": 8690,
+  "section_keys": [
+    "2.02",
+    "5.02",
+    "9.01"
+  ],
+  "exhibits": [
+    {
+      "type": "EX-99.1",
+      "file": "EX-99.1.md",
+      "chars": 99157
+    },
+    {
+      "type": "EX-99.2",
+      "file": "EX-99.2.md",
+      "chars": 48150
+    }
+  ]
+}

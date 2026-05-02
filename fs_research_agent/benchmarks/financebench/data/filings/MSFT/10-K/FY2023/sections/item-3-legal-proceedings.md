@@ -1,0 +1,2 @@
+## ITEM 3. LEGAL PROCEEDINGS
+Refer to Note 15 – Contingencies of the Notes to Financial Statements \(Part II, Item 8 of this Form 10\-K\) for information regarding legal proceedings in which we are involved\.
