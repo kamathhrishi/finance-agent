@@ -19,13 +19,13 @@ load_dotenv()
 # Fix: set the default + ensure the dir exists BEFORE any router imports run.
 # Idempotent — only acts when the env var is unset and we're on Railway.
 import os as _os
+def _is_railway() -> bool:
+    """True if any Railway-injected env var is present. Railway sets a varying
+    set of RAILWAY_* vars depending on plan / project age, so we accept any."""
+    return any(k.startswith("RAILWAY_") for k in _os.environ)
+
 if not _os.getenv("FS_RESEARCH_DATA_ROOT"):
-    _on_railway = bool(
-        _os.getenv("RAILWAY_ENVIRONMENT")
-        or _os.getenv("RAILWAY_PROJECT_ID")
-        or _os.getenv("RAILWAY_SERVICE_ID")
-    )
-    if _on_railway:
+    if _is_railway():
         _os.environ["FS_RESEARCH_DATA_ROOT"] = "/data/fs_research_corpus"
 
 # Ensure the data root dir exists (empty is fine — bootstrap fills it later).

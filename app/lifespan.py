@@ -493,21 +493,16 @@ async def lifespan(app: FastAPI):
             )
 
         # ── Smart defaults so Railway "just works" with zero env config ──
-        #
-        # FS_RESEARCH_DATA_ROOT: on Railway, default to /data/fs_research_corpus
-        # (the standard volume mount path) so the corpus survives redeploys
-        # without forcing the operator to set the var. Locally we keep the
-        # in-repo default so dev workflows are unaffected.
+        # Railway sets a varying set of RAILWAY_* env vars depending on plan /
+        # project age, so we sniff for ANY var with that prefix rather than
+        # checking specific names. Same robust check used in app/__init__.py.
+        _on_railway = any(k.startswith("RAILWAY_") for k in os.environ)
+
         if not os.getenv("FS_RESEARCH_DATA_ROOT"):
-            _on_railway = bool(
-                os.getenv("RAILWAY_ENVIRONMENT")
-                or os.getenv("RAILWAY_PROJECT_ID")
-                or os.getenv("RAILWAY_SERVICE_ID")
-            )
             if _on_railway:
                 _default_root = "/data/fs_research_corpus"
                 os.environ["FS_RESEARCH_DATA_ROOT"] = _default_root
-                log_info(f"📂 FS_RESEARCH_DATA_ROOT defaulted to {_default_root} (Railway environment detected)")
+                log_info(f"📂 FS_RESEARCH_DATA_ROOT defaulted to {_default_root} (Railway detected)")
 
         # FS_RESEARCH_BOOTSTRAP_FROM_S3: opt-in via env, OR auto-on when
         # running on Railway with S3 creds present. Bootstrap itself short-
@@ -515,7 +510,7 @@ async def lifespan(app: FastAPI):
         # leave on permanently.
         _bootstrap_explicit = os.getenv("FS_RESEARCH_BOOTSTRAP_FROM_S3", "").lower() in ("1", "true", "yes")
         _bootstrap_auto = (
-            bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+            _on_railway
             and bool(os.getenv("RAILWAY_BUCKET_ENDPOINT"))
             and bool(os.getenv("RAILWAY_BUCKET_ACCESS_KEY_ID"))
             and bool(os.getenv("RAILWAY_BUCKET_NAME"))
