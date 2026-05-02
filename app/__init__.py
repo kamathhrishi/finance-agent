@@ -7,6 +7,38 @@ This module creates and configures the FastAPI application instance.
 from dotenv import load_dotenv
 load_dotenv()
 
+# ─── Pre-import bootstrap of fs_research_agent path ──────────────────────────
+#
+# The chat router instantiates the FS agent at module-import time (line ~120
+# of app/routers/chat.py). The agent validates `data_root.is_dir()` and
+# raises if it doesn't exist. On Railway the default location
+# (/app/fs_research_agent/data) does not exist — the corpus lives on the
+# persistent volume at /data/fs_research_corpus. The lifespan sets that env
+# var, but lifespan runs AFTER router imports, so the agent fails first.
+#
+# Fix: set the default + ensure the dir exists BEFORE any router imports run.
+# Idempotent — only acts when the env var is unset and we're on Railway.
+import os as _os
+if not _os.getenv("FS_RESEARCH_DATA_ROOT"):
+    _on_railway = bool(
+        _os.getenv("RAILWAY_ENVIRONMENT")
+        or _os.getenv("RAILWAY_PROJECT_ID")
+        or _os.getenv("RAILWAY_SERVICE_ID")
+    )
+    if _on_railway:
+        _os.environ["FS_RESEARCH_DATA_ROOT"] = "/data/fs_research_corpus"
+
+# Ensure the data root dir exists (empty is fine — bootstrap fills it later).
+# This stops the agent's hard `is_dir()` check from failing at import time.
+try:
+    from pathlib import Path as _Path
+    _root = _os.getenv("FS_RESEARCH_DATA_ROOT") or str(
+        _Path(__file__).resolve().parent.parent / "fs_research_agent" / "data"
+    )
+    _Path(_root).mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass  # If we can't mkdir (permissions, etc.), agent init will surface it.
+
 import logging
 import uuid
 

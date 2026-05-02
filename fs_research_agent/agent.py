@@ -134,10 +134,20 @@ class FilesystemResearchAgent:
             raise ValueError("OPENAI_API_KEY is required (set in .env or env)")
 
         self.data_root = (data_root or DEFAULT_DATA_ROOT).resolve()
+        # Soft check. We log a warning if the dir is missing or empty at init,
+        # but DO NOT raise — on Railway the chat router instantiates this
+        # agent at import time, before the S3 bootstrap stage of the lifespan
+        # populates the persistent volume. If the dir is genuinely empty when
+        # a tool call eventually runs, the Sandbox will return a clean error
+        # for that specific call instead of bringing down chat at boot.
+        try:
+            self.data_root.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
         if not self.data_root.is_dir():
-            raise ValueError(
-                f"Data root does not exist: {self.data_root}\n"
-                f"Run: python -m fs_research_agent.ingest <TICKER> --years <N>"
+            logger.warning(
+                f"FilesystemResearchAgent: data root not present at init: {self.data_root}. "
+                f"This is OK if the corpus will be populated by an S3 bootstrap or watcher cycle."
             )
 
         self.sandbox = Sandbox(self.data_root)
