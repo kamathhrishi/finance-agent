@@ -101,8 +101,18 @@ def resolve_model(display_id: Optional[str], default: str) -> str:
 
 MEM_MAX_CONVERSATIONS = 200
 MEM_MAX_TURNS = 6                # ~3 user + 3 assistant pairs
-MEM_ASSISTANT_TRUNC_CHARS = 1800
-MEM_USER_TRUNC_CHARS = 600
+# Assistant cap is generous on purpose. Analytical answers in this product
+# routinely run 6-10 KB (multi-section findings with citations). The prior
+# 1800-char cap kept only ~250 words — usually the question restatement and
+# the start of section 1 — which made follow-ups like "is the relationship
+# deteriorating?" effectively context-free. 8000 chars covers ~95% of
+# answers in full, with the tail clipped on the very long ones.
+# Cost: at MEM_MAX_TURNS=6 and one user/assistant pair, the worst-case
+# preamble is ~50 KB ≈ ~12K input tokens per LLM call. Inside one ReAct
+# loop the preamble is byte-identical across calls so prompt caching
+# absorbs it after the first hit.
+MEM_ASSISTANT_TRUNC_CHARS = 8000
+MEM_USER_TRUNC_CHARS = 1500
 
 # Sentinel for anonymous callers (older code paths that don't pass user_id).
 # Distinct from any real user id so anon entries cannot collide with real ones.
@@ -205,17 +215,30 @@ def _format_scope_preamble(filings: List[Dict[str, Any]]) -> str:
 def _format_memory_preamble(turns: List[_Turn]) -> str:
     """Render prior turns as a context block prepended to the new question.
 
-    Returns "" when there's nothing to include. Format is intentionally compact
-    and labeled clearly so the model treats it as past context, not new input.
+    Returns "" when there's nothing to include. The wording is deliberate:
+    we instruct the model to RESOLVE follow-up pronouns ("it", "they", "the
+    relationship") against the prior turns instead of asking the user to
+    restate context. Without this, the model frequently asked clarifying
+    questions on obvious follow-ups (e.g. "would you say the relationship
+    is deteriorating?" → "which company / which relationship?").
     """
     if not turns:
         return ""
-    lines = ["[Conversation so far — earlier turns from this same chat:]"]
+    lines = [
+        "[Conversation so far — these are EARLIER turns from this SAME chat with this SAME user.",
+        "Treat them as authoritative shared context. The current question is almost certainly a",
+        "follow-up. Resolve pronouns and vague references (\"it\", \"they\", \"the relationship\",",
+        "\"that company\", \"is it deteriorating\", etc.) using this prior context — DO NOT ask",
+        "the user to restate what was just discussed. If the follow-up is genuinely ambiguous",
+        "even with this context, then ask; otherwise proceed.]",
+        "",
+    ]
     for t in turns:
         if t.role == "user":
-            lines.append(f"USER: {t.content}")
+            lines.append(f"USER (earlier): {t.content}")
         else:
-            lines.append(f"ASSISTANT: {t.content}")
+            lines.append(f"ASSISTANT (earlier): {t.content}")
+    lines.append("")
     lines.append("[End of prior turns. The CURRENT question follows.]")
     return "\n".join(lines)
 
