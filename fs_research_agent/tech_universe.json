@@ -1,15 +1,16 @@
 {
   "meta": {
-    "generated_from": "US_TECH_CLEANED.json + SEC company_tickers.json",
+    "generated_from": "financedatabase (Equities) + SEC company_tickers.json",
     "sectors": [
       "Information Technology",
       "Communication Services"
     ],
     "market_caps": [
       "Mega Cap",
-      "Large Cap"
+      "Large Cap",
+      "Mid Cap"
     ],
-    "ticker_count": 138,
+    "ticker_count": 336,
     "hard_excluded": [
       "ABMD",
       "ATVI",
@@ -22,6 +23,11 @@
   },
   "tickers": [
     {
+      "ticker": "AAOI",
+      "cik": "0001158114",
+      "company_name": "APPLIED OPTOELECTRONICS, INC."
+    },
+    {
       "ticker": "AAPL",
       "cik": "0000320193",
       "company_name": "Apple Inc."
@@ -32,14 +38,44 @@
       "company_name": "Airbnb, Inc."
     },
     {
+      "ticker": "ACIW",
+      "cik": "0000935036",
+      "company_name": "ACI WORLDWIDE, INC."
+    },
+    {
+      "ticker": "ACLS",
+      "cik": "0001113232",
+      "company_name": "AXCELIS TECHNOLOGIES INC"
+    },
+    {
+      "ticker": "ACMR",
+      "cik": "0001680062",
+      "company_name": "ACM Research, Inc."
+    },
+    {
+      "ticker": "AD",
+      "cik": "0000821130",
+      "company_name": "ARRAY DIGITAL INFRASTRUCTURE, INC."
+    },
+    {
       "ticker": "ADBE",
       "cik": "0000796343",
       "company_name": "ADOBE INC."
     },
     {
+      "ticker": "ADEA",
+      "cik": "0001803696",
+      "company_name": "Adeia Inc."
+    },
+    {
       "ticker": "ADI",
       "cik": "0000006281",
       "company_name": "ANALOG DEVICES INC"
+    },
+    {
+      "ticker": "ADP",
+      "cik": "0000008670",
+      "company_name": "AUTOMATIC DATA PROCESSING INC"
     },
     {
       "ticker": "ADSK",
@@ -52,6 +88,11 @@
       "company_name": "Affirm Holdings, Inc."
     },
     {
+      "ticker": "AGYS",
+      "cik": "0000078749",
+      "company_name": "AGILYSYS INC"
+    },
+    {
       "ticker": "AKAM",
       "cik": "0001086222",
       "company_name": "AKAMAI TECHNOLOGIES INC"
@@ -62,9 +103,24 @@
       "company_name": "Astera Labs, Inc."
     },
     {
+      "ticker": "ALGM",
+      "cik": "0000866291",
+      "company_name": "ALLEGRO MICROSYSTEMS, INC."
+    },
+    {
+      "ticker": "ALRM",
+      "cik": "0001459200",
+      "company_name": "Alarm.com Holdings, Inc."
+    },
+    {
       "ticker": "AMAT",
       "cik": "0000006951",
       "company_name": "APPLIED MATERIALS INC /DE"
+    },
+    {
+      "ticker": "AMBA",
+      "cik": "0001280263",
+      "company_name": "AMBARELLA INC"
     },
     {
       "ticker": "AMD",
@@ -77,6 +133,11 @@
       "company_name": "AMKOR TECHNOLOGY, INC."
     },
     {
+      "ticker": "AMZN",
+      "cik": "0001018724",
+      "company_name": "AMAZON COM INC"
+    },
+    {
       "ticker": "APH",
       "cik": "0000820313",
       "company_name": "AMPHENOL CORP /DE/"
@@ -87,14 +148,109 @@
       "company_name": "AppLovin Corp"
     },
     {
+      "ticker": "APPF",
+      "cik": "0001433195",
+      "company_name": "APPFOLIO INC"
+    },
+    {
+      "ticker": "ARM",
+      "cik": "0001973239",
+      "company_name": "ARM HOLDINGS PLC /UK"
+    },
+    {
+      "ticker": "ARW",
+      "cik": "0000007536",
+      "company_name": "ARROW ELECTRONICS, INC."
+    },
+    {
+      "ticker": "ASTS",
+      "cik": "0001780312",
+      "company_name": "AST SpaceMobile, Inc."
+    },
+    {
+      "ticker": "AUR",
+      "cik": "0001828108",
+      "company_name": "Aurora Innovation, Inc."
+    },
+    {
       "ticker": "AVGO",
       "cik": "0001730168",
       "company_name": "Broadcom Inc."
     },
     {
+      "ticker": "AVPT",
+      "cik": "0001777921",
+      "company_name": "AvePoint, Inc."
+    },
+    {
+      "ticker": "AVT",
+      "cik": "0000008858",
+      "company_name": "AVNET INC"
+    },
+    {
+      "ticker": "BABA",
+      "cik": "0001577552",
+      "company_name": "Alibaba Group Holding Ltd"
+    },
+    {
+      "ticker": "BATRA",
+      "cik": "0001958140",
+      "company_name": "Atlanta Braves Holdings, Inc."
+    },
+    {
+      "ticker": "BATRK",
+      "cik": "0001958140",
+      "company_name": "Atlanta Braves Holdings, Inc."
+    },
+    {
+      "ticker": "BELFA",
+      "cik": "0000729580",
+      "company_name": "BEL FUSE INC /NJ"
+    },
+    {
+      "ticker": "BELFB",
+      "cik": "0000729580",
+      "company_name": "BEL FUSE INC /NJ"
+    },
+    {
+      "ticker": "BHE",
+      "cik": "0000863436",
+      "company_name": "BENCHMARK ELECTRONICS INC"
+    },
+    {
+      "ticker": "BIDU",
+      "cik": "0001329099",
+      "company_name": "Baidu, Inc."
+    },
+    {
+      "ticker": "BILL",
+      "cik": "0001786352",
+      "company_name": "BILL Holdings, Inc."
+    },
+    {
+      "ticker": "BL",
+      "cik": "0001666134",
+      "company_name": "BLACKLINE, INC."
+    },
+    {
+      "ticker": "BLKB",
+      "cik": "0001280058",
+      "company_name": "BLACKBAUD INC"
+    },
+    {
+      "ticker": "BOX",
+      "cik": "0001372612",
+      "company_name": "BOX INC"
+    },
+    {
       "ticker": "BR",
       "cik": "0001383312",
       "company_name": "BROADRIDGE FINANCIAL SOLUTIONS, INC."
+    },
+    {
+      "ticker": "BRZE",
+      "cik": "0001676238",
+      "company_name": "Braze, Inc."
     },
     {
       "ticker": "BSY",
@@ -107,6 +263,36 @@
       "company_name": "CACI INTERNATIONAL INC /DE/"
     },
     {
+      "ticker": "CALX",
+      "cik": "0001406666",
+      "company_name": "CALIX, INC"
+    },
+    {
+      "ticker": "CARG",
+      "cik": "0001494259",
+      "company_name": "CarGurus, Inc."
+    },
+    {
+      "ticker": "CART",
+      "cik": "0001579091",
+      "company_name": "Maplebear Inc."
+    },
+    {
+      "ticker": "CBOE",
+      "cik": "0001374310",
+      "company_name": "Cboe Global Markets, Inc."
+    },
+    {
+      "ticker": "CBU",
+      "cik": "0000723188",
+      "company_name": "COMMUNITY FINANCIAL SYSTEM, INC."
+    },
+    {
+      "ticker": "CCC",
+      "cik": "0001818201",
+      "company_name": "CCC Intelligent Solutions Holdings Inc."
+    },
+    {
       "ticker": "CDNS",
       "cik": "0000813672",
       "company_name": "CADENCE DESIGN SYSTEMS INC"
@@ -117,9 +303,24 @@
       "company_name": "CDW Corp"
     },
     {
+      "ticker": "CGNX",
+      "cik": "0000851205",
+      "company_name": "COGNEX CORP"
+    },
+    {
       "ticker": "CHTR",
       "cik": "0001091667",
       "company_name": "CHARTER COMMUNICATIONS, INC. /MO/"
+    },
+    {
+      "ticker": "CHWY",
+      "cik": "0001766502",
+      "company_name": "Chewy, Inc."
+    },
+    {
+      "ticker": "CHYM",
+      "cik": "0001795586",
+      "company_name": "Chime Financial, Inc."
     },
     {
       "ticker": "CIEN",
@@ -127,9 +328,29 @@
       "company_name": "CIENA CORP"
     },
     {
+      "ticker": "CLSK",
+      "cik": "0000827876",
+      "company_name": "CLEANSPARK, INC."
+    },
+    {
       "ticker": "CMCSA",
       "cik": "0001166691",
       "company_name": "COMCAST CORP"
+    },
+    {
+      "ticker": "CME",
+      "cik": "0001156375",
+      "company_name": "CME GROUP INC."
+    },
+    {
+      "ticker": "CNK",
+      "cik": "0001385280",
+      "company_name": "Cinemark Holdings, Inc."
+    },
+    {
+      "ticker": "CNXC",
+      "cik": "0001803599",
+      "company_name": "Concentrix Corp"
     },
     {
       "ticker": "COHR",
@@ -142,9 +363,29 @@
       "company_name": "Coinbase Global, Inc."
     },
     {
+      "ticker": "COLB",
+      "cik": "0000887343",
+      "company_name": "COLUMBIA BANKING SYSTEM, INC."
+    },
+    {
+      "ticker": "COMP",
+      "cik": "0001563190",
+      "company_name": "Compass, Inc."
+    },
+    {
+      "ticker": "CORZ",
+      "cik": "0001839341",
+      "company_name": "Core Scientific, Inc./tx"
+    },
+    {
       "ticker": "CPAY",
       "cik": "0001175454",
       "company_name": "CORPAY, INC."
+    },
+    {
+      "ticker": "CPRT",
+      "cik": "0000900075",
+      "company_name": "COPART INC"
     },
     {
       "ticker": "CRDO",
@@ -155,6 +396,11 @@
       "ticker": "CRM",
       "cik": "0001108524",
       "company_name": "Salesforce, Inc."
+    },
+    {
+      "ticker": "CRUS",
+      "cik": "0000772406",
+      "company_name": "CIRRUS LOGIC, INC."
     },
     {
       "ticker": "CRWD",
@@ -172,14 +418,44 @@
       "company_name": "CISCO SYSTEMS, INC."
     },
     {
+      "ticker": "CSGS",
+      "cik": "0001005757",
+      "company_name": "CSG SYSTEMS INTERNATIONAL INC"
+    },
+    {
       "ticker": "CTSH",
       "cik": "0001058290",
       "company_name": "COGNIZANT TECHNOLOGY SOLUTIONS CORP"
     },
     {
+      "ticker": "CVLT",
+      "cik": "0001169561",
+      "company_name": "COMMVAULT SYSTEMS INC"
+    },
+    {
+      "ticker": "CVNA",
+      "cik": "0001690820",
+      "company_name": "CARVANA CO."
+    },
+    {
       "ticker": "DASH",
       "cik": "0001792789",
       "company_name": "DoorDash, Inc."
+    },
+    {
+      "ticker": "DAVE",
+      "cik": "0001841408",
+      "company_name": "Dave Inc./DE"
+    },
+    {
+      "ticker": "DBD",
+      "cik": "0000028823",
+      "company_name": "DIEBOLD NIXDORF, Inc"
+    },
+    {
+      "ticker": "DBX",
+      "cik": "0001467623",
+      "company_name": "DROPBOX, INC."
     },
     {
       "ticker": "DDOG",
@@ -192,9 +468,44 @@
       "company_name": "Dell Technologies Inc."
     },
     {
+      "ticker": "DIOD",
+      "cik": "0000029002",
+      "company_name": "DIODES INC /DEL/"
+    },
+    {
       "ticker": "DIS",
       "cik": "0001744489",
       "company_name": "Walt Disney Co"
+    },
+    {
+      "ticker": "DJT",
+      "cik": "0001849635",
+      "company_name": "Trump Media & Technology Group Corp."
+    },
+    {
+      "ticker": "DLB",
+      "cik": "0001308547",
+      "company_name": "Dolby Laboratories, Inc."
+    },
+    {
+      "ticker": "DOCN",
+      "cik": "0001582961",
+      "company_name": "DigitalOcean Holdings, Inc."
+    },
+    {
+      "ticker": "DOCS",
+      "cik": "0001516513",
+      "company_name": "Doximity, Inc."
+    },
+    {
+      "ticker": "DOCU",
+      "cik": "0001261333",
+      "company_name": "DOCUSIGN, INC."
+    },
+    {
+      "ticker": "DOX",
+      "cik": "0001062579",
+      "company_name": "AMDOCS LTD"
     },
     {
       "ticker": "DT",
@@ -202,9 +513,34 @@
       "company_name": "Dynatrace, Inc."
     },
     {
+      "ticker": "DUOL",
+      "cik": "0001562088",
+      "company_name": "Duolingo, Inc."
+    },
+    {
+      "ticker": "DXC",
+      "cik": "0001688568",
+      "company_name": "DXC Technology Co"
+    },
+    {
       "ticker": "EA",
       "cik": "0000712515",
       "company_name": "ELECTRONIC ARTS INC."
+    },
+    {
+      "ticker": "EBAY",
+      "cik": "0001065088",
+      "company_name": "EBAY INC"
+    },
+    {
+      "ticker": "EFX",
+      "cik": "0000033185",
+      "company_name": "EQUIFAX INC"
+    },
+    {
+      "ticker": "ENPH",
+      "cik": "0001463101",
+      "company_name": "Enphase Energy, Inc."
     },
     {
       "ticker": "ENTG",
@@ -212,14 +548,69 @@
       "company_name": "ENTEGRIS INC"
     },
     {
+      "ticker": "EPAM",
+      "cik": "0001352010",
+      "company_name": "EPAM Systems, Inc."
+    },
+    {
+      "ticker": "ESE",
+      "cik": "0000866706",
+      "company_name": "ESCO TECHNOLOGIES INC"
+    },
+    {
+      "ticker": "ESTC",
+      "cik": "0001707753",
+      "company_name": "Elastic N.V."
+    },
+    {
+      "ticker": "ETSY",
+      "cik": "0001370637",
+      "company_name": "ETSY INC"
+    },
+    {
+      "ticker": "EVCM",
+      "cik": "0001853145",
+      "company_name": "EverCommerce Inc."
+    },
+    {
+      "ticker": "EXLS",
+      "cik": "0001297989",
+      "company_name": "ExlService Holdings, Inc."
+    },
+    {
+      "ticker": "FDS",
+      "cik": "0001013237",
+      "company_name": "FACTSET RESEARCH SYSTEMS INC"
+    },
+    {
+      "ticker": "FIBK",
+      "cik": "0000860413",
+      "company_name": "FIRST INTERSTATE BANCSYSTEM INC"
+    },
+    {
       "ticker": "FICO",
       "cik": "0000814547",
       "company_name": "FAIR ISAAC CORP"
     },
     {
+      "ticker": "FIG",
+      "cik": "0001579878",
+      "company_name": "Figma, Inc."
+    },
+    {
       "ticker": "FIS",
       "cik": "0001136893",
       "company_name": "Fidelity National Information Services, Inc."
+    },
+    {
+      "ticker": "FORM",
+      "cik": "0001039399",
+      "company_name": "FORMFACTOR INC"
+    },
+    {
+      "ticker": "FOUR",
+      "cik": "0001794669",
+      "company_name": "Shift4 Payments, Inc."
     },
     {
       "ticker": "FOX",
@@ -232,9 +623,24 @@
       "company_name": "Fox Corp"
     },
     {
+      "ticker": "FROG",
+      "cik": "0001800667",
+      "company_name": "JFrog Ltd"
+    },
+    {
+      "ticker": "FRSH",
+      "cik": "0001544522",
+      "company_name": "Freshworks Inc."
+    },
+    {
       "ticker": "FSLR",
       "cik": "0001274494",
       "company_name": "FIRST SOLAR, INC."
+    },
+    {
+      "ticker": "FSLY",
+      "cik": "0001517413",
+      "company_name": "Fastly, Inc."
     },
     {
       "ticker": "FTNT",
@@ -245,6 +651,11 @@
       "ticker": "FTV",
       "cik": "0001659166",
       "company_name": "Fortive Corp"
+    },
+    {
+      "ticker": "GBTG",
+      "cik": "0001820872",
+      "company_name": "Global Business Travel Group, Inc."
     },
     {
       "ticker": "GDDY",
@@ -277,9 +688,24 @@
       "company_name": "Alphabet Inc."
     },
     {
+      "ticker": "GSAT",
+      "cik": "0001366868",
+      "company_name": "Globalstar, Inc."
+    },
+    {
+      "ticker": "GTLB",
+      "cik": "0001653482",
+      "company_name": "Gitlab Inc."
+    },
+    {
       "ticker": "GWRE",
       "cik": "0001528396",
       "company_name": "Guidewire Software, Inc."
+    },
+    {
+      "ticker": "HOOD",
+      "cik": "0001783879",
+      "company_name": "Robinhood Markets, Inc."
     },
     {
       "ticker": "HPE",
@@ -297,9 +723,34 @@
       "company_name": "HUBSPOT INC"
     },
     {
+      "ticker": "HXL",
+      "cik": "0000717605",
+      "company_name": "HEXCEL CORP /DE/"
+    },
+    {
+      "ticker": "IAC",
+      "cik": "0001800227",
+      "company_name": "IAC Inc."
+    },
+    {
+      "ticker": "IBKR",
+      "cik": "0001381197",
+      "company_name": "Interactive Brokers Group, Inc."
+    },
+    {
       "ticker": "IBM",
       "cik": "0000051143",
       "company_name": "INTERNATIONAL BUSINESS MACHINES CORP"
+    },
+    {
+      "ticker": "ICE",
+      "cik": "0001571949",
+      "company_name": "Intercontinental Exchange, Inc."
+    },
+    {
+      "ticker": "IDCC",
+      "cik": "0001405495",
+      "company_name": "InterDigital, Inc."
     },
     {
       "ticker": "INTC",
@@ -312,14 +763,34 @@
       "company_name": "INTUIT INC."
     },
     {
+      "ticker": "IPGP",
+      "cik": "0001111928",
+      "company_name": "IPG PHOTONICS CORP"
+    },
+    {
+      "ticker": "IRDM",
+      "cik": "0001418819",
+      "company_name": "Iridium Communications Inc."
+    },
+    {
       "ticker": "IT",
       "cik": "0000749251",
       "company_name": "GARTNER INC"
     },
     {
+      "ticker": "ITRI",
+      "cik": "0000780571",
+      "company_name": "ITRON, INC."
+    },
+    {
       "ticker": "JBL",
       "cik": "0000898293",
       "company_name": "JABIL INC"
+    },
+    {
+      "ticker": "JD",
+      "cik": "0001549802",
+      "company_name": "JD.com, Inc."
     },
     {
       "ticker": "JKHY",
@@ -337,9 +808,39 @@
       "company_name": "KLA CORP"
     },
     {
-      "ticker": "LBRDB",
+      "ticker": "KN",
+      "cik": "0001587523",
+      "company_name": "Knowles Corp"
+    },
+    {
+      "ticker": "KVYO",
+      "cik": "0001835830",
+      "company_name": "Klaviyo, Inc."
+    },
+    {
+      "ticker": "LASR",
+      "cik": "0001124796",
+      "company_name": "NLIGHT, INC."
+    },
+    {
+      "ticker": "LBRDA",
       "cik": "0001611983",
       "company_name": "Liberty Broadband Corp"
+    },
+    {
+      "ticker": "LBRDK",
+      "cik": "0001611983",
+      "company_name": "Liberty Broadband Corp"
+    },
+    {
+      "ticker": "LBRDP",
+      "cik": "0001611983",
+      "company_name": "Liberty Broadband Corp"
+    },
+    {
+      "ticker": "LCID",
+      "cik": "0001811210",
+      "company_name": "Lucid Group, Inc."
     },
     {
       "ticker": "LDOS",
@@ -347,9 +848,29 @@
       "company_name": "Leidos Holdings, Inc."
     },
     {
+      "ticker": "LFUS",
+      "cik": "0000889331",
+      "company_name": "LITTELFUSE INC /DE"
+    },
+    {
+      "ticker": "LIF",
+      "cik": "0001581760",
+      "company_name": "Life360, Inc."
+    },
+    {
       "ticker": "LITE",
       "cik": "0001633978",
       "company_name": "Lumentum Holdings Inc."
+    },
+    {
+      "ticker": "LLYVA",
+      "cik": "0002078416",
+      "company_name": "Liberty Live Holdings, Inc."
+    },
+    {
+      "ticker": "LLYVK",
+      "cik": "0002078416",
+      "company_name": "Liberty Live Holdings, Inc."
     },
     {
       "ticker": "LRCX",
@@ -362,9 +883,34 @@
       "company_name": "LATTICE SEMICONDUCTOR CORP"
     },
     {
+      "ticker": "LSTR",
+      "cik": "0000853816",
+      "company_name": "LANDSTAR SYSTEM INC"
+    },
+    {
+      "ticker": "LUMN",
+      "cik": "0000018926",
+      "company_name": "Lumen Technologies, Inc."
+    },
+    {
+      "ticker": "LYFT",
+      "cik": "0001759509",
+      "company_name": "Lyft, Inc."
+    },
+    {
       "ticker": "LYV",
       "cik": "0001335258",
       "company_name": "Live Nation Entertainment, Inc."
+    },
+    {
+      "ticker": "MA",
+      "cik": "0001141391",
+      "company_name": "Mastercard Inc"
+    },
+    {
+      "ticker": "MANH",
+      "cik": "0001056696",
+      "company_name": "MANHATTAN ASSOCIATES INC"
     },
     {
       "ticker": "MCHP",
@@ -372,9 +918,19 @@
       "company_name": "MICROCHIP TECHNOLOGY INC"
     },
     {
+      "ticker": "MCO",
+      "cik": "0001059556",
+      "company_name": "MOODYS CORP /DE/"
+    },
+    {
       "ticker": "MDB",
       "cik": "0001441816",
       "company_name": "MongoDB, Inc."
+    },
+    {
+      "ticker": "MELI",
+      "cik": "0001099590",
+      "company_name": "MERCADOLIBRE INC"
     },
     {
       "ticker": "META",
@@ -382,9 +938,29 @@
       "company_name": "Meta Platforms, Inc."
     },
     {
+      "ticker": "MIR",
+      "cik": "0001809987",
+      "company_name": "Mirion Technologies, Inc."
+    },
+    {
       "ticker": "MKSI",
       "cik": "0001049502",
       "company_name": "MKS INC"
+    },
+    {
+      "ticker": "MKTX",
+      "cik": "0001278021",
+      "company_name": "MARKETAXESS HOLDINGS INC"
+    },
+    {
+      "ticker": "MNDY",
+      "cik": "0001845338",
+      "company_name": "monday.com Ltd."
+    },
+    {
+      "ticker": "MORN",
+      "cik": "0001289419",
+      "company_name": "Morningstar, Inc."
     },
     {
       "ticker": "MPWR",
@@ -397,9 +973,24 @@
       "company_name": "Marvell Technology, Inc."
     },
     {
+      "ticker": "MSCI",
+      "cik": "0001408198",
+      "company_name": "MSCI Inc."
+    },
+    {
       "ticker": "MSFT",
       "cik": "0000789019",
       "company_name": "MICROSOFT CORP"
+    },
+    {
+      "ticker": "MSGE",
+      "cik": "0001952073",
+      "company_name": "Madison Square Garden Entertainment Corp."
+    },
+    {
+      "ticker": "MSGS",
+      "cik": "0001636519",
+      "company_name": "Madison Square Garden Sports Corp."
     },
     {
       "ticker": "MSI",
@@ -412,6 +1003,11 @@
       "company_name": "Strategy Inc"
     },
     {
+      "ticker": "MTCH",
+      "cik": "0000891103",
+      "company_name": "Match Group, Inc."
+    },
+    {
       "ticker": "MTSI",
       "cik": "0001493594",
       "company_name": "MACOM Technology Solutions Holdings, Inc."
@@ -422,9 +1018,34 @@
       "company_name": "MICRON TECHNOLOGY INC"
     },
     {
+      "ticker": "NAVN",
+      "cik": "0001639723",
+      "company_name": "Navan, Inc."
+    },
+    {
+      "ticker": "NDAQ",
+      "cik": "0001120193",
+      "company_name": "NASDAQ, INC."
+    },
+    {
       "ticker": "NET",
       "cik": "0001477333",
       "company_name": "Cloudflare, Inc."
+    },
+    {
+      "ticker": "NFLX",
+      "cik": "0001065280",
+      "company_name": "NETFLIX INC"
+    },
+    {
+      "ticker": "NN",
+      "cik": "0001865631",
+      "company_name": "NEXTNAV INC."
+    },
+    {
+      "ticker": "NOVT",
+      "cik": "0001076930",
+      "company_name": "NOVANTA INC"
     },
     {
       "ticker": "NOW",
@@ -432,9 +1053,24 @@
       "company_name": "ServiceNow, Inc."
     },
     {
+      "ticker": "NSIT",
+      "cik": "0000932696",
+      "company_name": "INSIGHT ENTERPRISES INC"
+    },
+    {
       "ticker": "NTAP",
       "cik": "0001002047",
       "company_name": "NetApp, Inc."
+    },
+    {
+      "ticker": "NTCT",
+      "cik": "0001078075",
+      "company_name": "NETSCOUT SYSTEMS INC"
+    },
+    {
+      "ticker": "NTES",
+      "cik": "0001110646",
+      "company_name": "NetEase, Inc."
     },
     {
       "ticker": "NTNX",
@@ -442,9 +1078,19 @@
       "company_name": "Nutanix, Inc."
     },
     {
+      "ticker": "NTSK",
+      "cik": "0002063196",
+      "company_name": "Netskope Inc"
+    },
+    {
       "ticker": "NVDA",
       "cik": "0001045810",
       "company_name": "NVIDIA CORP"
+    },
+    {
+      "ticker": "NVTS",
+      "cik": "0001821769",
+      "company_name": "Navitas Semiconductor Corp"
     },
     {
       "ticker": "NWS",
@@ -455,6 +1101,11 @@
       "ticker": "NWSA",
       "cik": "0001564708",
       "company_name": "NEWS CORP"
+    },
+    {
+      "ticker": "NXST",
+      "cik": "0001142417",
+      "company_name": "NEXSTAR MEDIA GROUP, INC."
     },
     {
       "ticker": "NXT",
@@ -472,6 +1123,11 @@
       "company_name": "Okta, Inc."
     },
     {
+      "ticker": "OLED",
+      "cik": "0001005284",
+      "company_name": "UNIVERSAL DISPLAY CORP \\PA\\"
+    },
+    {
       "ticker": "OMC",
       "cik": "0000029989",
       "company_name": "OMNICOM GROUP INC."
@@ -480,6 +1136,11 @@
       "ticker": "ON",
       "cik": "0001097864",
       "company_name": "ON SEMICONDUCTOR CORP"
+    },
+    {
+      "ticker": "ONDS",
+      "cik": "0001646188",
+      "company_name": "Ondas Inc."
     },
     {
       "ticker": "ONTO",
@@ -492,9 +1153,49 @@
       "company_name": "ORACLE CORP"
     },
     {
+      "ticker": "OSIS",
+      "cik": "0001039065",
+      "company_name": "OSI SYSTEMS INC"
+    },
+    {
+      "ticker": "PATH",
+      "cik": "0001734722",
+      "company_name": "UiPath, Inc."
+    },
+    {
+      "ticker": "PAYC",
+      "cik": "0001590955",
+      "company_name": "Paycom Software, Inc."
+    },
+    {
+      "ticker": "PCOR",
+      "cik": "0001611052",
+      "company_name": "PROCORE TECHNOLOGIES, INC."
+    },
+    {
+      "ticker": "PCTY",
+      "cik": "0001591698",
+      "company_name": "Paylocity Holding Corp"
+    },
+    {
+      "ticker": "PEGA",
+      "cik": "0001013857",
+      "company_name": "PEGASYSTEMS INC"
+    },
+    {
+      "ticker": "PI",
+      "cik": "0001114995",
+      "company_name": "IMPINJ INC"
+    },
+    {
       "ticker": "PINS",
       "cik": "0001506293",
       "company_name": "PINTEREST, INC."
+    },
+    {
+      "ticker": "PLAB",
+      "cik": "0000810136",
+      "company_name": "PHOTRONICS INC"
     },
     {
       "ticker": "PLTR",
@@ -502,9 +1203,19 @@
       "company_name": "Palantir Technologies Inc."
     },
     {
-      "ticker": "PRSI",
-      "cik": "0000079661",
-      "company_name": "PORTSMOUTH SQUARE INC"
+      "ticker": "PLUS",
+      "cik": "0001022408",
+      "company_name": "EPLUS INC"
+    },
+    {
+      "ticker": "PLXS",
+      "cik": "0000785786",
+      "company_name": "PLEXUS CORP"
+    },
+    {
+      "ticker": "POWI",
+      "cik": "0000833640",
+      "company_name": "POWER INTEGRATIONS INC"
     },
     {
       "ticker": "PSKY",
@@ -522,9 +1233,29 @@
       "company_name": "PTC INC."
     },
     {
+      "ticker": "PYPL",
+      "cik": "0001633917",
+      "company_name": "PayPal Holdings, Inc."
+    },
+    {
       "ticker": "QCOM",
       "cik": "0000804328",
       "company_name": "QUALCOMM INC/DE"
+    },
+    {
+      "ticker": "QLYS",
+      "cik": "0001107843",
+      "company_name": "QUALYS, INC."
+    },
+    {
+      "ticker": "QRVO",
+      "cik": "0001604778",
+      "company_name": "Qorvo, Inc."
+    },
+    {
+      "ticker": "QTWO",
+      "cik": "0001410384",
+      "company_name": "Q2 Holdings, Inc."
     },
     {
       "ticker": "QXO",
@@ -532,9 +1263,39 @@
       "company_name": "QXO, Inc."
     },
     {
+      "ticker": "R",
+      "cik": "0000085961",
+      "company_name": "RYDER SYSTEM INC"
+    },
+    {
       "ticker": "RBLX",
       "cik": "0001315098",
       "company_name": "Roblox Corp"
+    },
+    {
+      "ticker": "RDDT",
+      "cik": "0001713445",
+      "company_name": "Reddit, Inc."
+    },
+    {
+      "ticker": "RELY",
+      "cik": "0001782170",
+      "company_name": "Remitly Global, Inc."
+    },
+    {
+      "ticker": "RGTI",
+      "cik": "0001838359",
+      "company_name": "Rigetti Computing, Inc."
+    },
+    {
+      "ticker": "RIOT",
+      "cik": "0001167419",
+      "company_name": "Riot Platforms, Inc."
+    },
+    {
+      "ticker": "RIVN",
+      "cik": "0001874178",
+      "company_name": "Rivian Automotive, Inc. / DE"
     },
     {
       "ticker": "RMBS",
@@ -542,9 +1303,39 @@
       "company_name": "RAMBUS INC"
     },
     {
+      "ticker": "RNG",
+      "cik": "0001384905",
+      "company_name": "RingCentral, Inc."
+    },
+    {
       "ticker": "ROKU",
       "cik": "0001428439",
       "company_name": "ROKU, INC"
+    },
+    {
+      "ticker": "RUM",
+      "cik": "0001830081",
+      "company_name": "Rumble Inc."
+    },
+    {
+      "ticker": "RUN",
+      "cik": "0001469367",
+      "company_name": "Sunrun Inc."
+    },
+    {
+      "ticker": "S",
+      "cik": "0001583708",
+      "company_name": "SentinelOne, Inc."
+    },
+    {
+      "ticker": "SAIC",
+      "cik": "0001571123",
+      "company_name": "Science Applications International Corp"
+    },
+    {
+      "ticker": "SANM",
+      "cik": "0000897723",
+      "company_name": "SANMINA CORP"
     },
     {
       "ticker": "SATS",
@@ -552,14 +1343,39 @@
       "company_name": "EchoStar CORP"
     },
     {
+      "ticker": "SHOP",
+      "cik": "0001594805",
+      "company_name": "SHOPIFY INC."
+    },
+    {
+      "ticker": "SIRI",
+      "cik": "0000908937",
+      "company_name": "SIRIUS XM HOLDINGS INC."
+    },
+    {
       "ticker": "SITM",
       "cik": "0001451809",
       "company_name": "SITIME Corp"
     },
     {
+      "ticker": "SLAB",
+      "cik": "0001038074",
+      "company_name": "SILICON LABORATORIES INC."
+    },
+    {
       "ticker": "SMCI",
       "cik": "0001375365",
       "company_name": "Super Micro Computer, Inc."
+    },
+    {
+      "ticker": "SMTC",
+      "cik": "0000088941",
+      "company_name": "SEMTECH CORP"
+    },
+    {
+      "ticker": "SNAP",
+      "cik": "0001564408",
+      "company_name": "Snap Inc"
     },
     {
       "ticker": "SNDK",
@@ -582,6 +1398,31 @@
       "company_name": "TD SYNNEX CORP"
     },
     {
+      "ticker": "SOUN",
+      "cik": "0001840856",
+      "company_name": "SOUNDHOUND AI, INC."
+    },
+    {
+      "ticker": "SPGI",
+      "cik": "0000064040",
+      "company_name": "S&P Global Inc."
+    },
+    {
+      "ticker": "SPOT",
+      "cik": "0001639920",
+      "company_name": "Spotify Technology S.A."
+    },
+    {
+      "ticker": "SPSC",
+      "cik": "0001092699",
+      "company_name": "SPS COMMERCE INC"
+    },
+    {
+      "ticker": "ST",
+      "cik": "0001477294",
+      "company_name": "Sensata Technologies Holding plc"
+    },
+    {
       "ticker": "STRD",
       "cik": "0001050446",
       "company_name": "Strategy Inc"
@@ -592,14 +1433,39 @@
       "company_name": "Strategy Inc"
     },
     {
+      "ticker": "SWKS",
+      "cik": "0000004127",
+      "company_name": "SKYWORKS SOLUTIONS, INC."
+    },
+    {
+      "ticker": "SYNA",
+      "cik": "0000817720",
+      "company_name": "SYNAPTICS Inc"
+    },
+    {
       "ticker": "T",
       "cik": "0000732717",
       "company_name": "AT&T INC."
     },
     {
+      "ticker": "TDC",
+      "cik": "0000816761",
+      "company_name": "TERADATA CORP /DE/"
+    },
+    {
+      "ticker": "TDOC",
+      "cik": "0001477449",
+      "company_name": "Teladoc Health, Inc."
+    },
+    {
       "ticker": "TDY",
       "cik": "0001094285",
       "company_name": "TELEDYNE TECHNOLOGIES INC"
+    },
+    {
+      "ticker": "TEM",
+      "cik": "0001717115",
+      "company_name": "Tempus AI, Inc."
     },
     {
       "ticker": "TER",
@@ -612,14 +1478,34 @@
       "company_name": "T-Mobile US, Inc."
     },
     {
+      "ticker": "TOST",
+      "cik": "0001650164",
+      "company_name": "Toast, Inc."
+    },
+    {
       "ticker": "TRMB",
       "cik": "0000864749",
       "company_name": "TRIMBLE INC."
     },
     {
+      "ticker": "TSLA",
+      "cik": "0001318605",
+      "company_name": "Tesla, Inc."
+    },
+    {
+      "ticker": "TTAN",
+      "cik": "0001638826",
+      "company_name": "ServiceTitan, Inc."
+    },
+    {
       "ticker": "TTD",
       "cik": "0001671933",
       "company_name": "Trade Desk, Inc."
+    },
+    {
+      "ticker": "TTMI",
+      "cik": "0001116942",
+      "company_name": "TTM TECHNOLOGIES INC"
     },
     {
       "ticker": "TWLO",
@@ -637,9 +1523,19 @@
       "company_name": "TYLER TECHNOLOGIES INC"
     },
     {
+      "ticker": "U",
+      "cik": "0001810806",
+      "company_name": "Unity Software Inc."
+    },
+    {
       "ticker": "UBER",
       "cik": "0001543151",
       "company_name": "Uber Technologies, Inc"
+    },
+    {
+      "ticker": "UCTT",
+      "cik": "0001275014",
+      "company_name": "Ultra Clean Holdings, Inc."
     },
     {
       "ticker": "UI",
@@ -647,9 +1543,54 @@
       "company_name": "Ubiquiti Inc."
     },
     {
+      "ticker": "V",
+      "cik": "0001403161",
+      "company_name": "VISA INC."
+    },
+    {
+      "ticker": "VEEV",
+      "cik": "0001393052",
+      "company_name": "VEEVA SYSTEMS INC"
+    },
+    {
+      "ticker": "VERX",
+      "cik": "0001806837",
+      "company_name": "Vertex, Inc."
+    },
+    {
       "ticker": "VG",
       "cik": "0002007855",
       "company_name": "Venture Global, Inc."
+    },
+    {
+      "ticker": "VIAV",
+      "cik": "0000912093",
+      "company_name": "VIAVI SOLUTIONS INC."
+    },
+    {
+      "ticker": "VICR",
+      "cik": "0000751978",
+      "company_name": "VICOR CORP"
+    },
+    {
+      "ticker": "VISN",
+      "cik": "0001517228",
+      "company_name": "Vistance Networks, Inc."
+    },
+    {
+      "ticker": "VNT",
+      "cik": "0001786842",
+      "company_name": "Vontier Corp"
+    },
+    {
+      "ticker": "VRNS",
+      "cik": "0001361113",
+      "company_name": "VARONIS SYSTEMS INC"
+    },
+    {
+      "ticker": "VRSK",
+      "cik": "0001442145",
+      "company_name": "Verisk Analytics, Inc."
     },
     {
       "ticker": "VRSN",
@@ -657,9 +1598,34 @@
       "company_name": "VERISIGN INC/CA"
     },
     {
+      "ticker": "VSAT",
+      "cik": "0000797721",
+      "company_name": "VIASAT INC"
+    },
+    {
+      "ticker": "VSH",
+      "cik": "0000103730",
+      "company_name": "VISHAY INTERTECHNOLOGY INC"
+    },
+    {
+      "ticker": "VSNT",
+      "cik": "0002067876",
+      "company_name": "Versant Media Group, Inc."
+    },
+    {
+      "ticker": "VVX",
+      "cik": "0001601548",
+      "company_name": "V2X, Inc."
+    },
+    {
       "ticker": "VZ",
       "cik": "0000732712",
       "company_name": "VERIZON COMMUNICATIONS INC"
+    },
+    {
+      "ticker": "W",
+      "cik": "0001616707",
+      "company_name": "Wayfair Inc."
     },
     {
       "ticker": "WBD",
@@ -677,14 +1643,39 @@
       "company_name": "WESTERN DIGITAL CORP"
     },
     {
+      "ticker": "WEX",
+      "cik": "0001309108",
+      "company_name": "WEX Inc."
+    },
+    {
+      "ticker": "WGS",
+      "cik": "0001818331",
+      "company_name": "GeneDx Holdings Corp."
+    },
+    {
+      "ticker": "WK",
+      "cik": "0001445305",
+      "company_name": "WORKIVA INC"
+    },
+    {
       "ticker": "WMG",
       "cik": "0001319161",
       "company_name": "Warner Music Group Corp."
     },
     {
+      "ticker": "XMTR",
+      "cik": "0001657573",
+      "company_name": "Xometry, Inc."
+    },
+    {
       "ticker": "XYZ",
       "cik": "0001512673",
       "company_name": "Block, Inc."
+    },
+    {
+      "ticker": "YOU",
+      "cik": "0001856314",
+      "company_name": "Clear Secure, Inc."
     },
     {
       "ticker": "Z",

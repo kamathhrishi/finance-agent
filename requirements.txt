@@ -47,6 +47,12 @@ langchain-openai
 # work for whatever's already on disk, but no new filings can be pulled).
 datamule
 
+# Universe source — used by `fs_research_agent.tech_universe.regenerate_tech_universe`
+# to discover US tech tickers. Quarterly-refreshed snapshot of ~150k global
+# equities with sector/industry/market_cap/exchange metadata. Replaces the
+# older static US_TECH_CLEANED.json.
+financedatabase==2.3.0
+
 # Redis and caching
 redis==5.2.1
 

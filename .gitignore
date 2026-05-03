@@ -163,6 +163,10 @@ fs_research_agent/benchmarks/**/cache/
 # Local sandboxes / scratch
 explore/
 
+# Claude Code per-project state — agent transcripts, hooks, settings.local.json
+# (settings.json may be committed; the runtime keeps everything else local).
+.claude/
+
 # ─── Data files (defensive — never commit raw datasets, caches, or model artefacts) ───
 # Binary tabular formats
 *.parquet
