@@ -367,7 +367,12 @@ async def watcher_loop(
     keep_exhibits: bool,
     once: bool,
     max_age_days: Optional[int] = None,
+    install_signal_handlers: bool = True,
 ) -> int:
+    """Long-running poll loop. Set install_signal_handlers=False when running
+    inside another process (e.g. as an asyncio.task spawned from FastAPI's
+    lifespan) — otherwise we clobber uvicorn's SIGTERM/SIGINT handlers.
+    Cancellation in that case happens via asyncio.Task.cancel()."""
     universe = load_tech_universe()
     if not universe:
         logger.error("Empty tech universe. Run `python -m fs_research_agent.tech_universe regenerate`.")
@@ -383,14 +388,15 @@ async def watcher_loop(
 
     stop = asyncio.Event()
 
-    def _handle_signal(signum, _frame):
-        logger.info(f"received signal {signum} — shutting down after current cycle")
-        stop.set()
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        try:
-            signal.signal(sig, _handle_signal)
-        except ValueError:
-            pass  # not in main thread
+    if install_signal_handlers:
+        def _handle_signal(signum, _frame):
+            logger.info(f"received signal {signum} — shutting down after current cycle")
+            stop.set()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            try:
+                signal.signal(sig, _handle_signal)
+            except ValueError:
+                pass  # not in main thread
 
     cycle_num = 0
     while not stop.is_set():

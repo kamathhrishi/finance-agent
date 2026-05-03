@@ -202,7 +202,7 @@ export default function ChatPage() {
                       "Compare $MSFT and $GOOGL cloud segment growth in their latest 10-Ks",
                       "Which companies in our coverage discuss generative AI as a risk factor in their latest 10-K?",
                       "Compare cybersecurity disclosures across $CRWD, $PANW, and $ZS in the latest 10-K",
-                      "Which companies announced material acquisitions via 8-K in the last 12 months?",
+                      "Summarize $META's AI capex commentary across the last few quarters",
                     ].map((query, index) => (
                       <button
                         key={index}

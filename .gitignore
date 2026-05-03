@@ -151,9 +151,14 @@ fs_research_agent/data/
 fs_research_agent/logs/
 fs_research_agent/__pycache__/
 
-# fs_research benchmarks + their outputs (generated runs, not source)
+# fs_research benchmarks — data/ holds the downloaded SEC filings used by the
+# benchmark runners. Source-of-truth for those is the FinanceBench HuggingFace
+# dataset; the local copy is rebuildable via `python -m fs_research_agent.benchmarks.financebench.download`.
+# Never commit results/ or runs/ either — those are per-execution artefacts.
+fs_research_agent/benchmarks/**/data/
 fs_research_agent/benchmarks/**/results/
 fs_research_agent/benchmarks/**/runs/
+fs_research_agent/benchmarks/**/cache/
 
 # Local sandboxes / scratch
 explore/

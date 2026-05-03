@@ -538,12 +538,85 @@ async def lifespan(app: FastAPI):
         log_stage_header(7, "🔐", "AUTHENTICATION & RATE LIMITING")
         await setup_authentication_and_routing()
         
+        # ── In-process SEC filings watcher ───────────────────────────────────
+        #
+        # Spawns the watcher as a background asyncio task on the SAME event
+        # loop as uvicorn, sharing the same volume the agent reads from.
+        # Writes only to the local volume — never pushes to S3.
+        #
+        # Default behavior (no env config required):
+        #   - On Railway: AUTO-ENABLED (any RAILWAY_* env var detected)
+        #   - Local dev:  OFF (so dev runs don't hammer SEC)
+        # Override with FS_RESEARCH_WATCHER_ENABLED={true,false} explicitly
+        # if you want the opposite of the default for your environment.
+        #
+        # Why in-process instead of a separate worker:
+        #   - One container, one volume, no cross-service coordination
+        #   - Watcher writes to the volume; web reads from the volume; the
+        #     coverage_index hot-reloads on mtime change so the UI sees new
+        #     filings in near real-time without a restart
+        #   - No second Railway service to pay for
+        #
+        # Caveats:
+        #   - Bursty (downloads dozens of MBs in a cycle); keep interval
+        #     generous (≥ 1800s) on small Railway plans
+        #   - Redeploy cancels in-flight cycles; next boot's first cycle
+        #     re-discovers any unfinished work via _bootstrap_seen_from_disk.
+        #     Idempotent.
+        #   - DO NOT enable on more than one replica simultaneously — they'd
+        #     race each other writing to the same volume.
+        watcher_task: Optional[asyncio.Task] = None
+        _watcher_explicit = os.getenv("FS_RESEARCH_WATCHER_ENABLED", "").strip().lower()
+        if _watcher_explicit in ("1", "true", "yes"):
+            _watcher_should_run = True
+        elif _watcher_explicit in ("0", "false", "no"):
+            _watcher_should_run = False
+        else:
+            # No explicit setting: auto-on when Railway is detected.
+            _watcher_should_run = _on_railway
+
+        if _watcher_should_run:
+            try:
+                from fs_research_agent.watcher import watcher_loop
+                from fs_research_agent.agent import _resolve_default_data_root
+
+                _interval = int(os.getenv("FS_RESEARCH_WATCHER_INTERVAL_SECS", "1800"))
+                _max_age = int(os.getenv("FS_RESEARCH_WATCHER_MAX_AGE_DAYS", "30"))
+                _ua = os.getenv("DATAMULE_SEC_USER_AGENT", "").strip()
+                if not _ua:
+                    log_info(
+                        "⚠ FS_RESEARCH_WATCHER_ENABLED=true but DATAMULE_SEC_USER_AGENT "
+                        "is not set — SEC requires a real `Name email@domain` UA. "
+                        "Watcher will not start."
+                    )
+                else:
+                    os.environ.setdefault("DATAMULE_SEC_USER_AGENT", _ua)
+                    _data_root = _resolve_default_data_root()
+                    log_info(
+                        f"🛰 Spawning in-process SEC watcher: interval={_interval}s, "
+                        f"max_age_days={_max_age}, data_root={_data_root}"
+                    )
+                    watcher_task = asyncio.create_task(
+                        watcher_loop(
+                            interval_secs=_interval,
+                            data_root=_data_root,
+                            forms=("10-K", "10-Q", "8-K"),
+                            keep_exhibits=True,
+                            once=False,
+                            max_age_days=_max_age,
+                            install_signal_handlers=False,  # uvicorn owns signals
+                        ),
+                        name="fs_research_watcher",
+                    )
+            except Exception as e:
+                log_info(f"⚠ Could not start in-process watcher (non-fatal): {e}")
+
         # APPLICATION READY - YIELD CONTROL TO FASTAPI
         log_stage_header(8, "🎯", "APPLICATION READY - YIELDING CONTROL TO FASTAPI")
         log_info("✅ All systems initialized successfully!")
         log_info("🚀 StrataLens API is now ready to serve requests")
         log_info("="*60)
-        
+
         yield
         
     except Exception as e:
@@ -554,7 +627,23 @@ async def lifespan(app: FastAPI):
         # STAGE 8: Cleanup & Resource Management
         log_stage_header(8, "🧹", "CLEANUP & RESOURCE MANAGEMENT")
         log_info("🔄 Shutting down StrataLens API server...")
-        
+
+        # Stop in-process watcher (if spawned). Use a defined name so we don't
+        # accidentally cancel an unrelated task. Cancellation is safe — the
+        # next cycle re-discovers any work the cancelled cycle didn't finish.
+        try:
+            _watcher = locals().get("watcher_task")
+            if _watcher is not None and not _watcher.done():
+                log_info("🛰 Stopping in-process SEC watcher...")
+                _watcher.cancel()
+                try:
+                    await asyncio.wait_for(_watcher, timeout=5.0)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
+                    pass
+                log_info("🛰 Watcher stopped")
+        except Exception as e:
+            log_info(f"⚠ Error stopping watcher: {e}")
+
         # Close Redis connection
         if redis_client:
             try:

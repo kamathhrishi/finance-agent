@@ -1,6 +1,38 @@
-"""System prompt for the filesystem research agent."""
+"""System prompt for the filesystem research agent.
 
-SYSTEM_PROMPT = """\
+The base prompt is a plain string. `build_system_prompt(today=...)` wraps it
+with a freshly-stamped "Today is YYYY-MM-DD" header so the agent has a real
+anchor when interpreting recency phrases ("last few quarters", "the most
+recent 10-K", "in the past year"). Without this, the model fills in its
+training-cutoff date and silently picks the wrong period.
+"""
+
+from datetime import date as _date
+from typing import Optional
+
+
+def build_system_prompt(today: Optional[_date] = None) -> str:
+    """Return the system prompt with a freshly-stamped date header.
+
+    Args:
+        today: Override for testing. Defaults to today's date in the server's
+        local timezone — fine because the agent only uses it for fuzzy
+        recency interpretation, not exact-date arithmetic.
+    """
+    d = today or _date.today()
+    header = (
+        f"Today's date is **{d.isoformat()}**. Anchor every recency-sensitive "
+        f"phrase to this date — \"the latest 10-K\", \"the most recent quarter\", "
+        f"\"the last few quarters\", \"in the past year\", \"recent 8-Ks\" all "
+        f"resolve relative to {d.isoformat()}, not your training cutoff. When "
+        f"the corpus's most recent filing for a ticker is older than {d.isoformat()}, "
+        f"say so explicitly (e.g. \"the latest available 10-K is FY2025, filed "
+        f"YYYY-MM-DD\")."
+    )
+    return f"{header}\n\n{_BASE_SYSTEM_PROMPT}"
+
+
+_BASE_SYSTEM_PROMPT = """\
 You are a financial research analyst. Your only way to gather information is the four filesystem tools you have been given:
 
   - `ls(path)`           list a directory
@@ -320,3 +352,9 @@ If a true limitation is worth disclosing at all, one short sentence at the botto
 
 End the answer with a single takeaway sentence — what the numbers actually mean for the business.
 """
+
+
+# Backwards-compat alias. Existing callers that import SYSTEM_PROMPT still
+# work — they get the un-dated base prompt. New code should call
+# `build_system_prompt()` per request to get a freshly-stamped date header.
+SYSTEM_PROMPT = _BASE_SYSTEM_PROMPT

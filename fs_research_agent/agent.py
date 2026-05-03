@@ -22,7 +22,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 import openai
 from dotenv import load_dotenv
 
-from .prompts import SYSTEM_PROMPT
+from .prompts import build_system_prompt
 from .tools import Sandbox, TOOL_SCHEMAS, make_tool_executor
 from .observability import span, info as obs_info, warn as obs_warn, truncate
 
@@ -207,8 +207,9 @@ class FilesystemResearchAgent:
         # only enables one model so this override is plumbing for the future.
         active_model = model_override or self.model
 
+        # Build the system prompt fresh each request so today's date is current.
         messages: List[Dict[str, Any]] = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": build_system_prompt()},
             {"role": "user", "content": question},
         ]
 
