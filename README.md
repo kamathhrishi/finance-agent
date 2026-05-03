@@ -147,21 +147,10 @@ Visit `http://localhost:8000` — chat, browse companies, view filings.
 
 ## API documentation
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+Auto-generated from the FastAPI app — see the live spec rather than a curated list (which goes stale fast):
 
-### Key endpoints
-
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/chat/message/stream-v2` | Chat (authenticated, streaming SSE) |
-| `POST` | `/chat/landing/demo/stream-v2` | Chat (anonymous demo, streaming SSE) |
-| `GET` | `/coverage/status` | Universe stats + last-refresh time |
-| `GET` | `/coverage/companies` | All companies + per-form filing counts |
-| `GET` | `/coverage/companies/{ticker}` | Drill-down: every filing for one ticker |
-| `GET` | `/coverage/latest` | Newest-first feed of filings (paginated) |
-| `GET` | `/fs-research/document` | Raw filing markdown by path |
-| `POST` | `/fs-research/document/with-highlights` | Filing markdown with line-range highlights for citation rendering |
+- Swagger UI: `/docs` (e.g. `http://localhost:8000/docs`)
+- ReDoc: `/redoc`
 
 ---
 
