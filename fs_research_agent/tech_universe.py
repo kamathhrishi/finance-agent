@@ -86,7 +86,9 @@ EXTRA_TICKERS: Dict[str, str] = {
     "MKTX": "MarketAxess", "SPGI": "S&P Global", "MCO": "Moody's",
     "MSCI": "MSCI Inc", "FDS": "FactSet", "MORN": "Morningstar",
     # ── Digital brokers (GICS: Financials/Capital Markets) ──
-    "HOOD": "Robinhood", "IBKR": "Interactive Brokers",
+    "HOOD": "Robinhood", "IBKR": "Interactive Brokers", "SCHW": "Charles Schwab",
+    # ── Fintech mid-caps (GICS: Financials, but pure software businesses) ──
+    "SOFI": "SoFi Technologies", "UPST": "Upstart Holdings",
     # ── EV / hardware-as-tech (GICS: Consumer Discretionary/Automobiles) ──
     "TSLA": "Tesla", "RIVN": "Rivian", "LCID": "Lucid",
     # ── Tech-data hiding in 'Professional Services' (GICS: Industrials) ──
@@ -94,6 +96,13 @@ EXTRA_TICKERS: Dict[str, str] = {
     "VRSK": "Verisk Analytics", "CPRT": "Copart",
     # ── Health-tech (GICS: Health Care, cherry-picked from a noisy industry) ──
     "VEEV": "Veeva Systems", "DOCS": "Doximity", "TDOC": "Teladoc",
+    # ── Notable majors that FinanceDatabase's snapshot-date / sector logic
+    #    happens to miss but every analyst expects to be in any tech universe
+    "PANW": "Palo Alto Networks",       # cybersecurity, ~$120B
+    "ANET": "Arista Networks",          # cloud networking, ~$100B
+    "NXPI": "NXP Semiconductors",       # semis, ~$60B (Dutch domicile, US-listed)
+    "TEAM": "Atlassian",                # SaaS, ~$30B (Australian domicile, US-listed)
+    "TTWO": "Take-Two Interactive",     # gaming, GTA publisher
 }
 
 

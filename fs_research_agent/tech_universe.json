@@ -10,7 +10,7 @@
       "Large Cap",
       "Mid Cap"
     ],
-    "ticker_count": 336,
+    "ticker_count": 344,
     "hard_excluded": [
       "ABMD",
       "ATVI",
@@ -136,6 +136,11 @@
       "ticker": "AMZN",
       "cik": "0001018724",
       "company_name": "AMAZON COM INC"
+    },
+    {
+      "ticker": "ANET",
+      "cik": "0001596532",
+      "company_name": "Arista Networks, Inc."
     },
     {
       "ticker": "APH",
@@ -1103,6 +1108,11 @@
       "company_name": "NEWS CORP"
     },
     {
+      "ticker": "NXPI",
+      "cik": "0001413447",
+      "company_name": "NXP Semiconductors N.V."
+    },
+    {
       "ticker": "NXST",
       "cik": "0001142417",
       "company_name": "NEXSTAR MEDIA GROUP, INC."
@@ -1156,6 +1166,11 @@
       "ticker": "OSIS",
       "cik": "0001039065",
       "company_name": "OSI SYSTEMS INC"
+    },
+    {
+      "ticker": "PANW",
+      "cik": "0001327567",
+      "company_name": "Palo Alto Networks Inc"
     },
     {
       "ticker": "PATH",
@@ -1343,6 +1358,11 @@
       "company_name": "EchoStar CORP"
     },
     {
+      "ticker": "SCHW",
+      "cik": "0000316709",
+      "company_name": "SCHWAB CHARLES CORP"
+    },
+    {
       "ticker": "SHOP",
       "cik": "0001594805",
       "company_name": "SHOPIFY INC."
@@ -1396,6 +1416,11 @@
       "ticker": "SNX",
       "cik": "0001177394",
       "company_name": "TD SYNNEX CORP"
+    },
+    {
+      "ticker": "SOFI",
+      "cik": "0001818874",
+      "company_name": "SoFi Technologies, Inc."
     },
     {
       "ticker": "SOUN",
@@ -1463,6 +1488,11 @@
       "company_name": "TELEDYNE TECHNOLOGIES INC"
     },
     {
+      "ticker": "TEAM",
+      "cik": "0001650372",
+      "company_name": "Atlassian Corp"
+    },
+    {
       "ticker": "TEM",
       "cik": "0001717115",
       "company_name": "Tempus AI, Inc."
@@ -1508,6 +1538,11 @@
       "company_name": "TTM TECHNOLOGIES INC"
     },
     {
+      "ticker": "TTWO",
+      "cik": "0000946581",
+      "company_name": "TAKE TWO INTERACTIVE SOFTWARE INC"
+    },
+    {
       "ticker": "TWLO",
       "cik": "0001447669",
       "company_name": "TWILIO INC"
@@ -1541,6 +1576,11 @@
       "ticker": "UI",
       "cik": "0001511737",
       "company_name": "Ubiquiti Inc."
+    },
+    {
+      "ticker": "UPST",
+      "cik": "0001647639",
+      "company_name": "Upstart Holdings, Inc."
     },
     {
       "ticker": "V",
