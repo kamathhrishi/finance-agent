@@ -153,12 +153,10 @@ export default function LandingPage() {
   /**
    * Hand the query off to /chat.
    *
-   * `autosend` differentiates two intents:
-   *   - Typed-and-pressed-Send → autosend=true → /chat fires the request
-   *     immediately. The user explicitly hit Send.
-   *   - Clicked an example chip → autosend=false → /chat just LOADS the
-   *     query into its input. The user is exploring and may want to edit
-   *     before sending.
+   * Only the typed-and-Send path on landing reaches this — example chips
+   * now load into THIS page's input (no navigation). So `autosend` is
+   * effectively always true here, but kept as a parameter for clarity
+   * and in case we re-introduce a chip-driven navigation later.
    */
   const handleSubmit = (query: string, autosend: boolean = true) => {
     if (!query.trim()) return
@@ -329,8 +327,12 @@ export default function LandingPage() {
                     key={i}
                     onClick={() => {
                       track({ name: 'example_query_clicked', props: { surface: 'landing', query: text } })
-                      // Load only — user is exploring; let them review on /chat before sending
-                      handleSubmit(text, false)
+                      // Load into THIS page's input — no navigation, no autosend.
+                      // User reviews here, then presses Send to go to /chat.
+                      setInputValue(text)
+                      // Focus the textarea so they can edit / hit Enter immediately.
+                      // requestAnimationFrame lets the value-driven autosize layout settle first.
+                      requestAnimationFrame(() => inputRef.current?.focus())
                     }}
                     title={text}
                     className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-lg text-left text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all group"
