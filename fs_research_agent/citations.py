@@ -89,9 +89,19 @@ _LABELED_CITE_TOKEN_RE = re.compile(r"^(?:10K|10Q|8K|FS)-\d+$", re.IGNORECASE)
 # leak ("filings/NET/10-K/FY2025/sections/item-1-business.md" should never
 # show up in the user's answer).
 _RAW_PATH_RES = [
-    re.compile(r"\s*\(`?filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^()`]+?\.md`?\)"),  # (filings/.../X.md)
-    re.compile(r"`filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^`]+?\.md`"),             # `filings/.../X.md`
-    re.compile(r"(?<![:`/\w])filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[A-Za-z0-9./_-]+?\.md(?!\:)"),  # bare filings/.../X.md inline
+    # Markdown — without :line (canonical form WITH :line gets extracted
+    # to [10K-N] markers above; this catches the leftover incomplete ones).
+    re.compile(r"\s*\(`?filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^()`]+?\.md`?\)"),
+    re.compile(r"`filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^`]+?\.md`"),
+    re.compile(r"(?<![:`/\w])filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[A-Za-z0-9./_-]+?\.md(?!\:)"),
+
+    # Non-markdown corpus paths — `metadata.json:N`, `INDEX.md:N`, etc.
+    # The agent reads these for its own use (filing date discovery, index
+    # browsing) but they should NEVER appear as user-visible citations —
+    # they're agent-internal scratchpad. Strip both with-line and without.
+    re.compile(r"\s*\(`?filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^()`]+?\.json(?::\d+(?:-\d+)?)?`?\)"),
+    re.compile(r"\s*\(`?filings/[A-Z][A-Z0-9._-]{0,9}/INDEX\.md(?::\d+(?:-\d+)?)?`?\)"),
+    re.compile(r"\s*\(`?filings/[A-Z][A-Z0-9._-]{0,9}/(?:10-K|10-Q|8-K)/[^()`]+?/INDEX\.md(?::\d+(?:-\d+)?)?`?\)"),
 ]
 
 
@@ -317,11 +327,16 @@ def extract_citations(
         out = pat.sub("", out)
 
     # Strip bare numbered-shorthand citations like "(1)", "(2, 3)", "(6, 7, 8)".
-    # Only run this if we ALREADY extracted at least one real citation —
-    # otherwise the parens might be legitimate text (e.g. "1980s (1)" in
-    # a non-financial context).
+    # Run UNCONDITIONALLY — previously gated on `if citations:` (i.e. at least
+    # one real citation extracted), but that gating fails when the model only
+    # emits non-extractable paths like `metadata.json:N`: extractor returns
+    # 0 citations, the bare-number stripper never fires, and `(1)`...`(34)`
+    # leak through naked. We accept the trade-off that legitimate prose like
+    # "1980s (1)" might lose its parenthetical — that pattern is much rarer
+    # in financial-research output than the bare-number citation footgun.
+    out = _BARE_NUMBERED_CITE_RE.sub("", out)
+
     if citations:
-        out = _BARE_NUMBERED_CITE_RE.sub("", out)
 
         # Normalise EVERY parenthetical that looks like a citation group.
         # Three cases the model emits despite the prompt:
