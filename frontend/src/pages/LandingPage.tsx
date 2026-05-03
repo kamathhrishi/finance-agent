@@ -869,7 +869,7 @@ export default function LandingPage() {
              the whole universe in 2.5 minutes.
              Pairs with the w-max class on the .flex container above —
              without w-max this duration is meaningless. */
-          animation: scroll-right 300s linear infinite;
+          animation: scroll-right 345s linear infinite;
         }
       `}</style>
     </div>
