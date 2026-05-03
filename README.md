@@ -56,6 +56,17 @@ Glad to be past solving retrieval — frees up energy for higher-value problems.
 
 ---
 
+## SEC ingestion (datamule)
+
+The corpus is downloaded from SEC EDGAR via [datamule](https://github.com/john-friedman/datamule-python) — a Python SDK around EDGAR's submissions API plus an HTML→markdown converter. We use one class (`Portfolio`) at two call sites:
+
+- **Bulk seed** (`fs_research_agent/ingest.py`) — pulls every 10-K / 10-Q / 8-K for a ticker over the last N years. Used for the initial corpus build (`python -m fs_research_agent.batch_ingest`).
+- **Watcher single-fetch** (`fs_research_agent/watcher.py`) — pulls one specific filing by accession number. Used by the in-process polling watcher when its diff against `_seen_accessions.json` finds a new submission on EDGAR.
+
+Each downloaded document goes through `_doc_markdown` (datamule's built-in HTML→markdown render) and then `markdown_cleanup.py` (post-processing for two SEC-specific quirks — the `$`+value double-column pattern that confuses fiscal-year reads, and table-cell collapsing). The cleaned files land under `filings/<TICKER>/{10-K,10-Q,8-K}/<period>/` ready for the agent to `grep`.
+
+Datamule handles SEC's rate limits, retry-after headers, and the HTML→markdown conversion of EDGAR's malformed-by-modern-standards filings — the slowest, most thankless parts of any SEC ingest project. The rest of our pipeline (file layout, section splitting, dedup, atomic writes, INDEX.md generation, coverage_index rebuild) is ours.
+
 ## Project structure
 
 ```
