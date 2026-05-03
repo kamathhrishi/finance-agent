@@ -523,20 +523,53 @@ async def lifespan(app: FastAPI):
             and bool(os.getenv("RAILWAY_BUCKET_ACCESS_KEY_ID"))
             and bool(os.getenv("RAILWAY_BUCKET_NAME"))
         )
+
+        # Background bootstrap. Runs as an asyncio task so the lifespan
+        # completes promptly and Railway's healthcheck (100s window) sees
+        # /health respond. Without this, after a universe expansion the
+        # smart-refresh branch in bootstrap_if_missing() pulls a multi-GB
+        # tarball from S3 — many minutes — and the container is killed
+        # before /health ever responds.
+        #
+        # The watcher (started below) waits on `bootstrap_done` before its
+        # first cycle so it doesn't scan a half-extracted tarball.
+        #
+        # NOTE: cancelling this task on shutdown does NOT abort the in-
+        # flight S3 download — `asyncio.to_thread` runs in a non-cancellable
+        # OS thread. The container's SIGKILL takes care of it. This is fine.
+        bootstrap_done = asyncio.Event()
+        bootstrap_task: Optional[asyncio.Task] = None
+
         if _bootstrap_explicit or _bootstrap_auto:
-            try:
-                _why = "explicit env" if _bootstrap_explicit else "auto (Railway + S3 creds detected)"
-                log_info(f"📦 Bootstrapping fs_research_agent corpus from S3 (if missing) — {_why}...")
-                # Import is local so this dependency is optional in environments
-                # that don't use the FS research agent at all.
-                from fs_research_agent.bootstrap import bootstrap_if_missing
-                did_bootstrap = await asyncio.to_thread(bootstrap_if_missing)
-                if did_bootstrap:
-                    log_info("✅ fs_research_agent corpus bootstrapped from S3")
-                else:
-                    log_info("ℹ fs_research_agent corpus already populated; skipped bootstrap")
-            except Exception as e:
-                log_info(f"⚠ fs_research_agent S3 bootstrap failed (non-fatal): {e}")
+            _why = "explicit env" if _bootstrap_explicit else "auto (Railway + S3 creds detected)"
+            log_info(f"📦 Scheduling background fs_research_agent corpus bootstrap from S3 — {_why}")
+
+            async def _run_bootstrap_in_background():
+                try:
+                    # Local import — keeps boto3/manifest deps optional
+                    # for environments that don't use the FS agent at all.
+                    from fs_research_agent.bootstrap import bootstrap_if_missing
+                    did = await asyncio.to_thread(bootstrap_if_missing)
+                    if did:
+                        log_info("✅ Background S3 bootstrap completed (corpus refreshed)")
+                    else:
+                        log_info("ℹ Background bootstrap: corpus already up to date; skipped")
+                except Exception as e:
+                    log_info(f"⚠ Background S3 bootstrap failed (non-fatal): {e}")
+                    traceback.print_exc()
+                finally:
+                    # Always release the watcher, even on failure — better to
+                    # let the watcher proceed against whatever's on disk than
+                    # block it forever waiting on a bootstrap that won't come.
+                    bootstrap_done.set()
+
+            bootstrap_task = asyncio.create_task(
+                _run_bootstrap_in_background(),
+                name="fs_research_bootstrap",
+            )
+        else:
+            # No bootstrap configured — let the watcher proceed immediately.
+            bootstrap_done.set()
 
         # STAGE 6: Financial Analyzer & RAG Systems
         log_stage_header(6, "🤖", "FINANCIAL ANALYZER & RAG SYSTEMS")
@@ -604,8 +637,21 @@ async def lifespan(app: FastAPI):
                         f"🛰 Spawning in-process SEC watcher: interval={_interval}s, "
                         f"max_age_days={_max_age}, data_root={_data_root}"
                     )
-                    watcher_task = asyncio.create_task(
-                        watcher_loop(
+
+                    async def _watcher_after_bootstrap():
+                        # Wait for the background bootstrap to finish before
+                        # the first cycle. Otherwise the watcher might scan
+                        # a half-extracted tarball and re-pull filings from
+                        # SEC EDGAR that are seconds away from landing on
+                        # disk via S3.
+                        if not bootstrap_done.is_set():
+                            log_info(
+                                "🛰 Watcher waiting for background bootstrap "
+                                "to finish before first cycle..."
+                            )
+                            await bootstrap_done.wait()
+                            log_info("🛰 Bootstrap done — watcher first cycle starting")
+                        await watcher_loop(
                             interval_secs=_interval,
                             data_root=_data_root,
                             forms=("10-K", "10-Q", "8-K"),
@@ -613,7 +659,10 @@ async def lifespan(app: FastAPI):
                             once=False,
                             max_age_days=_max_age,
                             install_signal_handlers=False,  # uvicorn owns signals
-                        ),
+                        )
+
+                    watcher_task = asyncio.create_task(
+                        _watcher_after_bootstrap(),
                         name="fs_research_watcher",
                     )
             except Exception as e:
@@ -651,6 +700,24 @@ async def lifespan(app: FastAPI):
                 log_info("🛰 Watcher stopped")
         except Exception as e:
             log_info(f"⚠ Error stopping watcher: {e}")
+
+        # Cancel the background bootstrap task if still mid-pull. Note: this
+        # only cancels the asyncio wrapper — the underlying `to_thread` thread
+        # keeps the S3 download going until it returns. The container's
+        # SIGKILL on shutdown handles the rest. Next boot re-runs bootstrap
+        # and any partial extract gets overwritten.
+        try:
+            _bootstrap = locals().get("bootstrap_task")
+            if _bootstrap is not None and not _bootstrap.done():
+                log_info("📦 Cancelling in-flight S3 bootstrap...")
+                _bootstrap.cancel()
+                try:
+                    await asyncio.wait_for(_bootstrap, timeout=5.0)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
+                    pass
+                log_info("📦 Bootstrap task cancelled")
+        except Exception as e:
+            log_info(f"⚠ Error cancelling bootstrap: {e}")
 
         # Close Redis connection
         if redis_client:
