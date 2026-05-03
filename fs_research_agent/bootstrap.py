@@ -288,23 +288,103 @@ def download_and_extract_corpus(data_root: Optional[Path] = None, *, validate: b
     return manifest
 
 
+def _fetch_s3_manifest(s3, bucket: str) -> Optional[Manifest]:
+    """Read the S3 manifest and parse it. Returns None on any failure
+    (e.g. no manifest, network error, malformed JSON) so the caller can
+    fall back to its current behavior without taking down boot."""
+    try:
+        obj = s3.get_object(Bucket=bucket, Key=S3_KEY_MANIFEST)
+        data = json.loads(obj["Body"].read())
+        return Manifest(**data)
+    except Exception as e:
+        logger.info(f"S3 manifest fetch failed (non-fatal): {e}")
+        return None
+
+
 def bootstrap_if_missing(
     data_root: Optional[Path] = None,
     *,
     min_tickers: int = DEFAULT_MIN_TICKERS,
 ) -> bool:
-    """If local corpus is empty/sparse, download from S3. Returns True if a download happened."""
+    """Bootstrap the corpus from S3 when the local volume is missing data.
+
+    Two trigger conditions, checked in order:
+
+      1. Local corpus is empty/sparse (< `min_tickers` ticker dirs on disk).
+         Always re-pulls. This is the "fresh volume / first deploy" case.
+
+      2. Local corpus is populated BUT meaningfully behind the S3 snapshot.
+         Compares S3 manifest's `filing_count` to local `filings` count.
+         If S3 has at least `FS_RESEARCH_BOOTSTRAP_REFRESH_GAP` more filings
+         (env-tunable, default 500), re-pulls. This is the "ops did a
+         universe expansion or watcher-bulk-ingest pushed a much bigger
+         snapshot since the last time this volume was bootstrapped" case.
+
+    Set FS_RESEARCH_BOOTSTRAP_REFRESH_GAP=0 to disable the smart-refresh
+    behavior and revert to "first-time-only" semantics.
+
+    Returns True if a download happened, False if we skipped.
+    """
     data_root = (data_root or _data_root()).resolve()
     tickers, filings = _count_local(data_root)
-    if tickers >= min_tickers:
-        logger.info(f"Local corpus has {tickers} tickers / {filings:,} filings — skipping bootstrap")
+
+    # Case 1 — empty / sparse volume. Always pull.
+    if tickers < min_tickers:
+        logger.info(
+            f"Local corpus has only {tickers} ticker(s) (< {min_tickers}); "
+            f"bootstrapping from S3 into {data_root}"
+        )
+        download_and_extract_corpus(data_root)
+        return True
+
+    # Case 2 — smart refresh. Compare S3 manifest to local count and re-pull
+    # if S3 is meaningfully ahead. Skipped if disabled or S3 unavailable.
+    refresh_gap = int(os.getenv("FS_RESEARCH_BOOTSTRAP_REFRESH_GAP", "500"))
+    if refresh_gap <= 0:
+        logger.info(
+            f"Local corpus has {tickers} tickers / {filings:,} filings — "
+            f"smart-refresh disabled (FS_RESEARCH_BOOTSTRAP_REFRESH_GAP=0); skipping bootstrap"
+        )
         return False
+
+    try:
+        s3 = _make_s3_client()
+        bucket = _bucket_name()
+    except Exception as e:
+        # No bucket creds → no smart-refresh check possible. Skip silently.
+        logger.info(
+            f"Local corpus has {tickers} tickers / {filings:,} filings — "
+            f"S3 not configured for smart-refresh check; skipping bootstrap ({e})"
+        )
+        return False
+
+    manifest = _fetch_s3_manifest(s3, bucket)
+    if manifest is None:
+        # No manifest on S3 (or fetch failed) — nothing to compare against.
+        logger.info(
+            f"Local corpus has {tickers} tickers / {filings:,} filings — "
+            f"no S3 manifest found; skipping bootstrap"
+        )
+        return False
+
+    s3_filings = manifest.filing_count
+    gap = s3_filings - filings
+    if gap >= refresh_gap:
+        logger.info(
+            f"Local corpus has {tickers} tickers / {filings:,} filings — "
+            f"S3 snapshot is {gap:,} filings ahead (>= refresh-gap of {refresh_gap}). "
+            f"Re-pulling fresh snapshot ({manifest.ticker_count} tickers / {s3_filings:,} filings, "
+            f"generated {manifest.generated_at})."
+        )
+        download_and_extract_corpus(data_root)
+        return True
+
     logger.info(
-        f"Local corpus has only {tickers} ticker(s) (< {min_tickers}); "
-        f"bootstrapping from S3 into {data_root}"
+        f"Local corpus has {tickers} tickers / {filings:,} filings — "
+        f"S3 snapshot has {s3_filings:,} (gap of {gap:,} < refresh-gap of {refresh_gap}); "
+        f"skipping bootstrap"
     )
-    download_and_extract_corpus(data_root)
-    return True
+    return False
 
 
 def check(data_root: Optional[Path] = None) -> None:
