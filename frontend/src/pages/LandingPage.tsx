@@ -95,7 +95,7 @@ const transcriptChatData = [
   },
 ]
 
-const exampleQueries = EXAMPLE_QUERIES.map((q) => q.text)
+const exampleQueries = EXAMPLE_QUERIES
 
 // Tech company tickers for the scrolling banner
 const techTickers = [

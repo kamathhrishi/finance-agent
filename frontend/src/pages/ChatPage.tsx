@@ -8,7 +8,7 @@ import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { fetchCoverageStatus } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
-import { SINGLE_COMPANY_EXAMPLES, ACROSS_COMPANIES_EXAMPLES } from '../lib/exampleQueries'
+import { EXAMPLE_QUERIES } from '../lib/exampleQueries'
 import ChatMessage from '../components/ChatMessage'
 import Sidebar from '../components/Sidebar'
 import AboutModal from '../components/AboutModal'
@@ -184,11 +184,11 @@ export default function ChatPage() {
                   </span>
                 </div>
 
-                {/* Single company queries */}
-                <div className="w-full max-w-2xl mb-6">
-                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Single company</p>
+                {/* Example queries — single block, no categorisation */}
+                <div className="w-full max-w-2xl">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Example queries</p>
                   <div className="grid sm:grid-cols-2 gap-2">
-                    {SINGLE_COMPANY_EXAMPLES.map(({ text: query }, index) => (
+                    {EXAMPLE_QUERIES.map((query, index) => (
                       <button
                         key={index}
                         onClick={() => {
@@ -198,26 +198,6 @@ export default function ChatPage() {
                         className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
                       >
                         {query}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Multi-company screener queries */}
-                <div className="w-full max-w-2xl">
-                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Across companies</p>
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {ACROSS_COMPANIES_EXAMPLES.map(({ text: query }, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          track({ name: 'example_query_clicked', props: { surface: 'chat', query } })
-                          handleSendMessage(query)
-                        }}
-                        className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600 flex items-start gap-2"
-                      >
-                        <span className="text-[#0083f1] shrink-0 mt-0.5">⊞</span>
-                        <span>{query}</span>
                       </button>
                     ))}
                   </div>
