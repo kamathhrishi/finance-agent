@@ -368,9 +368,32 @@ class FilesystemResearchAgent:
                     # Execute synchronously — these are local FS ops, fast
                     result = self.execute_tool(name, args)
                     tool_elapsed = time.time() - tool_start
-                    truncated = len(result) > 16000
+                    # Tool-result cap. Prior 16K was way too tight for
+                    # financial-statements sections of 10-Qs / 10-Ks (commonly
+                    # 75-160 KB). The agent saw only the balance-sheet header
+                    # and bailed before reaching the income statement, then
+                    # gave a meta-summary like "filing exists but I didn't
+                    # reach the quarter numbers". 48K covers most income
+                    # statements + cash-flow tables in a single read while
+                    # still bounding token cost (~12K tokens per cap-hit).
+                    #
+                    # Also: the message used to say "(truncated to 16000 chars)"
+                    # — purely informational. Now it nudges the model to
+                    # paginate via read_file's offset arg, which is the actual
+                    # recovery path. read_file's own per-line truncation
+                    # footer already explains offset; we restate so it isn't
+                    # lost when our outer cap fires after read_file's already
+                    # appended its own.
+                    MAX_TOOL_RESULT_CHARS = 48000
+                    truncated = len(result) > MAX_TOOL_RESULT_CHARS
                     if truncated:
-                        result = result[:16000] + "\n... (truncated to 16000 chars)"
+                        result = (
+                            result[:MAX_TOOL_RESULT_CHARS]
+                            + f"\n... (truncated at {MAX_TOOL_RESULT_CHARS} chars. "
+                            + "If the answer requires content past this point, "
+                            + "call read_file again with offset=<line> to continue, "
+                            + "or grep for the specific term you need.)"
+                        )
                     if tool_span is not None:
                         try:
                             tool_span.set_attribute("result_chars", len(result))
