@@ -19,10 +19,29 @@ load_dotenv()
 # Fix: set the default + ensure the dir exists BEFORE any router imports run.
 # Idempotent — only acts when the env var is unset and we're on Railway.
 import os as _os
+
+# Railway injects these env vars into every container at boot. They are NOT
+# operator-set, so seeing them is a strong signal we're actually on Railway.
+# Crucially, this list does NOT include RAILWAY_BUCKET_* — those are S3
+# credentials operators set explicitly (often in a local .env for testing
+# bootstrap upload), so matching on them would mis-flag dev machines as
+# Railway and re-route the data path to /data/fs_research_corpus.
+_RAILWAY_INJECTED_VARS = (
+    "RAILWAY_PROJECT_ID",
+    "RAILWAY_PROJECT_NAME",
+    "RAILWAY_SERVICE_ID",
+    "RAILWAY_SERVICE_NAME",
+    "RAILWAY_ENVIRONMENT_ID",
+    "RAILWAY_ENVIRONMENT_NAME",
+    "RAILWAY_PUBLIC_DOMAIN",
+    "RAILWAY_REPLICA_ID",
+)
+
+
 def _is_railway() -> bool:
-    """True if any Railway-injected env var is present. Railway sets a varying
-    set of RAILWAY_* vars depending on plan / project age, so we accept any."""
-    return any(k.startswith("RAILWAY_") for k in _os.environ)
+    """True if Railway has injected at least one of its identity env vars."""
+    return any(_os.getenv(v) for v in _RAILWAY_INJECTED_VARS)
+
 
 if not _os.getenv("FS_RESEARCH_DATA_ROOT"):
     if _is_railway():

@@ -493,10 +493,18 @@ async def lifespan(app: FastAPI):
             )
 
         # ── Smart defaults so Railway "just works" with zero env config ──
-        # Railway sets a varying set of RAILWAY_* env vars depending on plan /
-        # project age, so we sniff for ANY var with that prefix rather than
-        # checking specific names. Same robust check used in app/__init__.py.
-        _on_railway = any(k.startswith("RAILWAY_") for k in os.environ)
+        # Detect Railway by looking for vars Railway INJECTS (project/service/
+        # environment identity), not for any RAILWAY_* prefix — that would
+        # false-positive on local dev machines that have RAILWAY_BUCKET_*
+        # in their .env for testing bootstrap upload locally. Same list as
+        # in app/__init__.py; keep them in sync.
+        _RAILWAY_INJECTED = (
+            "RAILWAY_PROJECT_ID", "RAILWAY_PROJECT_NAME",
+            "RAILWAY_SERVICE_ID", "RAILWAY_SERVICE_NAME",
+            "RAILWAY_ENVIRONMENT_ID", "RAILWAY_ENVIRONMENT_NAME",
+            "RAILWAY_PUBLIC_DOMAIN", "RAILWAY_REPLICA_ID",
+        )
+        _on_railway = any(os.getenv(v) for v in _RAILWAY_INJECTED)
 
         if not os.getenv("FS_RESEARCH_DATA_ROOT"):
             if _on_railway:
