@@ -410,13 +410,13 @@ export default function LandingPage() {
             className="text-center mb-20"
           >
             <span className="inline-block text-xs font-medium uppercase tracking-[0.2em] text-slate-400 mb-4">
-              Capabilities
+              Built for analysts
             </span>
             <h2 className="text-3xl md:text-4xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-              Comprehensive Research Suite
+              Research that used to take hours
             </h2>
-            <p className="text-lg text-slate-500 max-w-xl mx-auto">
-              Purpose-built tools for institutional-quality analysis of SEC filings, earnings calls, and market data.
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+              Cross-filing, cross-company analysis in plain English. The kind of work that meant half a day of grepping PDFs and stitching footnotes — answered in under two minutes, with every claim sourced back to a specific filing and section.
             </p>
           </motion.div>
 
@@ -432,16 +432,16 @@ export default function LandingPage() {
                 SEC Filings
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                10-K Filing Analysis
+                10-Ks and 10-Qs, indexed and queryable
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 300+ tech companies — semis, software, fintech, e-commerce, exchanges, EVs. Coverage updated continuously from SEC EDGAR with risk factors, revenue breakdowns, and competitive positioning all extracted and structured.
+                Customer concentration at $NVDA. TSMC supply commitments. $MSFT's OpenAI accounting drift across the latest 10-K and recent 10-Qs. Analyses that used to mean half a day of reading PDFs — now answered in under two minutes. 300+ tech tickers, continuously refreshed from SEC EDGAR.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Automated financial metric extraction",
-                  "Semiconductor, software, fintech coverage",
-                  "Risk factors and MD&A analysis"
+                  "Risk factors, MD&A, and segment economics extracted",
+                  "Cross-period comparisons across multiple filings",
+                  "Every claim cited to a specific filing and section",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
@@ -591,16 +591,16 @@ export default function LandingPage() {
                 Natural Language
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Query in Plain English
+                Ask the question, get the answer
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Compare cloud growth across $MSFT, $GOOGL, and $AMZN. Analyze semiconductor supply chains. Understand fintech unit economics. All in natural language.
+                "Track China export-control risk language across $NVDA, $AMD, $AVGO." "Trace $MSFT's OpenAI disclosures and how the language has shifted." Multi-filing, multi-company questions in plain English — the agent reads every relevant document and brings back the receipts.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Cross-company competitive analysis",
+                  "Multi-filing, multi-company analysis",
                   "Every insight sourced and verifiable",
-                  "Follow-up questions supported"
+                  "Follow-ups remember the prior turn",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
@@ -625,16 +625,16 @@ export default function LandingPage() {
                 Earnings Calls
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Executive Commentary Search
+                The footnotes nobody reads
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Find what Jensen Huang said about AI demand. What Lisa Su said about data center momentum. What Satya Nadella said about Copilot adoption. Direct quotes, fully searchable.
+                8-Ks, MD&A risk language, segment economics, equity-method footnotes — the parts buried 80 pages deep where the actual story lives. Pulled out, side-by-sided across periods, and quoted verbatim with the filing reference, so you can verify in two clicks.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Executive commentary and guidance",
-                  "Analyst Q&A insights",
-                  "3 years of earnings call history"
+                  "8-Ks captured the day they're filed",
+                  "Footnote and segment-disclosure level depth",
+                  "Three years of filing history per ticker",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
