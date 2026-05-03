@@ -857,11 +857,13 @@ export default function LandingPage() {
           /* Tuned for ~80 tickers (MARQUEE_TICKER_CAP). Per-ticker
              on-screen time stays roughly constant if you scale this
              with the cap (e.g. 60s for 30 tickers, 150s for 80). */
-          /* Tuned for the full live universe (~300+ tickers). The
-             ribbon is long, so a too-short duration blurs everything;
-             a too-long one feels frozen. 250s = brisker pixel rate
-             than the earlier 80-ticker config but still readable. */
-          animation: scroll-right 250s linear infinite;
+          /* Tuned for "show the breadth of coverage". With ~336 tickers
+             at 80s/cycle, per-ticker on-screen time is ~0.24s — names
+             blur past but the visual story ("we cover a LOT") is the
+             whole point. The previous 250s felt frozen; users only saw
+             the same ~8 names in viewport for minutes at a time. The
+             coverage modal exists for actually browsing names. */
+          animation: scroll-right 80s linear infinite;
         }
       `}</style>
     </div>
