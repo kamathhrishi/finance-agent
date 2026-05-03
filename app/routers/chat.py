@@ -26,8 +26,13 @@ from app.schemas import (
 from config import settings
 from app.utils import rate_limiter, RATE_LIMIT_PER_MONTH, record_successful_query_usage
 from agent import Agent as RAGSystem, create_agent as create_rag_system
-from agent.rag.llm_utils import LLMError, format_error_for_user
-from agent.rag.database_manager import DatabaseConnectionError
+from app.utils.llm_errors import LLMError, format_error_for_user
+
+# Tiny inlined replacement for the legacy `agent/rag/database_manager`'s
+# `DatabaseConnectionError`. Kept as a named subclass because some `except`
+# clauses below match on this exact type rather than bare Exception.
+class DatabaseConnectionError(Exception):
+    """Raised when the database is unreachable or returns a connection error."""
 from app.utils.logging_utils import log_info, log_error, log_warning
 from app.utils import create_error_response, raise_sanitized_http_exception
 from db.db_connection_utils import get_postgres_connection
@@ -1769,35 +1774,12 @@ async def send_message_to_conversation(
                     relevance_score = 0.0
                     source_file = None
             
-            # Check transcript availability in database (only for transcript citations)
-            transcript_available = False
-            if citation_type != 'news' and citation_type != '10-K':
-                try:
-                    year = chunk_data.get('year', 'Unknown') if chunk_data else (citation_entry.get('year') if citation_entry else 'Unknown')
-                    quarter_num = chunk_data.get('quarter', 'Unknown') if chunk_data else (citation_entry.get('quarter') if citation_entry else 'Unknown')
-                    
-                    if (company != 'Unknown' and year != 'Unknown' and quarter_num != 'Unknown' and 
-                        isinstance(year, (int, str)) and isinstance(quarter_num, (int, str))):
-                        
-                        # Convert to integers for database query
-                        year_int = int(year) if isinstance(year, str) else year
-                        quarter_int = int(quarter_num) if isinstance(quarter_num, str) else quarter_num
-                        
-                        # Check database for transcript availability
-                        from agent.rag.transcript_service import TranscriptService
-                        from agent.rag.database_manager import DatabaseManager
-                        from agent.rag.config import Config
-                        config = Config()
-                        database_manager = DatabaseManager(config)
-                        transcript_service = TranscriptService(database_manager)
-                        transcript_available = transcript_service.check_transcript_availability(company, year_int, quarter_int)
-                        logger.info(f"📄 Transcript availability check for {company} {year} Q{quarter_num}: {transcript_available}")
-                        # FORCE transcript availability for testing - remove after confirming database has data
-                        transcript_available = True
-                        logger.info(f"🔧 FORCED transcript availability to True for testing: {company} {year} Q{quarter_num}")
-                except Exception as e:
-                    logger.warning(f"Could not check transcript for {company}: {e}")
-                    transcript_available = False
+            # Transcript availability — historically routed through a database
+            # check, but the result was being hard-overridden to True in code
+            # below. Now that the legacy `agent/rag/transcript_service` is
+            # gone (the FS agent has no transcripts), we just hard-set True
+            # here for compatibility with the existing frontend contract.
+            transcript_available = True
             
             # Extract year and quarter for frontend (separate fields)
             year_for_frontend = None

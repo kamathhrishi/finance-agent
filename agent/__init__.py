@@ -1,50 +1,48 @@
 #!/usr/bin/env python3
 """
-Agent - Unified agent for financial Q&A
+agent/ — public entry point for the StrataLens AI agent.
 
-This module provides a unified agent that handles:
-- RAG-based question answering (earnings transcripts, 10-K filings, news)
-- Stock screening queries (fundamental data filtering)
-- Iterative self-improvement with quality evaluation
+There used to be three implementations selectable via env vars (legacy
+chunk-RAG `RAGAgent`, multi-agent ReAct `OrchestratorAgent`, and the
+filesystem-research `FilesystemResearchOrchestrator`). The first two have
+been retired — the platform now ships only the FS research agent.
 
-Simplified architecture with no circular dependencies.
+For the historical context behind the decision, see the original blog
+post on the multi-agent / chunk-RAG approach (linked from `agent/README.md`)
+and the design notes in `fs_research_agent/README.md`.
+
+Public API:
+  - `Agent` / `AgentSystem` — alias for `FilesystemResearchOrchestrator`
+  - `create_agent()` — factory that constructs a fresh agent instance
+
+Sub-packages kept under `agent/`:
+  - `screener/` — DuckDB-backed stock screener (independent of the agent;
+                  used by the screener router and qualitative-screen flow)
 """
 
-import os
+import os as _os
 
-from .rag.rag_agent import RAGAgent
+# Hard guard against any leftover deploys still setting USE_FS_RESEARCH_AGENT=false.
+# The legacy agents are gone; falling back to them is no longer possible.
+_explicit = _os.getenv("USE_FS_RESEARCH_AGENT", "").strip().lower()
+if _explicit in ("0", "false", "no"):
+    raise RuntimeError(
+        "USE_FS_RESEARCH_AGENT=false is no longer supported — the legacy "
+        "agent (RAGAgent / OrchestratorAgent) has been removed. The "
+        "filesystem-research agent is now the only implementation. "
+        "Unset USE_FS_RESEARCH_AGENT (or set it to true) and redeploy."
+    )
 
-# Agent selection (precedence: USE_FS_RESEARCH_AGENT > USE_DEEP_AGENT > legacy RAG)
-#   USE_FS_RESEARCH_AGENT=true   → FilesystemResearchOrchestrator (fs_research_agent) — DEFAULT
-#   USE_DEEP_AGENT=true          → OrchestratorAgent (deep agent)
-#   otherwise                    → RAGAgent (legacy)
-#
-# Default flipped to TRUE — the FS agent is the production path. Opt-out by
-# explicitly setting USE_FS_RESEARCH_AGENT=false to fall back to the legacy
-# orchestrator.
-_USE_FS_RESEARCH_AGENT = os.getenv("USE_FS_RESEARCH_AGENT", "true").lower() not in ("0", "false", "no", "")
-_USE_DEEP_AGENT = os.getenv("USE_DEEP_AGENT", "true").lower() not in ("0", "false", "no")
+from fs_research_agent.orchestrator_adapter import FilesystemResearchOrchestrator
 
-from .orchestrator import OrchestratorAgent
-# Keep DeepRAGAgent importable for backward compat
-from .rag.deep_rag_agent import DeepRAGAgent
+# Public API
+Agent = FilesystemResearchOrchestrator
+AgentSystem = FilesystemResearchOrchestrator
 
-if _USE_FS_RESEARCH_AGENT:
-    from fs_research_agent.orchestrator_adapter import FilesystemResearchOrchestrator
-    _ActiveAgent = FilesystemResearchOrchestrator
-elif _USE_DEEP_AGENT:
-    _ActiveAgent = OrchestratorAgent
-else:
-    _ActiveAgent = RAGAgent
-
-# Public API: Agent / AgentSystem are whichever implementation is active
-Agent = _ActiveAgent
-AgentSystem = _ActiveAgent
 
 def create_agent():
-    return _ActiveAgent()
+    """Construct a fresh agent instance."""
+    return FilesystemResearchOrchestrator()
 
-# Keep prompts
-from . import prompts
 
-__all__ = ['Agent', 'RAGAgent', 'AgentSystem', 'create_agent', 'prompts', 'DeepRAGAgent', 'OrchestratorAgent']
+__all__ = ["Agent", "AgentSystem", "create_agent"]

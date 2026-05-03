@@ -190,6 +190,119 @@ def tool_grep(
     return response
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# news_search — Tavily wrapper for current events / market color
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# This is the ONE tool that goes outside the local filesystem. Use it for:
+#   - Recent events POST the most recent filing date (M&A, executive changes,
+#     guidance updates, regulatory news)
+#   - Market context the SEC corpus cannot have (analyst reactions, sector
+#     news, macro events affecting a ticker)
+#
+# It is NOT a substitute for filings. Hard numbers, segment splits, audited
+# financials → SEC corpus. News is for color and recency only.
+#
+# Failure modes by design:
+#   - No TAVILY_API_KEY in env → returns a clear "not configured" message so
+#     the agent knows it cannot use this tool and proceeds without it.
+#   - Network / API error → returns the error string. Agent should fall back
+#     to filings.
+#
+# A separate "news" citation marker is appended (`[NEWS-N]`) so the citation
+# extractor and the frontend can render these distinctly from filing cites.
+
+# Lazy module-level cache of the Tavily client. We avoid importing the
+# `tavily` package at module-load time so the agent still loads cleanly when
+# the package isn't installed (it's optional).
+_TAVILY_CLIENT_CACHE: Any = None
+_TAVILY_LOAD_ATTEMPTED: bool = False
+
+
+def _get_tavily_client() -> Any:
+    """Return a TavilyClient or None if unavailable. Cached + idempotent."""
+    global _TAVILY_CLIENT_CACHE, _TAVILY_LOAD_ATTEMPTED
+    if _TAVILY_LOAD_ATTEMPTED:
+        return _TAVILY_CLIENT_CACHE
+    _TAVILY_LOAD_ATTEMPTED = True
+    api_key = os.getenv("TAVILY_API_KEY", "").strip()
+    if not api_key:
+        logger.info("TAVILY_API_KEY not set — news_search tool will be a no-op")
+        return None
+    try:
+        from tavily import TavilyClient  # type: ignore
+        _TAVILY_CLIENT_CACHE = TavilyClient(api_key)
+        logger.info("Tavily client initialised — news_search tool is live")
+    except ImportError:
+        logger.warning("tavily package not installed — news_search tool will be a no-op (pip install tavily)")
+    except Exception as e:
+        logger.warning(f"Tavily client init failed — news_search disabled: {e}")
+    return _TAVILY_CLIENT_CACHE
+
+
+def tool_news_search(query: str, max_results: int = 5, days_back: int = 30) -> str:
+    """Search recent news for color / recency context that can't be in SEC filings.
+
+    Returns plain text with URLs and dates the LLM can quote. Each result is
+    delimited so the agent can cite individual articles by URL.
+    """
+    if not query or not query.strip():
+        return "news_search: query is required"
+    client = _get_tavily_client()
+    if client is None:
+        return (
+            "news_search: not configured on this deployment — fall back to the "
+            "SEC filing corpus, or note that recent post-filing news is "
+            "unavailable in this answer."
+        )
+    try:
+        max_results = max(1, min(int(max_results), 10))
+        days_back = max(1, min(int(days_back), 365))
+    except (TypeError, ValueError):
+        max_results, days_back = 5, 30
+
+    try:
+        resp = client.search(
+            query=query,
+            max_results=max_results,
+            days=days_back,
+            search_depth="advanced",
+            topic="news",
+            include_answer=False,
+        )
+    except Exception as e:
+        logger.warning(f"Tavily search failed for query={query!r}: {e}")
+        return f"news_search: external search failed — fall back to the SEC corpus."
+
+    results = resp.get("results", []) if isinstance(resp, dict) else []
+    if not results:
+        return f"news_search: no recent news found for {query!r} in the last {days_back} days."
+
+    lines: List[str] = [
+        f"news_search results for {query!r} (last {days_back} days, {len(results)} articles):",
+        "",
+    ]
+    for i, r in enumerate(results, start=1):
+        title = (r.get("title") or "").strip().replace("\n", " ")
+        url = (r.get("url") or "").strip()
+        published = (r.get("published_date") or r.get("published") or "").strip()
+        content = (r.get("content") or "").strip().replace("\n", " ")
+        if len(content) > 600:
+            content = content[:597] + "…"
+        lines.append(f"[{i}] {title}")
+        if published:
+            lines.append(f"    published: {published}")
+        if url:
+            lines.append(f"    url: {url}")
+        if content:
+            lines.append(f"    snippet: {content}")
+        lines.append("")
+    lines.append(
+        "When citing in the answer, use the format: ([news](URL))  — e.g. ([news](https://example.com/article))."
+    )
+    return "\n".join(lines)
+
+
 def tool_glob(sandbox: Sandbox, pattern: str) -> str:
     """Use Path.glob (supports ** for recursive). Pattern is relative to root."""
     if not pattern:
@@ -299,6 +412,39 @@ TOOL_SCHEMAS: List[Dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "news_search",
+            "description": (
+                "Search RECENT news (Tavily) for color / events the SEC corpus "
+                "cannot contain — analyst reactions, post-filing M&A, executive "
+                "changes, regulatory updates, sector context. NOT a substitute "
+                "for filings — primary numbers and audited financials always "
+                "come from the local corpus via grep/read_file. Use sparingly: "
+                "1-3 calls per question max. Returns titles, URLs, dates, and "
+                "snippets the answer can quote."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Natural-language query, e.g. 'NVIDIA Blackwell launch supply update' or 'Adobe Figma deal regulatory status'.",
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Articles to return (1-10, default 5).",
+                    },
+                    "days_back": {
+                        "type": "integer",
+                        "description": "How many days back to search (1-365, default 30). Use 7 for very fresh, 90 for context.",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
 ]
 
 
@@ -333,6 +479,12 @@ def make_tool_executor(sandbox: Sandbox) -> Callable[[str, Dict[str, Any]], str]
                 )
             if name == "glob":
                 return tool_glob(sandbox, pattern=args["pattern"])
+            if name == "news_search":
+                return tool_news_search(
+                    query=args["query"],
+                    max_results=args.get("max_results", 5),
+                    days_back=args.get("days_back", 30),
+                )
             return f"error: unknown tool {name!r}"
         except SandboxViolation as e:
             return f"error: {e}"

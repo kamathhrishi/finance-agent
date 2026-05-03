@@ -388,7 +388,7 @@ async def setup_authentication_and_routing():
         except Exception as e:
             log_info(f"⚠️  QualitativeScreener initialization failed: {e} — screener unavailable")
 
-    # Inject screener into the active agent (RAGAgent or OrchestratorAgent)
+    # Inject screener into the active agent (FilesystemResearchOrchestrator)
     if qualitative_screener:
         try:
             from app.routers import chat as _chat_router

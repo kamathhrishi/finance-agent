@@ -1,15 +1,18 @@
 """
 Adapter that exposes FilesystemResearchAgent as a drop-in chat agent.
 
-It implements the same `execute_rag_flow()` async generator contract as
-RAGAgent / OrchestratorAgent so that `app/routers/chat.py` can drive it
-without any router-side changes. Final result event matches the existing
-shape: `{type: 'result', data: {response: {answer, citations}, timing}}`.
+It implements the chat router's standard agent interface — an async
+generator yielding `{type: ...}` events, terminating with a `result` event
+of shape `{type: 'result', data: {response: {answer, citations}, timing}}`.
+This is the only agent in the platform; the contract used to be shared
+with legacy `RAGAgent` / `OrchestratorAgent` implementations, both of which
+have since been retired. The shape lives on for the chat router and
+frontend that expect it.
 
 Citations are built from the agent's `path:line` cites (via
 `fs_research_agent.citations.extract_citations`) and shaped to match the
 existing `ChatCitation` schema (with `source_backend='fs_research'` and
-extra `line_start` / `line_end` fields the new highlighter endpoint needs).
+extra `line_start` / `line_end` fields the highlighter endpoint needs).
 """
 from __future__ import annotations
 
@@ -34,11 +37,11 @@ from .observability import span, info as obs_info, truncate
 
 logger = logging.getLogger("fs_research_agent.adapter")
 
-# The chat router passes `max_iterations=3` (a legacy ReAct iteration count for
-# OrchestratorAgent, where one iteration = many parallel tool calls). For the
-# FS agent each tool call counts individually, so 3 strangles it before it can
-# even open a filing. Keep the FS budget independent. Override with
-# FS_RESEARCH_TOOL_BUDGET env var.
+# The chat router still passes `max_iterations=3` for historical reasons
+# (the retired OrchestratorAgent counted ReAct iterations, where one iter =
+# many parallel tool calls). The FS agent counts individual tool calls, so 3
+# would strangle it before it can even open a filing. Ignore the kwarg and
+# use our own budget. Override with FS_RESEARCH_TOOL_BUDGET env var.
 _DEFAULT_FS_BUDGET = int(os.getenv("FS_RESEARCH_TOOL_BUDGET", "30"))
 
 # ─── Model alias map ─────────────────────────────────────────────────────────
