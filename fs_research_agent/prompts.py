@@ -1,26 +1,43 @@
 """System prompt for the filesystem research agent.
 
-The base prompt is a plain string. `build_system_prompt(today=...)` wraps it
-with a freshly-stamped "Today is YYYY-MM-DD" header so the agent has a real
-anchor when interpreting recency phrases ("last few quarters", "the most
-recent 10-K", "in the past year"). Without this, the model fills in its
-training-cutoff date and silently picks the wrong period.
+Two-message design for OpenAI prompt caching:
+
+  Message 1 — `_BASE_SYSTEM_PROMPT`:  ~32 KB / ~8k tokens, stable across all
+              requests and across days. This is what gets prompt-cached on
+              OpenAI's side (automatic for any prefix ≥1024 tokens that
+              matches an earlier request, ~5-10 min cache TTL). Cache hits
+              show up in usage.prompt_tokens_details.cached_tokens and bill
+              at ~50% of normal input rate.
+
+  Message 2 — `build_date_anchor()`:  ~80 tokens, regenerated per request
+              with today's date. Sits AFTER the static prompt so it never
+              invalidates the cached prefix.
+
+The earlier `build_system_prompt(today=...)` wrapper put the date at the
+TOP of the combined prompt — that defeated caching because the prefix
+changed daily (and effectively per-request because the entire concatenated
+blob was re-checked against cache). Resolved: route the date through a
+separate message that hangs off the cached prefix.
 """
 
 from datetime import date as _date
 from typing import Optional
 
 
-def build_system_prompt(today: Optional[_date] = None) -> str:
-    """Return the system prompt with a freshly-stamped date header.
+def build_date_anchor(today: Optional[_date] = None) -> str:
+    """Tiny dynamic prompt fragment carrying today's date.
+
+    Goes into the agent's message stack as a SEPARATE system message after
+    the cached `_BASE_SYSTEM_PROMPT`. Keep this small — every byte here is
+    paid in full, no cache discount.
 
     Args:
-        today: Override for testing. Defaults to today's date in the server's
-        local timezone — fine because the agent only uses it for fuzzy
-        recency interpretation, not exact-date arithmetic.
+        today: Override for testing. Defaults to the server's local date —
+        fine because the agent uses it for fuzzy recency interpretation,
+        not exact-date arithmetic.
     """
     d = today or _date.today()
-    header = (
+    return (
         f"Today's date is **{d.isoformat()}**. Anchor every recency-sensitive "
         f"phrase to this date — \"the latest 10-K\", \"the most recent quarter\", "
         f"\"the last few quarters\", \"in the past year\", \"recent 8-Ks\" all "
@@ -29,7 +46,16 @@ def build_system_prompt(today: Optional[_date] = None) -> str:
         f"say so explicitly (e.g. \"the latest available 10-K is FY2025, filed "
         f"YYYY-MM-DD\")."
     )
-    return f"{header}\n\n{_BASE_SYSTEM_PROMPT}"
+
+
+def build_system_prompt(today: Optional[_date] = None) -> str:
+    """DEPRECATED. Returns the date-anchored prompt as a single string.
+
+    Kept for any external callers that still use the single-string API.
+    New code should use `_BASE_SYSTEM_PROMPT` + `build_date_anchor()` as
+    two separate messages — see the module docstring for why.
+    """
+    return f"{build_date_anchor(today)}\n\n{_BASE_SYSTEM_PROMPT}"
 
 
 _BASE_SYSTEM_PROMPT = """\

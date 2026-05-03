@@ -22,7 +22,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 import openai
 from dotenv import load_dotenv
 
-from .prompts import build_system_prompt
+from .prompts import _BASE_SYSTEM_PROMPT, build_date_anchor
 from .tools import Sandbox, TOOL_SCHEMAS, make_tool_executor
 from .observability import span, info as obs_info, warn as obs_warn, truncate
 
@@ -207,9 +207,15 @@ class FilesystemResearchAgent:
         # only enables one model so this override is plumbing for the future.
         active_model = model_override or self.model
 
-        # Build the system prompt fresh each request so today's date is current.
+        # Two-message system prompt for OpenAI prompt caching:
+        #   1. Static base prompt (~32 KB / ~8k tokens) — cached on OpenAI's
+        #      side once a prior request has primed the prefix. Hits bill at
+        #      ~50% of normal input rate and avoid re-tokenization latency.
+        #   2. Tiny date anchor (~80 tokens, regenerated per request) —
+        #      placed AFTER the cached prefix so it doesn't invalidate it.
         messages: List[Dict[str, Any]] = [
-            {"role": "system", "content": build_system_prompt()},
+            {"role": "system", "content": _BASE_SYSTEM_PROMPT},
+            {"role": "system", "content": build_date_anchor()},
             {"role": "user", "content": question},
         ]
 
@@ -244,7 +250,7 @@ class FilesystemResearchAgent:
                 model=active_model,
                 message_count=len(messages),
                 tool_calls_so_far=tool_call_count,
-            ):
+            ) as round_span:
                 for _attempt in range(5):
                     try:
                         response = await self._client.chat.completions.create(
@@ -255,6 +261,21 @@ class FilesystemResearchAgent:
                             temperature=0,  # gpt-5.4 family rejects reasoning_effort with tools
                             max_completion_tokens=self.max_completion_tokens,
                         )
+                        # Surface OpenAI prompt-cache hit data on the span so we
+                        # can confirm in logfire that caching is actually firing.
+                        # `cached_tokens` shows up once the static system prompt
+                        # has been seen on the OpenAI side within the cache TTL.
+                        if round_span is not None:
+                            try:
+                                _u = getattr(response, "usage", None)
+                                if _u is not None:
+                                    _ptd = getattr(_u, "prompt_tokens_details", None)
+                                    _cached = getattr(_ptd, "cached_tokens", 0) if _ptd else 0
+                                    round_span.set_attribute("prompt_tokens", getattr(_u, "prompt_tokens", 0))
+                                    round_span.set_attribute("completion_tokens", getattr(_u, "completion_tokens", 0))
+                                    round_span.set_attribute("cached_tokens", _cached or 0)
+                            except Exception:
+                                pass
                         break
                     except openai.RateLimitError as e:
                         wait = _wait_from_429(e, _attempt)
