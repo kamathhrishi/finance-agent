@@ -415,8 +415,8 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
               Research that used to take hours
             </h2>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-              Cross-filing, cross-company analysis in plain English. The kind of work that meant half a day of grepping PDFs and stitching footnotes — answered in under two minutes, with every claim sourced back to a specific filing and section.
+            <p className="text-lg text-slate-500 max-w-xl mx-auto">
+              Plain-English questions across 300+ tickers. Every answer cited.
             </p>
           </motion.div>
 
@@ -432,16 +432,16 @@ export default function LandingPage() {
                 SEC Filings
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                10-Ks and 10-Qs, indexed and queryable
+                Numbers without the page-flipping
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Customer concentration at $NVDA. TSMC supply commitments. $MSFT's OpenAI accounting drift across the latest 10-K and recent 10-Qs. Analyses that used to mean half a day of reading PDFs — now answered in under two minutes. 300+ tech tickers, continuously refreshed from SEC EDGAR.
+                Risk factors, segment revenue, margins — pulled out of 100-page filings and sourced to the item.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Risk factors, MD&A, and segment economics extracted",
-                  "Cross-period comparisons across multiple filings",
-                  "Every claim cited to a specific filing and section",
+                  "10-K, 10-Q, 8-K coverage",
+                  "300+ tech tickers, refreshed from EDGAR",
+                  "Every figure cites the filing and item",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
@@ -591,15 +591,15 @@ export default function LandingPage() {
                 Natural Language
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Ask the question, get the answer
+                Plain-English questions, sourced answers
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                "Track China export-control risk language across $NVDA, $AMD, $AVGO." "Trace $MSFT's OpenAI disclosures and how the language has shifted." Multi-filing, multi-company questions in plain English — the agent reads every relevant document and brings back the receipts.
+                Compare segments across companies. Trace metrics across years. The agent reads the filings; you get the answer.
               </p>
               <ul className="space-y-3">
                 {[
-                  "Multi-filing, multi-company analysis",
-                  "Every insight sourced and verifiable",
+                  "Multi-company comparisons",
+                  "Inline source chips on every claim",
                   "Follow-ups remember the prior turn",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
@@ -625,16 +625,16 @@ export default function LandingPage() {
                 Earnings Calls
               </span>
               <h3 className="text-2xl font-semibold text-[#0a1628] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                The footnotes nobody reads
+                What execs actually said
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                8-Ks, MD&A risk language, segment economics, equity-method footnotes — the parts buried 80 pages deep where the actual story lives. Pulled out, side-by-sided across periods, and quoted verbatim with the filing reference, so you can verify in two clicks.
+                Direct quotes from earnings calls — speaker, ticker, timestamp. No paraphrase.
               </p>
               <ul className="space-y-3">
                 {[
-                  "8-Ks captured the day they're filed",
-                  "Footnote and segment-disclosure level depth",
-                  "Three years of filing history per ticker",
+                  "Speaker and role attribution",
+                  "Timestamped to the call",
+                  "Three years of call history",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center">
