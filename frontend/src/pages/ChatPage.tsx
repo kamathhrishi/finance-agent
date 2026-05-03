@@ -8,6 +8,7 @@ import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { fetchCoverageStatus } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
+import { SINGLE_COMPANY_EXAMPLES, ACROSS_COMPANIES_EXAMPLES } from '../lib/exampleQueries'
 import ChatMessage from '../components/ChatMessage'
 import Sidebar from '../components/Sidebar'
 import AboutModal from '../components/AboutModal'
@@ -187,12 +188,7 @@ export default function ChatPage() {
                 <div className="w-full max-w-2xl mb-6">
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Single company</p>
                   <div className="grid sm:grid-cols-2 gap-2">
-                    {[
-                      "Analyze $PLTR's 2024 and 2025 10-K filings and explain why growth has been high but margins have been thin",
-                      "How has $NVDA's gross margin changed across the last 4 fiscal years?",
-                      "Summarize $META's AI capex commentary across the last few 10-Q MD&A sections",
-                      "Comment on $ORCL's balance sheet and use of debt in the latest 10-K",
-                    ].map((query, index) => (
+                    {SINGLE_COMPANY_EXAMPLES.map(({ text: query }, index) => (
                       <button
                         key={index}
                         onClick={() => {
@@ -211,12 +207,7 @@ export default function ChatPage() {
                 <div className="w-full max-w-2xl">
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Across companies</p>
                   <div className="grid sm:grid-cols-2 gap-2">
-                    {[
-                      "Compare $MSFT and $GOOGL cloud segment growth in their latest 10-Ks",
-                      "Which companies in our coverage discuss generative AI as a risk factor in their latest 10-K?",
-                      "Compare cybersecurity disclosures across $CRWD, $PANW, and $ZS in the latest 10-K",
-                      "Summarize $META's AI capex commentary across the last few quarters",
-                    ].map((query, index) => (
+                    {ACROSS_COMPANIES_EXAMPLES.map(({ text: query }, index) => (
                       <button
                         key={index}
                         onClick={() => {

@@ -8,6 +8,7 @@ import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { fetchCoverageStatus } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
+import { EXAMPLE_QUERIES } from '../lib/exampleQueries'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
 
 // Mock data for 10-K Analysis Chat - Minimal card style with data extraction
@@ -94,13 +95,7 @@ const transcriptChatData = [
   },
 ]
 
-const exampleQueries = [
-  "Analyze $PLTR's 2024 and 2025 10-K filings and explain why growth has been high but margins have been thin",
-  "How has $NVDA's gross margin changed across the last 4 fiscal years?",
-  "Compare $MSFT and $GOOGL cloud segment growth in their latest 10-Ks",
-  "Summarize $META's AI capex commentary across the last few 10-Q MD&A sections",
-  "Comment on $ORCL's balance sheet and their usage of debt in the latest 10-K",
-]
+const exampleQueries = EXAMPLE_QUERIES.map((q) => q.text)
 
 // Tech company tickers for the scrolling banner
 const techTickers = [
