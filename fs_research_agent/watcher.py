@@ -263,6 +263,126 @@ def _ingest_single_accession(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Periodic S3 re-snapshot
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# The watcher writes new filings to the local volume. Without an auto-push
+# back to S3, a future "wipe + bootstrap" would lose everything the watcher
+# gathered since the last manual `python -m fs_research_agent.bootstrap upload`.
+#
+# This module-level helper checks two conditions after each cycle that wrote
+# anything:
+#   1. enough wall-clock time has passed since the last upload
+#   2. enough NEW filings have been added since the last upload to justify it
+#
+# When both pass, it tar+gzips the corpus and pushes a fresh snapshot to S3.
+# State (timestamp + filing count at last upload) lives in
+# `_last_s3_upload.json` next to the corpus.
+#
+# Defaults are tunable via env (see app/lifespan.py for the watcher's other
+# knobs):
+#   FS_RESEARCH_S3_AUTO_UPLOAD_HOURS    = 24   (max staleness allowed)
+#   FS_RESEARCH_S3_AUTO_UPLOAD_MIN_NEW  = 50   (min new filings to justify upload)
+#
+# Set FS_RESEARCH_S3_AUTO_UPLOAD_HOURS=0 to disable auto-uploads entirely.
+
+_S3_AUTO_UPLOAD_STATE = "_last_s3_upload.json"
+
+
+def _read_last_upload_state(data_root: Path) -> Dict[str, Any]:
+    p = data_root / _S3_AUTO_UPLOAD_STATE
+    if not p.is_file():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _write_last_upload_state(data_root: Path, ticker_count: int, filing_count: int) -> None:
+    p = data_root / _S3_AUTO_UPLOAD_STATE
+    payload = {
+        "uploaded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "ticker_count": ticker_count,
+        "filing_count": filing_count,
+    }
+    try:
+        p.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"  could not persist {_S3_AUTO_UPLOAD_STATE}: {e}")
+
+
+async def _maybe_upload_to_s3(data_root: Path) -> None:
+    """Re-snapshot the corpus to S3 if it's been long enough AND grown enough.
+
+    Idempotent. Safe to call after every cycle. Silent no-op when:
+      - FS_RESEARCH_S3_AUTO_UPLOAD_HOURS == 0
+      - RAILWAY_BUCKET_* env vars aren't all set (i.e. not on Railway)
+      - last upload was within the threshold AND not enough new filings
+    """
+    hours = int(os.getenv("FS_RESEARCH_S3_AUTO_UPLOAD_HOURS", "24"))
+    if hours <= 0:
+        return  # explicitly disabled
+
+    min_new = int(os.getenv("FS_RESEARCH_S3_AUTO_UPLOAD_MIN_NEW", "50"))
+
+    # Skip if we don't have S3 credentials (dev env).
+    creds_present = all(
+        os.getenv(k) for k in ("RAILWAY_BUCKET_ENDPOINT", "RAILWAY_BUCKET_ACCESS_KEY_ID", "RAILWAY_BUCKET_NAME")
+    )
+    if not creds_present:
+        return  # no bucket configured; silently skip
+
+    # Count what's on disk right now
+    from .bootstrap import _count_local
+    cur_tickers, cur_filings = _count_local(data_root)
+    if cur_tickers == 0:
+        return  # nothing to upload
+
+    state = _read_last_upload_state(data_root)
+    last_uploaded_at_str = state.get("uploaded_at")
+    last_filing_count = int(state.get("filing_count", 0))
+
+    # Time check
+    now = datetime.now(timezone.utc)
+    if last_uploaded_at_str:
+        try:
+            last_uploaded_at = datetime.fromisoformat(last_uploaded_at_str)
+            elapsed_hours = (now - last_uploaded_at).total_seconds() / 3600.0
+            if elapsed_hours < hours:
+                return  # still fresh
+        except Exception:
+            pass  # parse error → treat as no prior upload
+
+    # Growth check (only enforce if we have a prior upload)
+    if last_filing_count > 0 and (cur_filings - last_filing_count) < min_new:
+        logger.info(
+            f"  S3 auto-upload: skipping — only {cur_filings - last_filing_count} new filings "
+            f"since last upload (need ≥{min_new})"
+        )
+        return
+
+    # Conditions met — upload. Run in a thread so the watcher loop isn't
+    # blocked by the tar+gzip+upload (~5-10 min on Linux native disk).
+    logger.info(
+        f"  S3 auto-upload: triggering — {cur_tickers} tickers / {cur_filings:,} filings on disk, "
+        f"last uploaded {last_uploaded_at_str or 'never'} "
+        f"(threshold: every {hours}h with ≥{min_new} new filings)"
+    )
+
+    def _do_upload() -> None:
+        from .bootstrap import upload_corpus
+        upload_corpus(data_root=data_root)
+
+    try:
+        await asyncio.to_thread(_do_upload)
+        _write_last_upload_state(data_root, cur_tickers, cur_filings)
+        logger.info("  ✅ S3 auto-upload complete; manifest + tarball refreshed")
+    except Exception as e:
+        logger.warning(f"  S3 auto-upload failed (will retry on next eligible cycle): {e}")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Cycle driver
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -340,6 +460,18 @@ async def run_one_cycle(
             _rebuild_coverage(data_root=data_root)
         except Exception as e:
             logger.warning(f"  coverage_index rebuild failed: {e}")
+
+        # Best-effort periodic re-snapshot to S3. Keeps the bucket within
+        # ~FS_RESEARCH_S3_AUTO_UPLOAD_HOURS of the live volume so a future
+        # cold-start bootstrap doesn't lose the watcher's between-snapshot
+        # additions. Skips silently when:
+        #   - RAILWAY_BUCKET_* env vars aren't all set (local dev)
+        #   - last upload was more recent than the threshold
+        #   - we haven't gathered enough new filings to justify the round-trip
+        try:
+            await _maybe_upload_to_s3(data_root)
+        except Exception as e:
+            logger.warning(f"  S3 auto-upload check failed (non-fatal): {e}")
 
     finished_at = datetime.now(timezone.utc)
     return CycleStats(

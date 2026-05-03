@@ -157,7 +157,12 @@ def _tar_corpus(data_root: Path, dest: Path) -> None:
     # Members to include — keep it tight: just filings + the two top-level
     # markdown files. Skip any state files (_seen_accessions.json,
     # _watcher_state.json, _batch_checkpoint.json) — they're per-host state.
-    skip_names = {"_seen_accessions.json", "_watcher_state.json", "_batch_checkpoint.json"}
+    skip_names = {
+        "_seen_accessions.json",
+        "_watcher_state.json",
+        "_batch_checkpoint.json",
+        "_last_s3_upload.json",  # per-host upload tracking; never tar in
+    }
 
     def _filter(tarinfo: tarfile.TarInfo) -> Optional[tarfile.TarInfo]:
         name = Path(tarinfo.name).name

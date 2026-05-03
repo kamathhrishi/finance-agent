@@ -152,6 +152,8 @@ Visit `http://localhost:8000` — chat, browse companies, view filings.
 | `FS_RESEARCH_BOOTSTRAP_FROM_S3` | Optional | Force corpus hydration from S3. Auto-on when Railway + S3 creds detected. |
 | `FS_RESEARCH_WATCHER_ENABLED` | Optional | Spawn background SEC watcher. Auto-on when Railway is detected. |
 | `DATAMULE_SEC_USER_AGENT` | Required if watcher is on | SEC requires a real `Name email@domain` UA. |
+| `FS_RESEARCH_S3_AUTO_UPLOAD_HOURS` | Optional (default 24) | Watcher re-snapshots the corpus to S3 every N hours after meaningful changes. Set to `0` to disable auto-upload. Keeps the bucket within ~24h of the live volume so a future cold-start bootstrap doesn't lose between-snapshot watcher additions. |
+| `FS_RESEARCH_S3_AUTO_UPLOAD_MIN_NEW` | Optional (default 50) | Minimum new filings since last upload before re-snapshotting. Prevents wasteful uploads after near-empty cycles. |
 | `RAILWAY_BUCKET_*` | Required for S3 bootstrap | Standard Railway S3 vars (endpoint / key / secret / name) |
 
 ---
