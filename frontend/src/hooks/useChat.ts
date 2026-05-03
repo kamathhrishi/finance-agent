@@ -329,36 +329,17 @@ export function useChat(): UseChatReturn {
             // Pass through ALL fields from backend - cast to any to avoid type stripping
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const newSources: Source[] = citationsData.map((c: any) => ({
-              // Common
-              title: c.title,
+              // Spread first so any field the backend sends survives —
+              // including ones we forget to enumerate. Without this, the
+              // fs_research agent's source_backend / line_start / line_end /
+              // filing_type were getting silently dropped, causing
+              // handleViewSECFiling() to fall through to the legacy SQL/S3
+              // path that 404'd → showed "Coming Soon" placeholder.
+              ...c,
+
+              // Explicit overrides where we want a specific shape:
+              // - normalize type from either field name
               type: c.type || c.citation_type,
-              marker: c.marker,
-
-              // Transcript fields
-              company: c.company,
-              ticker: c.ticker,
-              quarter: c.quarter,
-              year: c.year,
-              chunk_text: c.chunk_text,
-              chunk_id: c.chunk_id,
-              chunk_length: c.chunk_length,
-              relevance_score: c.relevance_score,
-              transcript_available: c.transcript_available,
-
-              // 10-K fields
-              fiscal_year: c.fiscal_year,
-              section: c.section,
-              chunk_type: c.chunk_type,
-              path: c.path,
-              filing_date: c.filing_date,
-              char_offset: c.char_offset,
-
-              // News fields
-              url: c.url,
-              published_date: c.published_date,
-
-              // Legacy
-              page: c.page,
             }))
             setSources(newSources)
             setMessages((prev) =>
