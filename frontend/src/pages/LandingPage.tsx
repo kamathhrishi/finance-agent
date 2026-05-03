@@ -381,8 +381,16 @@ export default function LandingPage() {
         </p>
 
         {/* Tickers - more muted. List is duplicated for seamless loop
-            (the @keyframes translates from 0 → -50%). */}
-        <div className="flex animate-scroll-right gap-16">
+            (the @keyframes translates from 0 → -50%).
+
+            CRITICAL: `w-max` so the flex container's CSS width actually
+            equals the full ribbon width (~100,000px for 672 items),
+            not the parent's viewport width. Without this, translateX(-50%)
+            is computed against viewport width (~1200px) → ribbon only
+            moves ~600px before snapping back, and the user sees the
+            same ~5-10 tickers cycling endlessly. With w-max the
+            translation actually traverses half the real ribbon. */}
+        <div className="flex w-max animate-scroll-right gap-16">
           {[...marqueeTickers, ...marqueeTickers].map((ticker, i) => (
             <span key={i} className="text-lg font-medium text-slate-300 whitespace-nowrap tracking-wide">
               ${ticker}
@@ -854,16 +862,11 @@ export default function LandingPage() {
           100% { transform: translateX(-50%); }
         }
         .animate-scroll-right {
-          /* Tuned for ~80 tickers (MARQUEE_TICKER_CAP). Per-ticker
-             on-screen time stays roughly constant if you scale this
-             with the cap (e.g. 60s for 30 tickers, 150s for 80). */
-          /* Tuned for "show the breadth of coverage". With ~336 tickers
-             at 80s/cycle, per-ticker on-screen time is ~0.24s — names
-             blur past but the visual story ("we cover a LOT") is the
-             whole point. The previous 250s felt frozen; users only saw
-             the same ~8 names in viewport for minutes at a time. The
-             coverage modal exists for actually browsing names. */
-          animation: scroll-right 80s linear infinite;
+          /* Stock-ticker-tape feel. 50s/cycle for the full ~336-ticker
+             ribbon. Pairs with the w-max class on the .flex container
+             above — without w-max, this duration is meaningless because
+             the ribbon only travels ~600px regardless. */
+          animation: scroll-right 50s linear infinite;
         }
       `}</style>
     </div>
