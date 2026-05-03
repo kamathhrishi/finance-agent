@@ -13,12 +13,15 @@ We walk the answer, find every such cite, deduplicate, and:
 """
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from .highlight import extract_snippet
+
+logger = logging.getLogger(__name__)
 
 
 # Path shapes by form:
@@ -255,8 +258,11 @@ def extract_citations(
     citations: List[FsCitation] = []
     key_to_marker: Dict[Tuple[str, int, int], str] = {}
 
-    # Walk all matches in order; build a list of (span, replacement)
+    # Walk all matches in order; build a list of (span, replacement).
+    # Track dead cites separately so we can scrub their raw text from the
+    # output instead of leaving a [10K-N] marker pointing at nothing.
     spans: List[Tuple[int, int, str]] = []
+    dead_spans: List[Tuple[int, int]] = []
     for m in _CITE_RE.finditer(answer):
         path = m.group(1)
         line_start = int(m.group(2))
@@ -272,21 +278,40 @@ def extract_citations(
             # Form-aware marker prefix so 10-K / 10-Q / 8-K cites are visually
             # distinct in the chat UI ("[10Q-3]" vs "[8K-1]").
             prefix = _MARKER_PREFIX.get(form or "10-K", "10K")
-            # Number per-prefix so each form gets its own running sequence
+
+            # ── Dead-cite guard ─────────────────────────────────────────
+            # If the cited file isn't on disk OR the path doesn't match
+            # our known corpus shape (no ticker/form parsable), DROP the
+            # citation entirely. The frontend has no way to render a
+            # filing for a path that doesn't exist — clicking "View
+            # Filing" would 404 and produce the "source not available"
+            # symptom the user sees. Better: scrub the raw cite from the
+            # answer so the user never sees a clickable dead link.
+            file_text = _read_file_lines(corpus_root, path)
+            if file_text is None or ticker is None or form is None:
+                # Log so we can spot which paths the model is hallucinating.
+                # Truncate the path in the log line to keep records compact.
+                logger.warning(
+                    "dropping dead citation: path=%r ticker=%r form=%r file_exists=%s",
+                    path[:120], ticker, form, file_text is not None,
+                )
+                dead_spans.append((m.start(), m.end()))
+                continue
+            # ────────────────────────────────────────────────────────────
+
+            # Number per-prefix so each form gets its own running sequence.
+            # Computed AFTER the dead-cite guard so dropped cites don't
+            # leave gaps in the [10K-1], [10K-2], ... numbering.
             seq = sum(1 for c in citations if c.marker.startswith(f"[{prefix}-")) + 1
             chunk_id = f"{prefix}-{seq}"
             marker = f"[{chunk_id}]"
             key_to_marker[key] = marker
 
-            file_text = _read_file_lines(corpus_root, path) or ""
             # Pad the snippet a little so the citation card preview shows
             # context, not just the bare cited line(s).
             pad_start = max(1, line_start - 2)
             pad_end = line_end + 2
-            snippet = (
-                extract_snippet(file_text, pad_start, pad_end, max_chars=320)
-                if file_text else ""
-            )
+            snippet = extract_snippet(file_text, pad_start, pad_end, max_chars=320)
 
             citations.append(
                 FsCitation(
@@ -310,15 +335,25 @@ def extract_citations(
 
         spans.append((m.start(), m.end(), marker))
 
-    # Replace right-to-left so earlier offsets stay valid
+    # Replace right-to-left so earlier offsets stay valid. Live cites
+    # become [10K-N] markers; dead cites get scrubbed (replaced with "")
+    # so the user never sees a clickable link that 404s.
+    all_spans = [(s, e, repl) for s, e, repl in spans]
+    all_spans.extend((s, e, "") for s, e in dead_spans)
     out = answer
-    for start, end, replacement in sorted(spans, key=lambda s: -s[0]):
+    for start, end, replacement in sorted(all_spans, key=lambda s: -s[0]):
         out = out[:start] + replacement + out[end:]
 
     # Defensive: strip any leftover abbreviated citation patterns the LLM
     # may have emitted despite the prompt — they would render as dead text.
     for pat in _BROKEN_CITE_RES:
         out = pat.sub("", out)
+
+    # After dead-cite scrubbing above, any surrounding parens/backticks
+    # the model wrapped the cite in are left empty: " ()", "( )", "``".
+    # Strip those so the user doesn't see orphan punctuation.
+    out = re.sub(r"\s*\(\s*\)", "", out)
+    out = re.sub(r"\s*`\s*`", "", out)
 
     # Defensive: strip any raw corpus paths the LLM emitted WITHOUT a line
     # number (those wouldn't match _CITE_RE above). User must never see

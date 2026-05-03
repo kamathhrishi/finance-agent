@@ -62,9 +62,18 @@ def _safe_resolve(rel_path: str) -> Path:
     return candidate
 
 
+# Matches all three corpus path shapes — must stay aligned with the
+# canonical _PATH_RE in fs_research_agent/citations.py:
+#   10-K:  filings/<TICKER>/10-K/FY####/(sections/|exhibits/)?<file>.md
+#   10-Q:  filings/<TICKER>/10-Q/FY####/Q[1-4]/(sections/|exhibits/)?<file>.md
+#   8-K:   filings/<TICKER>/8-K/YYYY-MM-DD/(sections/|exhibits/)?<file>.md
+# The previous version only handled FY####/ — so 10-Q and 8-K paths
+# returned an empty meta dict and the SECFilingViewer header rendered
+# without ticker/filing_type/year (showed "Unknown FY 10-K").
 _PATH_META_RE = re.compile(
-    r"filings/(?P<ticker>[A-Z][A-Z0-9._-]{0,9})/(?P<form>10-K|10-Q|8-K)/(?P<fy>FY?\d{4})/"
-    r"(?P<rest>(?:sections/)?[A-Za-z0-9._\-]+\.md)"
+    r"filings/(?P<ticker>[A-Z][A-Z0-9._-]{0,9})/(?P<form>10-K|10-Q|8-K)/"
+    r"(?P<period>FY?\d{4}(?:/Q[1-4])?|\d{4}-\d{2}-\d{2})/"
+    r"(?P<rest>(?:sections/|exhibits/)?[A-Za-z0-9._\-]+\.md)"
 )
 
 
@@ -72,8 +81,8 @@ def _parse_meta(rel_path: str) -> dict:
     m = _PATH_META_RE.match(rel_path)
     if not m:
         return {}
-    fy_label = m.group("fy")
-    fy_digits = re.search(r"\d{4}", fy_label)
+    period = m.group("period")
+    fy_digits = re.search(r"\d{4}", period or "")
     fy = int(fy_digits.group()) if fy_digits else None
     rest = m.group("rest")
     section = Path(rest).stem if rest.startswith("sections/") else None
