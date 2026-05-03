@@ -862,11 +862,14 @@ export default function LandingPage() {
           100% { transform: translateX(-50%); }
         }
         .animate-scroll-right {
-          /* Stock-ticker-tape feel. 50s/cycle for the full ~336-ticker
-             ribbon. Pairs with the w-max class on the .flex container
-             above — without w-max, this duration is meaningless because
-             the ribbon only travels ~600px regardless. */
-          animation: scroll-right 50s linear infinite;
+          /* Calm scroll for the full ~336-ticker ribbon. Earlier 50s
+             felt like horses running once the w-max bug was fixed and
+             the ribbon actually traversed its real width. 150s gives
+             a readable per-ticker glide while still cycling through
+             the whole universe in 2.5 minutes.
+             Pairs with the w-max class on the .flex container above —
+             without w-max this duration is meaningless. */
+          animation: scroll-right 150s linear infinite;
         }
       `}</style>
     </div>
