@@ -1,255 +1,190 @@
-# Finance Agent
+# StrataLens AI
 
-Finance agent is an equity research platform. Ask questions and get answers from 10-K filings, earnings calls, and news.
+Equity-research platform that answers questions about public-company SEC filings (10-K · 10-Q · 8-K). Built around a single research agent that reads filings directly off a local filesystem corpus — no chunking, no vector DB, no semantic routing.
 
-**Live Platform:** [www.stratalens.ai](https://www.stratalens.ai)
+**Live platform:** [www.stratalens.ai](https://www.stratalens.ai)
 
-**10K filings agent blogpost:** [Blogpost](https://substack.com/home/post/p-181608263)
-
-## Agent System
-
-Core agent system implementing **Retrieval-Augmented Generation (RAG)** with **semantic data source routing**, **research planning**, and **iterative self-improvement** for financial Q&A.
-
-### Architecture Overview
-
-```
-                              AGENT PIPELINE
- ═══════════════════════════════════════════════════════════════════════
-
- ┌──────────┐    ┌───────────────────┐    ┌──────────────────────────┐
- │ Question │───►│ Question Analyzer │───►│  Semantic Data Routing   │
- └──────────┘    │  (LLM via config) │    │                          │
-                 │                   │    │  • Earnings Transcripts  │
-                 │ Extracts:         │    │  • SEC 10-K Filings      │
-                 │ • Tickers         │    │  • Real-Time News        │
-                 │ • Time periods    │    │  • Hybrid (multi-source) │
-                 │ • Intent          │    └────────────┬─────────────┘
-                 └───────────────────┘                 │
-                                                       ▼
-                 ┌─────────────────────────────────────────────────────┐
-                 │              RESEARCH PLANNING                       │
-                 │  Agent generates reasoning: "I need to find..."     │
-                 └────────────────────────┬────────────────────────────┘
-                                          ▼
-                 ┌─────────────────────────────────────────────────────┐
-                 │                  RETRIEVAL LAYER                     │
-                 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-                 │  │  Earnings   │  │  SEC 10-K   │  │   Tavily    │  │
-                 │  │ Transcripts │  │  Retrieval  │  │    News     │  │
-                 │  │             │  │   Agent     │  │             │  │
-                 │  │ Vector DB   │  │ (10-K only) │  │  Live API   │  │
-                 │  │ + Hybrid    │  │ Planning +  │  │             │  │
-                 │  │   Search    │  │  Iterative  │  │             │  │
-                 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
-                 └─────────┴───────────┬────┴────────────────┴─────────┘
-                                       │ ▲
-                                       │ │ Re-query with
-                                       │ │ follow-up questions
-                                       ▼ │
-                 ┌─────────────────────────────────────────────────────┐
-                 │               ITERATIVE IMPROVEMENT                  │
-                 │                                                      │
-                 │    ┌──────────┐    ┌──────────┐    ┌──────────┐     │
-                 │    │ Generate │───►│ Evaluate │───►│ Iterate? │─────┼───┐
-                 │    │  Answer  │    │ Quality  │    │          │     │   │
-                 │    └──────────┘    └──────────┘    └──────────┘     │   │
-                 │                                         │ NO        │   │ YES
-                 └─────────────────────────────────────────┼───────────┘   │
-                                                           ▼               │
-                                                    ┌─────────────┐        │
-                                                    │   ANSWER    │        │
-                                                    │ + Citations │        │
-                                                    └─────────────┘        │
-                                                           ▲               │
-                                                           └───────────────┘
-```
-
-**Key Concepts:**
-1. **Semantic Routing** - Routes to data sources based on question **intent**, not keywords
-2. **Research Planning** - Agent explains reasoning before searching ("I need to find...")
-3. **Multi-Source RAG** - Combines earnings transcripts, SEC 10-K filings, and news
-4. **Self-Reflection** - Evaluates answer quality and iterates until confident
-5. **Answer Modes** - Configurable iteration depth (2-10 iterations) and quality thresholds (70-95%)
-6. **Search-Optimized Follow-ups** - Generates keyword phrases for better RAG retrieval
-7. **Parallel Multi-Agent Synthesis** - Per-ticker subagents run in parallel; results are synthesized into one unified answer
-
-**Benchmark:** 91% accuracy on [FinanceBench](https://github.com/patronus-ai/financebench) (112 10-K questions), ~10s per question, evaluated using LLM-as-a-judge.
-
-### Documentation
-
-| Document | Description |
-|----------|-------------|
-| **[agent/README.md](agent/README.md)** | Complete agent architecture, pipeline stages, configuration |
-| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: section routing, table selection, reranking |
-| **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** | Data ingestion pipelines for transcripts and 10-K filings |
+**Coverage:** 138 tech companies · 12,000+ filings · 3 years history. Updated automatically by an in-process watcher polling SEC EDGAR.
 
 ---
 
-## Features
-
-- **Earnings Transcripts** (2020-2025) - Word-for-word executive commentary from earnings calls
-- **SEC 10-K Filings** (2018-2025) - Official annual reports via specialized retrieval agent (10-Q/8-K coming soon)
-- **Real-Time News** - Latest market developments via Tavily search
-- **Financial Screener** - Natural language queries over company fundamentals [in development]
-
-Unlike generic LLMs that rely on web content, Finance Agent uses the same authoritative documents that professional analysts depend on.
-
-## Tech Stack
-
-- **Backend:** FastAPI, PostgreSQL (pgvector), DuckDB
-- **AI/ML:** Cerebras (Qwen-3-235B), OpenAI (fallback), RAG with iterative self-improvement
-- **Search:** Hybrid vector (pgvector) + TF-IDF with cross-encoder reranking
-- **Frontend:** React + TypeScript, Tailwind CSS
-
-## Project Structure
+## Architecture
 
 ```
-finance_agent/
-├── agent/                  # AI agent & RAG system         → see agent/README.md
-│   ├── __init__.py        # Public API: Agent, RAGAgent, create_agent()
-│   ├── agent_config.py    # Iteration/quality threshold settings
-│   ├── prompts.py         # Centralized LLM prompt templates
-│   ├── llm/               # Unified LLM client (OpenAI/Cerebras)  → see agent/llm/README.md
-│   ├── rag/               # RAG implementation
-│   │   ├── rag_agent.py                          # Main orchestration
-│   │   ├── sec_filings_service_smart_parallel.py  # SEC 10-K agent
-│   │   ├── response_generator.py   # LLM response & evaluation
-│   │   ├── question_analyzer.py    # Semantic routing
-│   │   ├── search_engine.py        # Hybrid transcript search
-│   │   ├── tavily_service.py       # Real-time news
-│   │   ├── earnings_transcript_service.py  # Dedicated earnings transcript retrieval agent
-│   │   ├── search_planner.py       # Search plan generation and temporal reference resolution
-│   │   ├── rag_flow_context.py     # Flow context dataclass for pipeline state
-│   │   └── data_ingestion/         # Data pipeline → see data_ingestion/README.md
-│   └── screener/          # Financial screener
-├── app/                   # FastAPI application
-│   ├── routers/           # API endpoints
-│   └── schemas/           # Pydantic models
-├── frontend/              # React + TypeScript frontend
-├── docs/                  # Documentation
-│   └── SEC_AGENT.md       # 10-K agent deep dive
+                            CHAT REQUEST
+                                 │
+                                 ▼
+                    ┌─────────────────────────┐
+                    │ FilesystemResearchAgent │
+                    │   (gpt-5.4-mini)        │
+                    └────────────┬────────────┘
+                                 │ ReAct loop
+            ┌────────────────────┼────────────────────┐
+            ▼                    ▼                    ▼
+       ┌─────────┐         ┌──────────┐         ┌──────────┐
+       │   ls    │         │ read_file│         │   grep   │
+       │  glob   │         │          │         │ (ripgrep)│
+       └────┬────┘         └────┬─────┘         └────┬─────┘
+            │                   │                    │
+            └────────────┬──────┴────────────────────┘
+                         ▼
+        ┌────────────────────────────────────────┐
+        │  Local SEC corpus (markdown filesystem)│
+        │  filings/<TICKER>/{10-K,10-Q,8-K}/...  │
+        │  Hosted on Railway persistent volume.  │
+        │  Hydrated from S3 on cold start.       │
+        └────────────────────────────────────────┘
+
+        + 1 supplemental tool: news_search (Tavily) for post-filing color
+        + Background watcher: polls SEC every 30 min, writes to the volume
 ```
 
-## Quick Start
+### Why this shape
+
+The agent has four primary tools (`ls`, `read_file`, `grep`, `glob`) over a sandboxed filesystem of pre-cleaned SEC markdown. No embeddings, no vector store, no rerank pipeline. The LLM does its own retrieval the same way an analyst would: list the directory, read the index, grep for the figure, quote the line.
+
+This replaces an earlier multi-agent / chunk-RAG pipeline (semantic-routing → vector retrieval → cross-encoder rerank → iterative self-improvement) — see the original blog post on that approach: [Building a 10-K research agent with chunked RAG](https://substack.com/home/post/p-181608263). It worked, but the new model generation made the simpler harness measurably better at long-form filings reasoning. Design notes in [`fs_research_agent/README.md`](fs_research_agent/README.md).
+
+---
+
+## Project structure
+
+```
+stratalens_ai/
+├── fs_research_agent/        # The active agent + tools + corpus management
+│   ├── agent.py              # ReAct loop on OpenAI function-calling
+│   ├── tools.py              # ls / read_file / grep / glob / news_search
+│   ├── prompts.py            # System prompt (date-injected per request)
+│   ├── citations.py          # path:line → [10K-N] markers + post-processor
+│   ├── orchestrator_adapter.py  # Adapter for the chat router
+│   ├── coverage_index.py     # Per-ticker filing index for the UI
+│   ├── bootstrap.py          # S3 corpus snapshot upload/download
+│   ├── watcher.py            # Background SEC poller
+│   ├── observability.py      # Logfire span wrapper
+│   ├── tech_universe.json    # Canonical 138-ticker list (CIK-resolved)
+│   └── data/                 # Corpus root (gitignored, lives on Railway volume)
+├── agent/
+│   └── screener/             # DuckDB-backed stock screener
+├── app/
+│   ├── __init__.py           # FastAPI app + global exception handlers
+│   ├── lifespan.py           # Startup/shutdown (auto-bootstrap, watcher spawn)
+│   ├── routers/              # API endpoints (chat, coverage, screener, ...)
+│   ├── schemas/              # Pydantic request/response models
+│   └── utils/                # llm_errors, logfire_config, ...
+├── frontend/                 # React + TypeScript + Vite
+├── docs/                     # Long-form design docs
+├── nixpacks.toml             # Railway build config (installs ripgrep)
+├── railway.toml              # Railway deploy config
+└── requirements.txt          # Python deps
+```
+
+---
+
+## Quick start
 
 ### Prerequisites
-- Python 3.9+
-- PostgreSQL 12+ with pgvector extension
-- See [Requirements](#requirements) for full dependency list
+- Python 3.11+
+- `ripgrep` on PATH (`apt-get install ripgrep` or `brew install ripgrep`)
+- PostgreSQL 12+ (auth + chat history; not used by the agent itself)
+- An OpenAI API key
 
-### Installation
+### Install
 
 ```bash
-# Clone repository
 git clone https://github.com/kamathhrishi/stratalensai.git
-cd finance_agent
-
-# Install dependencies
+cd stratalensai
 pip install -r requirements.txt
-
-# Setup environment variables
-cp .env.example .env
-# Edit .env with your API keys and database credentials
-
-# Configure environment (see Configuration section below)
+cp .env.example .env   # then fill in keys
 ```
 
-### Configuration
-
-Before running the application, configure the following in `.env`:
-
-- `BASE_URL` - Set to your server URL (e.g., `http://localhost:8000` for local, your production URL for deployed)
-- `RAG_DEBUG_MODE` - Set to `false` for production, `true` for development debugging
-- `AUTH_DISABLED` - Set to `true` to bypass Clerk auth (dev only), `false` for production
-- `CLERK_SECRET_KEY` / `CLERK_PUBLISHABLE_KEY` - Required for production authentication (get from Clerk Dashboard)
-
-Frontend env vars (read from root `.env` via `envDir: '../'` in `vite.config.ts`):
-- `VITE_CLERK_PUBLISHABLE_KEY` - Same value as `CLERK_PUBLISHABLE_KEY` (Vite requires `VITE_` prefix)
-- `VITE_API_BASE_URL` - Leave empty for same-origin requests (default); set to an explicit URL only if backend is on a separate domain
+### Build the corpus (first time only — local dev)
 
 ```bash
-# Ingest data (optional - see agent/rag/data_ingestion/README.md)
-python agent/rag/data_ingestion/download_transcripts.py
-python agent/rag/data_ingestion/ingest_with_structure.py --ticker AAPL --year-start 2020 --year-end 2025
+# Either: download a ready snapshot from S3
+python -m fs_research_agent.bootstrap download
 
-# Run server
+# Or: ingest from scratch (slow, hits SEC EDGAR)
+python -m fs_research_agent.batch_ingest --years 3
+```
+
+### Build frontend + run server
+
+```bash
+cd frontend && npm install && npm run build && cd ..
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Access the application at `http://localhost:8000`
+Visit `http://localhost:8000` — chat, browse companies, view filings.
 
-## Requirements
+---
 
-### API Keys
+## Environment variables
 
-| Service | Environment Variable | Required |
-|---------|---------------------|----------|
-| OpenAI | `OPENAI_API_KEY` | Yes |
-| Cerebras | `CEREBRAS_API_KEY` | Yes |
-| API Ninjas | `API_NINJAS_KEY` | Yes |
-| Clerk | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | Yes (production) |
-| Tavily | `TAVILY_API_KEY` | Optional |
-| Logfire | `LOGFIRE_TOKEN` | Optional |
+| Variable | Required | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | **Yes** | LLM calls (gpt-5.4-mini default) |
+| `DATABASE_URL` | **Yes** | Postgres for users + chat history |
+| `REDIS_URL` | **Yes** | WebSocket sessions |
+| `CLERK_SECRET_KEY` / `CLERK_PUBLISHABLE_KEY` | Production | Auth |
+| `TAVILY_API_KEY` | Optional | Enables `news_search` tool. Agent silently skips news without it. |
+| `LOGFIRE_TOKEN` | Optional | Observability dashboard |
+| `FS_RESEARCH_DATA_ROOT` | Optional | Corpus path. Auto-defaults to `/data/fs_research_corpus` on Railway. |
+| `FS_RESEARCH_BOOTSTRAP_FROM_S3` | Optional | Force corpus hydration from S3. Auto-on when Railway + S3 creds detected. |
+| `FS_RESEARCH_WATCHER_ENABLED` | Optional | Spawn background SEC watcher. Auto-on when Railway is detected. |
+| `DATAMULE_SEC_USER_AGENT` | Required if watcher is on | SEC requires a real `Name email@domain` UA. |
+| `RAILWAY_BUCKET_*` | Required for S3 bootstrap | Standard Railway S3 vars (endpoint / key / secret / name) |
 
-### Database
+---
 
-- **PostgreSQL** with [pgvector](https://github.com/pgvector/pgvector) extension (`DATABASE_URL`)
-- **Redis** (optional, for caching) (`REDIS_URL`)
-
-### Python Dependencies
-
-See `requirements.txt` for full list.
-
-## API Documentation
+## API documentation
 
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-### Key Endpoints
+### Key endpoints
 
-- `POST /message/stream-v2` - Chat with streaming RAG responses
-- `GET /companies/search` - Search companies by ticker/name
-- `GET /transcript/{ticker}/{year}/{quarter}` - Get specific earnings transcript
-- `POST /screener/query/stream` - Natural language financial queries
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/chat/message/stream-v2` | Chat (authenticated, streaming SSE) |
+| `POST` | `/chat/landing/demo/stream-v2` | Chat (anonymous demo, streaming SSE) |
+| `GET` | `/coverage/status` | Universe stats + last-refresh time |
+| `GET` | `/coverage/companies` | All companies + per-form filing counts |
+| `GET` | `/coverage/companies/{ticker}` | Drill-down: every filing for one ticker |
+| `GET` | `/coverage/latest` | Newest-first feed of filings (paginated) |
+| `GET` | `/fs-research/document` | Raw filing markdown by path |
+| `POST` | `/fs-research/document/with-highlights` | Filing markdown with line-range highlights for citation rendering |
 
-## Data Sources
+---
 
-Data is split between PostgreSQL (embeddings, metadata) and Railway S3 (full filing documents, transcript text). See `agent/rag/data_ingestion/README.md` for detailed ingestion instructions.
-
-## AI Agent Documentation
+## Documentation
 
 | Document | Description |
-|----------|-------------|
-| **[agent/README.md](agent/README.md)** | Complete agent architecture, pipeline stages, semantic routing, iterative self-improvement |
-| **[docs/SEC_AGENT.md](docs/SEC_AGENT.md)** | SEC 10-K agent: planning-driven retrieval, 91% accuracy on FinanceBench |
-| **[agent/rag/data_ingestion/README.md](agent/rag/data_ingestion/README.md)** | Data ingestion pipelines for transcripts and SEC filings |
+|---|---|
+| **[fs_research_agent/README.md](fs_research_agent/README.md)** | Deep dive: tools, prompts, citations, ingest, benchmarks, lessons |
+| **[Original blog post (chunked RAG approach)](https://substack.com/home/post/p-181608263)** | Historical: the multi-agent / vector-retrieval pipeline that preceded this design |
 
-## Development Status
+---
 
-**Production (Finance Agent):**
-- Earnings transcript chat with RAG
-- SEC 10-K filings (2018-2025)
-- Real-time streaming responses
-- User authentication
+## Deployment
 
-**In Development:**
-- Enhanced financial screener
-- Performance optimizations
+- **Platform**: Railway (Nixpacks builder)
+- **Volume**: persistent volume mounted at `/data/fs_research_corpus` for the SEC corpus
+- **Cold start**: corpus auto-hydrates from S3 (`s3://<bucket>/fs_research_agent/corpus/latest.tar.gz`) on first boot, then short-circuits on every redeploy
+- **Watcher**: in-process asyncio task, polls SEC every 30 min, writes new filings directly to the volume
+- **Observability**: Logfire spans across the whole agent lifecycle (flow / llm_round / tool_call / force_final / errors)
+
+See [`fs_research_agent/README.md`](fs_research_agent/README.md) for the operations playbook.
+
+---
 
 ## Contributing
 
-Contributions welcome! Please open an issue to discuss major changes before submitting PRs.
+Open an issue to discuss major changes before submitting a PR.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT — see `LICENSE`.
 
 ## Contact
 
-For questions or access requests: hrishi@stratalens.ai
-
-
-
-
-
-
+hrishi@stratalens.ai

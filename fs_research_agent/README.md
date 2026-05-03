@@ -6,7 +6,7 @@ and asks it to act as a financial research analyst.
 
 The hypothesis: *for SEC research, raw filesystem access + a strong system
 prompt beats a chunk-based vector-retrieval pipeline.* Validated by direct
-side-by-side against the platform's existing `OrchestratorAgent` ("the deep
+side-by-side against the now-retired `OrchestratorAgent` ("the deep
 agent") on the same questions — and again by the FinanceBench benchmark
 included in this folder.
 
@@ -204,7 +204,7 @@ USE_FS_RESEARCH_AGENT=true
 
 Restart the FastAPI server. The chat router now uses
 `FilesystemResearchOrchestrator` (in `orchestrator_adapter.py`) instead of
-the legacy `OrchestratorAgent`. Citations render as `[10K-N]` / `[10Q-N]` /
+the now-retired `OrchestratorAgent`. Citations render as `[10K-N]` / `[10Q-N]` /
 `[8K-N]` markers and click through to the existing SEC filing viewer.
 
 ---
@@ -219,7 +219,12 @@ the legacy `OrchestratorAgent`. Citations render as `[10K-N]` / `[10Q-N]` /
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `USE_FS_RESEARCH_AGENT` | `false` | When `true`, the chat backend uses this agent instead of `OrchestratorAgent`. Precedence: this > `USE_DEEP_AGENT` > `RAGAgent`. |
+| `USE_FS_RESEARCH_AGENT` | `true` | Defaults to `true` because this is the only agent in the platform. Setting it to `false` raises a runtime error at boot — the legacy `OrchestratorAgent` / `RAGAgent` paths have been removed. |
+| `TAVILY_API_KEY` | — | Optional. Enables `news_search` (Tavily) as a 5th tool for post-filing color. Without it the tool returns a friendly "not configured" message and the agent silently proceeds without news. |
+| `FS_RESEARCH_WATCHER_ENABLED` | auto | Spawns the SEC watcher as an in-process asyncio task. Auto-on when any `RAILWAY_*` env var is detected; off locally. Set explicitly to `true` / `false` to override. |
+| `FS_RESEARCH_WATCHER_INTERVAL_SECS` | `1800` | Poll cadence for the watcher (30 min default). |
+| `FS_RESEARCH_WATCHER_MAX_AGE_DAYS` | `30` | Skip filings older than this when polling — prevents the first cycle from re-ingesting years of history. |
+| `FS_RESEARCH_BOOTSTRAP_FROM_S3` | auto | Hydrates the local volume from the S3 corpus snapshot on cold start. Auto-on when Railway + `RAILWAY_BUCKET_*` creds are detected. |
 | `DATAMULE_SEC_USER_AGENT` | `John Smith johnsmith@gmail.com` | Set this to a real `Name email@domain` string. SEC throttles datamule's default UA — you'll get 500s on hot tickers (AAPL etc.) without a real one. |
 | `FS_RESEARCH_DATA_ROOT` | `<pkg>/data/` | Override the corpus root used by the API and the agent's `Sandbox`. |
 | `FS_RESEARCH_FINANCEBENCH_DATA_ROOT` | `<pkg>/benchmarks/financebench/data/` | Override the benchmark corpus location. |
@@ -378,8 +383,10 @@ endpoint.
 ### `orchestrator_adapter.py` — `FilesystemResearchOrchestrator`
 
 Drop-in agent compatible with `app/routers/chat.py`. Implements the same
-`execute_rag_flow()` async generator contract as `OrchestratorAgent` and
-`RAGAgent`, so the chat router doesn't know which agent is behind it.
+`execute_rag_flow()` async generator contract — historically shared with
+the now-retired `OrchestratorAgent` / `RAGAgent` — so the chat router
+remains agent-agnostic should we ever want to slot in a different
+implementation.
 
 Key behaviors:
 
@@ -584,15 +591,15 @@ data/                                     ← FS_RESEARCH_DATA_ROOT
 
 ## 7. Plugging the agent into the chat backend
 
-Set `USE_FS_RESEARCH_AGENT=true` in `.env` and restart `uvicorn`. The chat
-router will load `FilesystemResearchOrchestrator` instead of
-`OrchestratorAgent`.
+`FilesystemResearchOrchestrator` is the only agent in the platform — wired
+in `agent/__init__.py`, served by `app/routers/chat.py`. No env flag needed
+to enable it; `USE_FS_RESEARCH_AGENT=false` is rejected at boot with a
+clear error pointing at this module.
 
-The agent factory in `agent/__init__.py` selects in this precedence order:
-
-1. `USE_FS_RESEARCH_AGENT=true` → `FilesystemResearchOrchestrator`
-2. `USE_DEEP_AGENT=true` (default) → `OrchestratorAgent` (legacy deep agent)
-3. otherwise → `RAGAgent` (legacy chunk-RAG)
+The earlier multi-agent / chunk-RAG implementations (`OrchestratorAgent`
+and `RAGAgent`) were retired together with the rest of the legacy
+`agent/rag/` and `agent/orchestrator/` trees. For historical context on
+that approach see the [original blog post](https://substack.com/home/post/p-181608263).
 
 The orchestrator adapter implements:
 - `execute_rag_flow(question, ...)` async generator — primary entry point
