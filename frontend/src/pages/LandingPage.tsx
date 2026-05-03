@@ -6,7 +6,7 @@ import AboutModal from '../components/AboutModal'
 import CoverageModal from '../components/CoverageModal'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
-import { fetchCoverageStatus, formatCoverageCount } from '../lib/coverageApi'
+import { fetchCoverageStatus, fetchCoverageCompanies, formatCoverageCount } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
 import { EXAMPLE_QUERIES } from '../lib/exampleQueries'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
@@ -97,12 +97,20 @@ const transcriptChatData = [
 
 const exampleQueries = EXAMPLE_QUERIES
 
-// Tech company tickers for the scrolling banner
-const techTickers = [
+// Seed list for the scrolling coverage banner. Used only as a no-flash
+// fallback while /coverage/companies is in flight — the actual on-screen
+// ribbon is replaced with the live universe (~80 tickers, see below).
+const SEED_TICKERS = [
   'NVDA', 'AAPL', 'MSFT', 'GOOGL', 'META', 'AMZN', 'TSLA', 'AMD', 'AVGO', 'CRM',
   'ADBE', 'INTC', 'QCOM', 'NFLX', 'CSCO', 'ORCL', 'NOW', 'UBER', 'ABNB', 'COIN',
   'SQ', 'PLTR', 'SNOW', 'CRWD', 'PANW', 'MU', 'AMAT', 'LRCX', 'KLAC', 'MRVL'
 ]
+
+// Cap how many tickers ride the marquee. The animation duration below
+// is tuned for this count — bumping this ALSO requires bumping the
+// duration in the @keyframes block at the bottom of the file or the
+// per-ticker pixel-rate will get uncomfortably fast.
+const MARQUEE_TICKER_CAP = 80
 
 
 export default function LandingPage() {
@@ -115,6 +123,7 @@ export default function LandingPage() {
   const [aboutOpen, setAboutOpen] = useState(false)
   const [coverageOpen, setCoverageOpen] = useState(false)
   const [coverageCount, setCoverageCount] = useState<number | null>(null)
+  const [marqueeTickers, setMarqueeTickers] = useState<string[]>(SEED_TICKERS)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Live coverage count for the stats strip — single GET per page load.
@@ -123,6 +132,24 @@ export default function LandingPage() {
     fetchCoverageStatus()
       .then((s) => setCoverageCount(s.company_count))
       .catch(() => {})
+  }, [])
+
+  // Replace the seeded marquee with the real universe so the banner
+  // actually represents what the corpus covers (was a stale 30-ticker
+  // hardcode while the corpus is now ~300+). Sort by total filings
+  // desc so the most-covered names lead — visually surfaces the
+  // heavier coverage. Cap at MARQUEE_TICKER_CAP; the duplicated track
+  // for the seamless loop already doubles DOM count.
+  useEffect(() => {
+    fetchCoverageCompanies()
+      .then((rows) => {
+        const sorted = [...rows].sort((a, b) => b.total - a.total)
+        const tickers = sorted.slice(0, MARQUEE_TICKER_CAP).map((c) => c.ticker)
+        if (tickers.length > 0) setMarqueeTickers(tickers)
+      })
+      .catch(() => {
+        // Keep SEED_TICKERS — banner stays useful even on API failure.
+      })
   }, [])
 
   useEffect(() => {
@@ -358,9 +385,10 @@ export default function LandingPage() {
           Coverage includes
         </p>
 
-        {/* Tickers - more muted */}
+        {/* Tickers - more muted. List is duplicated for seamless loop
+            (the @keyframes translates from 0 → -50%). */}
         <div className="flex animate-scroll-right gap-16">
-          {[...techTickers, ...techTickers].map((ticker, i) => (
+          {[...marqueeTickers, ...marqueeTickers].map((ticker, i) => (
             <span key={i} className="text-lg font-medium text-slate-300 whitespace-nowrap tracking-wide">
               ${ticker}
             </span>
@@ -831,7 +859,10 @@ export default function LandingPage() {
           100% { transform: translateX(-50%); }
         }
         .animate-scroll-right {
-          animation: scroll-right 60s linear infinite;
+          /* Tuned for ~80 tickers (MARQUEE_TICKER_CAP). Per-ticker
+             on-screen time stays roughly constant if you scale this
+             with the cap (e.g. 60s for 30 tickers, 150s for 80). */
+          animation: scroll-right 150s linear infinite;
         }
       `}</style>
     </div>
