@@ -106,11 +106,6 @@ const SEED_TICKERS = [
   'SQ', 'PLTR', 'SNOW', 'CRWD', 'PANW', 'MU', 'AMAT', 'LRCX', 'KLAC', 'MRVL'
 ]
 
-// Cap how many tickers ride the marquee. The animation duration below
-// is tuned for this count — bumping this ALSO requires bumping the
-// duration in the @keyframes block at the bottom of the file or the
-// per-ticker pixel-rate will get uncomfortably fast.
-const MARQUEE_TICKER_CAP = 80
 
 
 export default function LandingPage() {
@@ -134,17 +129,17 @@ export default function LandingPage() {
       .catch(() => {})
   }, [])
 
-  // Replace the seeded marquee with the real universe so the banner
-  // actually represents what the corpus covers (was a stale 30-ticker
-  // hardcode while the corpus is now ~300+). Sort by total filings
-  // desc so the most-covered names lead — visually surfaces the
-  // heavier coverage. Cap at MARQUEE_TICKER_CAP; the duplicated track
-  // for the seamless loop already doubles DOM count.
+  // Replace the seeded marquee with the FULL live universe so the
+  // banner actually shows the breadth of coverage (~300+ tickers).
+  // Sorted by total filings desc — heavy hitters lead, but every
+  // covered name eventually scrolls past. The marquee duration in
+  // the @keyframes block is tuned to keep per-ticker on-screen time
+  // readable across the whole ribbon.
   useEffect(() => {
     fetchCoverageCompanies()
       .then((rows) => {
         const sorted = [...rows].sort((a, b) => b.total - a.total)
-        const tickers = sorted.slice(0, MARQUEE_TICKER_CAP).map((c) => c.ticker)
+        const tickers = sorted.map((c) => c.ticker)
         if (tickers.length > 0) setMarqueeTickers(tickers)
       })
       .catch(() => {
@@ -862,7 +857,11 @@ export default function LandingPage() {
           /* Tuned for ~80 tickers (MARQUEE_TICKER_CAP). Per-ticker
              on-screen time stays roughly constant if you scale this
              with the cap (e.g. 60s for 30 tickers, 150s for 80). */
-          animation: scroll-right 150s linear infinite;
+          /* Tuned for the full live universe (~300+ tickers). The
+             ribbon is long, so a too-short duration blurs everything;
+             a too-long one feels frozen. 250s = brisker pixel rate
+             than the earlier 80-ticker config but still readable. */
+          animation: scroll-right 250s linear infinite;
         }
       `}</style>
     </div>
