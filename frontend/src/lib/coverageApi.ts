@@ -27,6 +27,25 @@ export function formatAccession(accession: string): string {
   return `${raw.slice(0, 10)}-${raw.slice(10, 12)}-${raw.slice(12)}`
 }
 
+/**
+ * Round a coverage count DOWN to the nearest 100 and append "+".
+ *   336 → "300+"   (typical case for current corpus)
+ *   280 → "200+"
+ *   125 → "100+"
+ *    97 →  "97"    (sub-100 stays exact, since "0+" or "100+" both look bad)
+ *
+ * Why vague: the exact number ticks up by 1-3 every week as the watcher
+ * picks up new IPOs / corporate actions. Showing "336" today and "338"
+ * next week creates a "did something change?" UX itch when actually
+ * nothing meaningful did. "300+" stays accurate for ~6 months.
+ *
+ * Apply this anywhere a public-facing surface displays a company count.
+ */
+export function formatCoverageCount(n: number): string {
+  if (n < 100) return `${n}`
+  return `${Math.floor(n / 100) * 100}+`
+}
+
 /** "412345" → "412 KB" — rough size hint for the main filing markdown. */
 export function formatBytes(n: number | undefined): string {
   if (!n) return ''

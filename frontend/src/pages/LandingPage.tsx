@@ -6,7 +6,7 @@ import AboutModal from '../components/AboutModal'
 import CoverageModal from '../components/CoverageModal'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
-import { fetchCoverageStatus } from '../lib/coverageApi'
+import { fetchCoverageStatus, formatCoverageCount } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
 import { EXAMPLE_QUERIES } from '../lib/exampleQueries'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
@@ -150,15 +150,26 @@ export default function LandingPage() {
     el.style.overflowY = el.scrollHeight > 300 ? 'auto' : 'hidden'
   }, [inputValue])
 
-  const handleSubmit = (query: string) => {
+  /**
+   * Hand the query off to /chat.
+   *
+   * `autosend` differentiates two intents:
+   *   - Typed-and-pressed-Send → autosend=true → /chat fires the request
+   *     immediately. The user explicitly hit Send.
+   *   - Clicked an example chip → autosend=false → /chat just LOADS the
+   *     query into its input. The user is exploring and may want to edit
+   *     before sending.
+   */
+  const handleSubmit = (query: string, autosend: boolean = true) => {
     if (!query.trim()) return
-    navigate(`/chat?q=${encodeURIComponent(query)}`)
+    const flag = autosend ? '&autosend=1' : ''
+    navigate(`/chat?q=${encodeURIComponent(query)}${flag}`)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit(inputValue)
+      handleSubmit(inputValue, true)
     }
   }
 
@@ -231,7 +242,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-center gap-10 mb-5">
                 <div className="text-center">
                   <div className="text-2xl font-semibold text-[#0a1628]">
-                    {coverageCount != null ? `${coverageCount}` : '300+'}
+                    {coverageCount != null ? formatCoverageCount(coverageCount) : '300+'}
                   </div>
                   <div className="text-sm text-slate-400">Tech Companies</div>
                 </div>
@@ -284,7 +295,7 @@ export default function LandingPage() {
                   rows={1}
                 />
                 <button
-                  onClick={() => handleSubmit(inputValue)}
+                  onClick={() => handleSubmit(inputValue, true)}
                   disabled={!inputValue.trim()}
                   className="absolute right-3 bottom-3 w-10 h-10 bg-[#0a1628] text-white rounded-lg flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#1e293b] transition-colors"
                 >
@@ -318,7 +329,8 @@ export default function LandingPage() {
                     key={i}
                     onClick={() => {
                       track({ name: 'example_query_clicked', props: { surface: 'landing', query: text } })
-                      handleSubmit(text)
+                      // Load only — user is exploring; let them review on /chat before sending
+                      handleSubmit(text, false)
                     }}
                     title={text}
                     className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-lg text-left text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all group"

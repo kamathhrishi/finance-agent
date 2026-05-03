@@ -6,7 +6,7 @@ import ChatInput from '../components/ChatInput'
 import ScopeChips from '../components/ScopeChips'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
-import { fetchCoverageStatus } from '../lib/coverageApi'
+import { fetchCoverageStatus, formatCoverageCount } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
 import { EXAMPLE_QUERIES } from '../lib/exampleQueries'
 import ChatMessage from '../components/ChatMessage'
@@ -69,14 +69,35 @@ export default function ChatPage() {
     sendMessage(content)
   }, [sendMessage])
 
-  // Auto-execute query from URL parameter
+  // Handle landing → /chat handoff via `?q=<text>` (+ optional `&autosend=1`).
+  //
+  // Two intents from the caller:
+  //   - autosend=1 → typed-and-sent on landing → fire immediately
+  //   - no autosend → clicked an example chip → just load the text into
+  //                   the input so the user can review/edit before sending
+  //
+  // pendingInput drives ChatInput's `initialValue` prop. ChatInput has an
+  // effect that reads initialValue and pushes it into its internal state,
+  // so any change here lands in the textarea.
+  //
+  // CRITICAL: searchParams.get() already URI-decodes. Calling
+  // decodeURIComponent again throws `URIError: URI malformed` whenever
+  // the decoded text contains a literal `%` (e.g. "(% of revenue)") —
+  // that double-decode used to blank the whole page.
+  const [pendingInput, setPendingInput] = useState<string>('')
+
   useEffect(() => {
     const query = searchParams.get('q')
+    const autosend = searchParams.get('autosend') === '1'
     if (query && !hasExecutedInitialQuery.current && messages.length === 0) {
       hasExecutedInitialQuery.current = true
-      handleSendMessage(decodeURIComponent(query))
+      if (autosend) {
+        handleSendMessage(query)
+      } else {
+        setPendingInput(query)
+      }
     }
-  }, [searchParams, handleSendMessage, messages.length])
+  }, [searchParams, messages.length, handleSendMessage])
 
   const isEmpty = messages.length === 0
 
@@ -174,7 +195,7 @@ export default function ChatPage() {
                 {/* Data Coverage Badges - more muted */}
                 <div className="flex flex-wrap justify-center gap-3 mb-8">
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
-                    {coverageCount != null ? `${coverageCount} Tech Companies` : '300+ Tech Companies'}
+                    {coverageCount != null ? `${formatCoverageCount(coverageCount)} Tech Companies` : '300+ Tech Companies'}
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
                     3 Years Filings History
@@ -185,9 +206,9 @@ export default function ChatPage() {
                 </div>
 
                 {/* Example queries — single block, no categorisation.
-                    Chip shows the short professional preview; click sends
-                    the full long query. Hover surfaces the full text via
-                    native title tooltip. */}
+                    Chip shows the short professional preview; click LOADS
+                    the full query into the input below (does not send).
+                    User reviews and presses Enter to send. */}
                 <div className="w-full max-w-2xl">
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Example queries</p>
                   <div className="grid sm:grid-cols-2 gap-2">
@@ -196,7 +217,7 @@ export default function ChatPage() {
                         key={index}
                         onClick={() => {
                           track({ name: 'example_query_clicked', props: { surface: 'chat', query: text } })
-                          handleSendMessage(text)
+                          setPendingInput(text)
                         }}
                         title={text}
                         className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
@@ -206,7 +227,7 @@ export default function ChatPage() {
                     ))}
                   </div>
                   <p className="text-xs text-slate-400 mt-2 text-left">
-                    Searches across 10-K, 10-Q, and 8-K filings for {coverageCount != null ? `${coverageCount}` : '300+'} tech companies.
+                    Searches across 10-K, 10-Q, and 8-K filings for {coverageCount != null ? formatCoverageCount(coverageCount) : '300+'} tech companies.
                   </p>
                 </div>
               </motion.div>
@@ -236,7 +257,8 @@ export default function ChatPage() {
               onSubmit={handleSendMessage}
               isLoading={isLoading}
               placeholder="Query SEC filings and earnings transcripts..."
-              autoFocus={!searchParams.get('q')}
+              autoFocus
+              initialValue={pendingInput}
             />
             <p className="text-center text-xs text-slate-400 mt-3">
               Results derived from primary SEC filings and earnings transcripts.

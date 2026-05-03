@@ -6,6 +6,7 @@ import Pagination from '../components/Pagination'
 import {
   fetchLatestFilings,
   fetchCoverageStatus,
+  formatCoverageCount,
   relativeTime,
   type Filing,
   type CoverageStatus,
@@ -103,7 +104,7 @@ export default function LatestFilingsPage() {
                 <>
                   <span>
                     <span className="font-semibold text-slate-900">
-                      {status.company_count}
+                      {formatCoverageCount(status.company_count)}
                     </span>{' '}
                     tech companies in coverage
                   </span>

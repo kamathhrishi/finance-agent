@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, FileText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { fetchCoverageCompanies, type CompanySummary } from '../lib/coverageApi'
+import { fetchCoverageCompanies, formatCoverageCount, type CompanySummary } from '../lib/coverageApi'
 import { track } from '../lib/analytics'
 
 interface CoverageModalProps {
@@ -102,7 +102,7 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
                   <h2 className="text-lg font-semibold text-slate-900">Coverage</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {companies
-                      ? `${total} tech companies — full 10-K, 10-Q, 8-K SEC filings`
+                      ? `${formatCoverageCount(total)} tech companies — full 10-K, 10-Q, 8-K SEC filings`
                       : 'Loading coverage…'}
                   </p>
                 </div>
@@ -120,7 +120,7 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
             <div className="grid grid-cols-3 gap-px bg-slate-200 border-b border-slate-200 shrink-0">
               <div className="bg-white px-5 py-3">
                 <div className="text-2xl font-semibold text-[#0a1628]">
-                  {companies ? total : '—'}
+                  {companies ? formatCoverageCount(total) : '—'}
                 </div>
                 <div className="text-xs text-slate-500 mt-0.5">Tech Companies</div>
               </div>
@@ -168,7 +168,7 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
               )}
               {!error && companies && filtered.length === 0 && (
                 <p className="text-sm text-slate-500 text-center py-12">
-                  No matches. We currently cover {total} tech companies — request additions via the chat.
+                  No matches. We currently cover {formatCoverageCount(total)} tech companies — request additions via the chat.
                 </p>
               )}
               {!error && companies && filtered.length > 0 && (

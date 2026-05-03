@@ -7,6 +7,7 @@ import {
   fetchCoverageCompanies,
   fetchCoverageStatus,
   formatFilingDate,
+  formatCoverageCount,
   type CompanySummary,
   type CoverageStatus,
 } from '../lib/coverageApi'
@@ -101,7 +102,7 @@ export default function CompaniesPage() {
               {status ? (
                 <>
                   <span className="font-semibold text-slate-900">
-                    {status.company_count}
+                    {formatCoverageCount(status.company_count)}
                   </span>{' '}
                   tech companies in coverage. Click any company to see its SEC filings.
                 </>
