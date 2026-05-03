@@ -1,66 +1,27 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, FileText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { fetchCoverageCompanies, type CompanySummary } from '../lib/coverageApi'
 
 interface CoverageModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-// Tech universe — every ticker we currently have full SEC filing coverage for
-// (10-K, 10-Q, 8-K + substantive exhibits, last 5 years). Generated from
-// fs_research_agent/tech_universe.json. Names are SEC's display titles,
-// lightly cleaned.
-const COVERAGE: { t: string; n: string }[] = [
-  { t: "AAPL", n: "Apple Inc." }, { t: "ABNB", n: "Airbnb, Inc." }, { t: "ADBE", n: "Adobe Inc." },
-  { t: "ADI", n: "Analog Devices Inc." }, { t: "ADSK", n: "Autodesk, Inc." }, { t: "AFRM", n: "Affirm Holdings, Inc." },
-  { t: "AKAM", n: "Akamai Technologies Inc." }, { t: "ALAB", n: "Astera Labs, Inc." }, { t: "AMAT", n: "Applied Materials Inc." },
-  { t: "AMD", n: "Advanced Micro Devices Inc." }, { t: "AMKR", n: "Amkor Technology, Inc." }, { t: "APH", n: "Amphenol Corp" },
-  { t: "APP", n: "AppLovin Corp" }, { t: "AVGO", n: "Broadcom Inc." }, { t: "BR", n: "Broadridge Financial Solutions, Inc." },
-  { t: "BSY", n: "Bentley Systems Inc." }, { t: "CACI", n: "CACI International Inc." }, { t: "CDNS", n: "Cadence Design Systems Inc." },
-  { t: "CDW", n: "CDW Corp" }, { t: "CHTR", n: "Charter Communications, Inc." }, { t: "CIEN", n: "Ciena Corp" },
-  { t: "CMCSA", n: "Comcast Corp" }, { t: "COHR", n: "Coherent Corp." }, { t: "COIN", n: "Coinbase Global, Inc." },
-  { t: "CPAY", n: "Corpay, Inc." }, { t: "CRDO", n: "Credo Technology Group" }, { t: "CRM", n: "Salesforce, Inc." },
-  { t: "CRWD", n: "CrowdStrike Holdings, Inc." }, { t: "CRWV", n: "CoreWeave, Inc." }, { t: "CSCO", n: "Cisco Systems, Inc." },
-  { t: "CTSH", n: "Cognizant Technology Solutions" }, { t: "DASH", n: "DoorDash, Inc." }, { t: "DDOG", n: "Datadog, Inc." },
-  { t: "DELL", n: "Dell Technologies Inc." }, { t: "DIS", n: "Walt Disney Co" }, { t: "DT", n: "Dynatrace, Inc." },
-  { t: "EA", n: "Electronic Arts Inc." }, { t: "ENTG", n: "Entegris Inc." }, { t: "FICO", n: "Fair Isaac Corp" },
-  { t: "FIS", n: "Fidelity National Information Services" }, { t: "FOX", n: "Fox Corp" }, { t: "FOXA", n: "Fox Corp (Class A)" },
-  { t: "FSLR", n: "First Solar, Inc." }, { t: "FTNT", n: "Fortinet, Inc." }, { t: "FTV", n: "Fortive Corp" },
-  { t: "GDDY", n: "GoDaddy Inc." }, { t: "GEHC", n: "GE Healthcare Technologies Inc." }, { t: "GEN", n: "Gen Digital Inc." },
-  { t: "GFS", n: "GlobalFoundries Inc." }, { t: "GLW", n: "Corning Inc." }, { t: "GOOG", n: "Alphabet Inc. (Class C)" },
-  { t: "GWRE", n: "Guidewire Software, Inc." }, { t: "HPE", n: "Hewlett Packard Enterprise Co" }, { t: "HPQ", n: "HP Inc." },
-  { t: "HUBS", n: "HubSpot Inc." }, { t: "IBM", n: "IBM Corp" }, { t: "INTC", n: "Intel Corp" },
-  { t: "INTU", n: "Intuit Inc." }, { t: "IT", n: "Gartner Inc." }, { t: "JBL", n: "Jabil Inc." },
-  { t: "JKHY", n: "Jack Henry & Associates Inc." }, { t: "KEYS", n: "Keysight Technologies, Inc." }, { t: "KLAC", n: "KLA Corp" },
-  { t: "LBRDB", n: "Liberty Broadband Corp" }, { t: "LDOS", n: "Leidos Holdings, Inc." }, { t: "LITE", n: "Lumentum Holdings Inc." },
-  { t: "LRCX", n: "Lam Research Corp" }, { t: "LSCC", n: "Lattice Semiconductor Corp" }, { t: "LYV", n: "Live Nation Entertainment, Inc." },
-  { t: "MCHP", n: "Microchip Technology Inc." }, { t: "MDB", n: "MongoDB, Inc." }, { t: "META", n: "Meta Platforms, Inc." },
-  { t: "MKSI", n: "MKS Inc." }, { t: "MPWR", n: "Monolithic Power Systems Inc." }, { t: "MRVL", n: "Marvell Technology, Inc." },
-  { t: "MSFT", n: "Microsoft Corp" }, { t: "MSI", n: "Motorola Solutions, Inc." }, { t: "MSTR", n: "Strategy (formerly MicroStrategy) Inc." },
-  { t: "MTSI", n: "MACOM Technology Solutions" }, { t: "MU", n: "Micron Technology Inc." }, { t: "NET", n: "Cloudflare, Inc." },
-  { t: "NOW", n: "ServiceNow, Inc." }, { t: "NTAP", n: "NetApp, Inc." }, { t: "NTNX", n: "Nutanix, Inc." },
-  { t: "NVDA", n: "NVIDIA Corp" }, { t: "NWS", n: "News Corp" }, { t: "NWSA", n: "News Corp (Class A)" },
-  { t: "NXT", n: "Nextracker Inc." }, { t: "NYT", n: "New York Times Co" }, { t: "OKTA", n: "Okta, Inc." },
-  { t: "OMC", n: "Omnicom Group Inc." }, { t: "ON", n: "ON Semiconductor Corp" }, { t: "ONTO", n: "Onto Innovation Inc." },
-  { t: "ORCL", n: "Oracle Corp" }, { t: "PINS", n: "Pinterest, Inc." }, { t: "PLTR", n: "Palantir Technologies Inc." },
-  { t: "PSKY", n: "Paramount Skydance Corp" }, { t: "PSTG", n: "Pure Storage, Inc." }, { t: "PTC", n: "PTC Inc." },
-  { t: "QCOM", n: "Qualcomm Inc." }, { t: "QXO", n: "QXO, Inc." }, { t: "RBLX", n: "Roblox Corp" },
-  { t: "RMBS", n: "Rambus Inc." }, { t: "ROKU", n: "Roku, Inc." }, { t: "SATS", n: "EchoStar Corp" },
-  { t: "SITM", n: "SiTime Corp" }, { t: "SMCI", n: "Super Micro Computer, Inc." }, { t: "SNDK", n: "SanDisk Corp" },
-  { t: "SNOW", n: "Snowflake Inc." }, { t: "SNPS", n: "Synopsys Inc." }, { t: "SNX", n: "TD SYNNEX Corp" },
-  { t: "T", n: "AT&T Inc." }, { t: "TDY", n: "Teledyne Technologies Inc." }, { t: "TER", n: "Teradyne, Inc." },
-  { t: "TMUS", n: "T-Mobile US, Inc." }, { t: "TRMB", n: "Trimble Inc." }, { t: "TTD", n: "The Trade Desk, Inc." },
-  { t: "TWLO", n: "Twilio Inc." }, { t: "TXN", n: "Texas Instruments Inc." }, { t: "TYL", n: "Tyler Technologies Inc." },
-  { t: "UBER", n: "Uber Technologies, Inc." }, { t: "UI", n: "Ubiquiti Inc." }, { t: "VG", n: "Venture Global, Inc." },
-  { t: "VRSN", n: "VeriSign Inc." }, { t: "VZ", n: "Verizon Communications Inc." }, { t: "WBD", n: "Warner Bros. Discovery, Inc." },
-  { t: "WDAY", n: "Workday, Inc." }, { t: "WDC", n: "Western Digital Corp" }, { t: "WMG", n: "Warner Music Group Corp." },
-  { t: "XYZ", n: "Block, Inc. (formerly Square)" }, { t: "Z", n: "Zillow Group, Inc." }, { t: "ZBRA", n: "Zebra Technologies Corp" },
-  { t: "ZG", n: "Zillow Group, Inc. (Class A)" }, { t: "ZM", n: "Zoom Communications, Inc." }, { t: "ZS", n: "Zscaler, Inc." },
-]
-
+/**
+ * Coverage modal — dynamic, fetches the live list from `/coverage/companies`
+ * so it always matches what the deployed corpus actually has. The previous
+ * version hardcoded a 138-ticker array in this file; the universe doubled
+ * shortly after and the modal silently lied. Don't repeat that.
+ *
+ * On modal open we fire a single fetch (cached for the modal's lifetime).
+ * Showing a small loading state while the fetch is in flight is fine —
+ * the modal is opened by an explicit user action so a 200ms shimmer is OK.
+ */
 export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
   const [query, setQuery] = useState('')
+  const [companies, setCompanies] = useState<CompanySummary[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const onEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -68,6 +29,25 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
       document.addEventListener('keydown', onEscape)
       document.body.style.overflow = 'hidden'
       setQuery('')
+
+      // Fetch fresh on every open — the universe grows, so a 30-min-old
+      // snapshot kept across opens isn't worth a stale-by-default UX.
+      let cancelled = false
+      setError(null)
+      fetchCoverageCompanies()
+        .then((rows) => {
+          if (!cancelled) setCompanies(rows)
+        })
+        .catch((e) => {
+          if (cancelled) return
+          console.error('coverage modal load failed:', e)
+          setError("We couldn't load the coverage list right now. Please try again in a moment.")
+        })
+      return () => {
+        cancelled = true
+        document.removeEventListener('keydown', onEscape)
+        document.body.style.overflow = ''
+      }
     }
     return () => {
       document.removeEventListener('keydown', onEscape)
@@ -75,11 +55,18 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
     }
   }, [isOpen, onClose])
 
+  const total = companies?.length ?? 0
+
   const filtered = useMemo(() => {
+    if (!companies) return []
     const q = query.trim().toLowerCase()
-    if (!q) return COVERAGE
-    return COVERAGE.filter(c => c.t.toLowerCase().includes(q) || c.n.toLowerCase().includes(q))
-  }, [query])
+    if (!q) return companies
+    return companies.filter(
+      (c) =>
+        c.ticker.toLowerCase().includes(q) ||
+        (c.company_name || '').toLowerCase().includes(q),
+    )
+  }, [companies, query])
 
   return (
     <AnimatePresence>
@@ -112,7 +99,9 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">Coverage</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {COVERAGE.length} tech companies — full 10-K, 10-Q, 8-K SEC filings
+                    {companies
+                      ? `${total} tech companies — full 10-K, 10-Q, 8-K SEC filings`
+                      : 'Loading coverage…'}
                   </p>
                 </div>
               </div>
@@ -128,7 +117,9 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
             {/* Coverage stats strip */}
             <div className="grid grid-cols-3 gap-px bg-slate-200 border-b border-slate-200 shrink-0">
               <div className="bg-white px-5 py-3">
-                <div className="text-2xl font-semibold text-[#0a1628]">{COVERAGE.length}</div>
+                <div className="text-2xl font-semibold text-[#0a1628]">
+                  {companies ? total : '—'}
+                </div>
                 <div className="text-xs text-slate-500 mt-0.5">Tech Companies</div>
               </div>
               <div className="bg-white px-5 py-3">
@@ -154,30 +145,41 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
                   className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg placeholder:text-slate-400 focus:outline-none focus:border-[#0a1628] focus:ring-1 focus:ring-[#0a1628]"
                 />
               </div>
-              {query && (
+              {query && companies && (
                 <p className="text-xs text-slate-400 mt-2">
-                  {filtered.length} of {COVERAGE.length} match
+                  {filtered.length} of {total} match
                 </p>
               )}
             </div>
 
             {/* Ticker grid */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {filtered.length === 0 ? (
+              {error && (
+                <p className="text-sm text-red-600 text-center py-12">{error}</p>
+              )}
+              {!error && !companies && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="h-8 rounded-lg bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              )}
+              {!error && companies && filtered.length === 0 && (
                 <p className="text-sm text-slate-500 text-center py-12">
-                  No matches. We currently cover {COVERAGE.length} tech companies — request additions via the chat.
+                  No matches. We currently cover {total} tech companies — request additions via the chat.
                 </p>
-              ) : (
+              )}
+              {!error && companies && filtered.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {filtered.map((c) => (
                     <div
-                      key={c.t}
+                      key={c.ticker}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
                     >
                       <span className="text-xs font-mono font-semibold text-[#0a1628] bg-slate-100 px-2 py-0.5 rounded min-w-[3.25rem] text-center">
-                        {c.t}
+                        {c.ticker}
                       </span>
-                      <span className="text-sm text-slate-700 truncate">{c.n}</span>
+                      <span className="text-sm text-slate-700 truncate">{c.company_name || '—'}</span>
                     </div>
                   ))}
                 </div>

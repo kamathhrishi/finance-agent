@@ -6,6 +6,7 @@ import ChatInput from '../components/ChatInput'
 import ScopeChips from '../components/ScopeChips'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
+import { fetchCoverageStatus } from '../lib/coverageApi'
 import ChatMessage from '../components/ChatMessage'
 import Sidebar from '../components/Sidebar'
 import AboutModal from '../components/AboutModal'
@@ -30,6 +31,14 @@ export default function ChatPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [modelId, setModelId] = useState<ModelId>(getStoredModel())
+  const [coverageCount, setCoverageCount] = useState<number | null>(null)
+
+  // Live coverage count for the empty-state badges. Fail-soft to a sane string.
+  useEffect(() => {
+    fetchCoverageStatus()
+      .then((s) => setCoverageCount(s.company_count))
+      .catch(() => {})
+  }, [])
   const [documentPanel, setDocumentPanel] = useState<{ open: boolean; content: DocumentPanelContent | null }>({
     open: false,
     content: null,
@@ -163,7 +172,7 @@ export default function ChatPage() {
                 {/* Data Coverage Badges - more muted */}
                 <div className="flex flex-wrap justify-center gap-3 mb-8">
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
-                    100+ Tech Companies
+                    {coverageCount != null ? `${coverageCount} Tech Companies` : '300+ Tech Companies'}
                   </span>
                   <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded text-xs text-slate-500 font-mono">
                     3 Years Filings History
@@ -214,7 +223,9 @@ export default function ChatPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-400 mt-2 text-left">Searches across 10-K, 10-Q, and 8-K filings for 100+ tech companies.</p>
+                  <p className="text-xs text-slate-400 mt-2 text-left">
+                    Searches across 10-K, 10-Q, and 8-K filings for {coverageCount != null ? `${coverageCount}` : '300+'} tech companies.
+                  </p>
                 </div>
               </motion.div>
             ) : (

@@ -6,6 +6,7 @@ import AboutModal from '../components/AboutModal'
 import CoverageModal from '../components/CoverageModal'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
+import { fetchCoverageStatus } from '../lib/coverageApi'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
 
 // Mock data for 10-K Analysis Chat - Minimal card style with data extraction
@@ -117,7 +118,16 @@ export default function LandingPage() {
   const [landingModelId, setLandingModelId] = useState<ModelId>(getStoredModel())
   const [aboutOpen, setAboutOpen] = useState(false)
   const [coverageOpen, setCoverageOpen] = useState(false)
+  const [coverageCount, setCoverageCount] = useState<number | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Live coverage count for the stats strip — single GET per page load.
+  // Falls back to a sane "300+" string if the call fails.
+  useEffect(() => {
+    fetchCoverageStatus()
+      .then((s) => setCoverageCount(s.company_count))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => setFilingChatIndex(i => (i + 1) % filingChatData.length), 4000)
@@ -224,7 +234,9 @@ export default function LandingPage() {
               {/* Stats row - more muted */}
               <div className="flex items-center justify-center gap-10 mb-5">
                 <div className="text-center">
-                  <div className="text-2xl font-semibold text-[#0a1628]">100+</div>
+                  <div className="text-2xl font-semibold text-[#0a1628]">
+                    {coverageCount != null ? `${coverageCount}` : '300+'}
+                  </div>
                   <div className="text-sm text-slate-400">Tech Companies</div>
                 </div>
                 <div className="w-px h-12 bg-slate-200" />
@@ -378,7 +390,7 @@ export default function LandingPage() {
                 10-K Filing Analysis
               </h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 500+ tech companies. Coverage spans 2022–2025 with risk factors, revenue breakdowns, and competitive positioning—all extracted and structured.
+                Instantly analyze annual reports from NVIDIA, Apple, Microsoft, AMD, and 300+ tech companies — semis, software, fintech, e-commerce, exchanges, EVs. Coverage updated continuously from SEC EDGAR with risk factors, revenue breakdowns, and competitive positioning all extracted and structured.
               </p>
               <ul className="space-y-3">
                 {[
@@ -694,7 +706,7 @@ export default function LandingPage() {
                 {[
                   { title: "Official SEC Filings", desc: "10-K reports directly from the SEC" },
                   { title: "Earnings Transcripts", desc: "Word-for-word executive commentary" },
-                  { title: "Tech Sector Focus", desc: "500+ companies: semis, software, fintech" },
+                  { title: "Tech Sector Focus", desc: "300+ companies: semis, software, fintech, exchanges, EVs" },
                   { title: "Verifiable & Auditable", desc: "Citation-backed, traceable insights" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">

@@ -4,7 +4,7 @@ Equity-research platform that answers questions about public-company SEC filings
 
 **Live platform:** [www.stratalens.ai](https://www.stratalens.ai)
 
-**Coverage:** 138 tech companies · 12,000+ filings · 3 years history. Updated automatically by an in-process watcher polling SEC EDGAR.
+**Coverage:** 300+ US tech companies — semis, software, fintech, e-commerce, exchanges, EVs — with 3 years of 10-K, 10-Q, and 8-K history. Updated automatically by an in-process watcher polling SEC EDGAR.
 
 ---
 
@@ -81,7 +81,7 @@ stratalens_ai/
 │   ├── bootstrap.py          # S3 corpus snapshot upload/download
 │   ├── watcher.py            # Background SEC poller
 │   ├── observability.py      # Logfire span wrapper
-│   ├── tech_universe.json    # Canonical 138-ticker list (CIK-resolved)
+│   ├── tech_universe.json    # Canonical 300+ ticker list (CIK-resolved, regenerated from FinanceDatabase)
 │   └── data/                 # Corpus root (gitignored, lives on Railway volume)
 ├── agent/
 │   └── screener/             # DuckDB-backed stock screener
