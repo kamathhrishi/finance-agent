@@ -13,6 +13,7 @@ import {
 } from '../lib/api'
 import { _scopeStoreInternal } from '../lib/scopeStore'
 import { getStoredModel } from '../lib/models'
+import { track } from '../lib/analytics'
 
 interface UseChatReturn {
   messages: ChatMessage[]
@@ -132,6 +133,10 @@ export function useChat(): UseChatReturn {
 
     setMessages((prev) => [...prev, userMessage, assistantMessage])
 
+    // Hoisted out of the try block so the catch can reference them too.
+    const _model = getStoredModel()
+    const _sentAt = performance.now()
+
     try {
       let accumulatedContent = ''
       const accumulatedReasoning: ReasoningStep[] = []
@@ -142,6 +147,16 @@ export function useChat(): UseChatReturn {
       // singleton so the hook doesn't have to subscribe (avoids re-renders on
       // every chip add/remove).
       const scopedFilings = _scopeStoreInternal.getSnapshot()
+
+      track({
+        name: 'chat_message_sent',
+        props: {
+          model: _model,
+          chars: content.trim().length,
+          pinned_count: scopedFilings.length,
+          conversation_existing: Boolean(currentConversationId),
+        },
+      })
 
       for await (const event of streamChat(content, {
         conversationId: currentConversationId || undefined,
@@ -179,6 +194,16 @@ export function useChat(): UseChatReturn {
         )
       )
 
+      track({
+        name: 'chat_response_received',
+        props: {
+          model: _model,
+          latency_ms: Math.round(performance.now() - _sentAt),
+          citation_count: accumulatedSources.length,
+          conversation_id: newConversationId || undefined,
+        },
+      })
+
       // Refresh conversations list after sending a message
       if (authEnabled && isSignedIn) {
         refreshConversations()
@@ -187,6 +212,10 @@ export function useChat(): UseChatReturn {
       console.error('Chat error:', err)
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setError(errorMessage)
+      track({
+        name: 'chat_response_error',
+        props: { model: _model, reason: errorMessage.slice(0, 120) },
+      })
 
       // Update assistant message with error
       setMessages((prev) =>

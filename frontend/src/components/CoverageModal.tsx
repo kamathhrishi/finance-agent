@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Search, FileText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { fetchCoverageCompanies, type CompanySummary } from '../lib/coverageApi'
+import { track } from '../lib/analytics'
 
 interface CoverageModalProps {
   isOpen: boolean
@@ -29,6 +30,7 @@ export default function CoverageModal({ isOpen, onClose }: CoverageModalProps) {
       document.addEventListener('keydown', onEscape)
       document.body.style.overflow = 'hidden'
       setQuery('')
+      track({ name: 'coverage_modal_opened', props: {} })
 
       // Fetch fresh on every open — the universe grows, so a 30-min-old
       // snapshot kept across opens isn't worth a stale-by-default UX.

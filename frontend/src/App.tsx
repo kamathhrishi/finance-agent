@@ -10,6 +10,8 @@ import FilingViewerPage from './pages/FilingViewerPage'
 import PortfolioPage from './pages/PortfolioPage'
 import StrataLensLogo from './components/StrataLensLogo'
 import { Toaster } from './components/Toast'
+import { useAuth, useUser } from '@clerk/clerk-react'
+import { identify, reset } from './lib/analytics'
 
 function MobileWarningModal({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -37,12 +39,28 @@ function MobileWarningModal({ onDismiss }: { onDismiss: () => void }) {
 
 function App() {
   const [showMobileWarning, setShowMobileWarning] = useState(false)
+  const { userId, isSignedIn } = useAuth()
+  const { user } = useUser()
 
   useEffect(() => {
     const isTouchDevice = navigator.maxTouchPoints > 0 || 'ontouchstart' in window
     const isMobileWidth = window.innerWidth < 1024
     if (isTouchDevice || isMobileWidth) setShowMobileWarning(true)
   }, [])
+
+  // Bind PostHog identity to the current user. On sign-out we reset so the
+  // next visitor on this device isn't bucketed as the prior user. Anonymous
+  // visitors get PostHog's auto-generated distinct_id; we don't override it.
+  useEffect(() => {
+    if (isSignedIn && userId) {
+      identify(userId, {
+        email: user?.primaryEmailAddress?.emailAddress,
+        clerk_id: userId,
+      })
+    } else if (isSignedIn === false) {
+      reset()
+    }
+  }, [isSignedIn, userId, user])
 
   return (
     <>

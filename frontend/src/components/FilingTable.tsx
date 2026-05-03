@@ -10,6 +10,7 @@ import {
 } from '../lib/coverageApi'
 import { showToast } from './Toast'
 import { useScope } from '../lib/scopeStore'
+import { track } from '../lib/analytics'
 
 interface FilingTableProps {
   filings: Filing[]
@@ -43,6 +44,10 @@ export default function FilingTable({ filings, hideTickerColumn = false }: Filin
   const handleTogglePin = (f: Filing) => {
     if (isInScope(f.path)) {
       remove(f.path)
+      track({
+        name: 'filing_unpinned',
+        props: { ticker: f.ticker, form: f.form, period: f.period_label, total_pinned_after: count - 1 },
+      })
       showToast({
         title: 'Removed from chat scope',
         body: `${f.ticker} ${f.form} ${f.period_label}`,
@@ -61,6 +66,10 @@ export default function FilingTable({ filings, hideTickerColumn = false }: Filin
       return
     }
     add(f)
+    track({
+      name: 'filing_pinned',
+      props: { ticker: f.ticker, form: f.form, period: f.period_label, total_pinned_after: count + 1 },
+    })
     showToast({
       title: 'Added to chat scope',
       body: `${f.ticker} ${f.form} · ${f.period_label}`,
@@ -165,7 +174,13 @@ export default function FilingTable({ filings, hideTickerColumn = false }: Filin
                         )}
                       </button>
                       <button
-                        onClick={() => navigate(`/filings/${f.path}`)}
+                        onClick={() => {
+                          track({
+                            name: 'filing_viewed',
+                            props: { ticker: f.ticker, form: f.form, period: f.period_label, source: hideTickerColumn ? 'drilldown' : 'latest' },
+                          })
+                          navigate(`/filings/${f.path}`)
+                        }}
                         className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[11px] font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                         title="View filing"
                       >
@@ -177,6 +192,10 @@ export default function FilingTable({ filings, hideTickerColumn = false }: Filin
                           href={edgarUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => track({
+                            name: 'filing_edgar_opened',
+                            props: { ticker: f.ticker, form: f.form, period: f.period_label },
+                          })}
                           className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[11px] font-medium bg-white text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                           title="Open original on SEC EDGAR"
                         >

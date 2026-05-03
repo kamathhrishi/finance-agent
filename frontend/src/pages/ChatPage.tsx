@@ -7,6 +7,7 @@ import ScopeChips from '../components/ScopeChips'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { fetchCoverageStatus } from '../lib/coverageApi'
+import { track } from '../lib/analytics'
 import ChatMessage from '../components/ChatMessage'
 import Sidebar from '../components/Sidebar'
 import AboutModal from '../components/AboutModal'
@@ -194,7 +195,10 @@ export default function ChatPage() {
                     ].map((query, index) => (
                       <button
                         key={index}
-                        onClick={() => handleSendMessage(query)}
+                        onClick={() => {
+                          track({ name: 'example_query_clicked', props: { surface: 'chat', query } })
+                          handleSendMessage(query)
+                        }}
                         className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
                       >
                         {query}
@@ -215,7 +219,10 @@ export default function ChatPage() {
                     ].map((query, index) => (
                       <button
                         key={index}
-                        onClick={() => handleSendMessage(query)}
+                        onClick={() => {
+                          track({ name: 'example_query_clicked', props: { surface: 'chat', query } })
+                          handleSendMessage(query)
+                        }}
                         className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600 flex items-start gap-2"
                       >
                         <span className="text-[#0083f1] shrink-0 mt-0.5">⊞</span>

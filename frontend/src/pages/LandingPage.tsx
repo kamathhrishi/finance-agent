@@ -7,6 +7,7 @@ import CoverageModal from '../components/CoverageModal'
 import ModelSelector from '../components/ModelSelector'
 import { getStoredModel, setStoredModel, type ModelId } from '../lib/models'
 import { fetchCoverageStatus } from '../lib/coverageApi'
+import { track } from '../lib/analytics'
 import { Check, X, Shield, Globe, Send, ArrowRight, ChevronRight, FileText, MessageSquare, Sparkles, BookOpen, Clock } from 'lucide-react'
 
 // Mock data for 10-K Analysis Chat - Minimal card style with data extraction
@@ -320,7 +321,10 @@ export default function LandingPage() {
                 {exampleQueries.map((query, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSubmit(query)}
+                    onClick={() => {
+                      track({ name: 'example_query_clicked', props: { surface: 'landing', query } })
+                      handleSubmit(query)
+                    }}
                     className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-lg text-left text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all group"
                   >
                     <span className="text-sm">{query}</span>

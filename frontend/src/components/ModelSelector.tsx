@@ -6,6 +6,7 @@ import {
   findModel,
   type ModelId,
 } from '../lib/models'
+import { track } from '../lib/analytics'
 
 interface ModelSelectorProps {
   value: ModelId
@@ -104,6 +105,7 @@ export default function ModelSelector({
                           disabled={disabled}
                           onClick={() => {
                             if (disabled) return
+                            track({ name: 'model_changed', props: { from: value, to: m.id } })
                             onChange(m.id)
                             setOpen(false)
                           }}
