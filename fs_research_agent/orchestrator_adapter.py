@@ -23,7 +23,12 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
-from .agent import FilesystemResearchAgent, DEFAULT_DATA_ROOT, DEFAULT_MODEL
+from .agent import (
+    FilesystemResearchAgent,
+    DEFAULT_DATA_ROOT,
+    DEFAULT_MODEL,
+    _resolve_default_data_root,
+)
 from .citations import extract_citations
 from .observability import span, info as obs_info, truncate
 
@@ -229,7 +234,9 @@ class FilesystemResearchOrchestrator:
         model: str = DEFAULT_MODEL,
         max_tool_calls: int = _DEFAULT_FS_BUDGET,
     ) -> None:
-        self.data_root = Path(data_root) if data_root else DEFAULT_DATA_ROOT
+        # Honor FS_RESEARCH_DATA_ROOT env at instantiation time (not just at
+        # module import) so a lifespan that sets it after import still works.
+        self.data_root = Path(data_root) if data_root else _resolve_default_data_root()
         self.model = model
         self.max_tool_calls = max_tool_calls
         self._agent = FilesystemResearchAgent(

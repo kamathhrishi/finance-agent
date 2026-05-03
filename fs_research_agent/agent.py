@@ -38,7 +38,22 @@ DEFAULT_MAX_TOOL_CALLS = 25
 DEFAULT_MAX_COMPLETION_TOKENS = 16000
 
 PKG_ROOT = Path(__file__).resolve().parent
-DEFAULT_DATA_ROOT = PKG_ROOT / "data"
+
+
+def _resolve_default_data_root() -> Path:
+    """Resolve the corpus root with env override, falling back to the in-repo
+    location. This is computed lazily (every import) so a deploy can set
+    FS_RESEARCH_DATA_ROOT without any agent-side code change.
+    """
+    env = os.getenv("FS_RESEARCH_DATA_ROOT", "").strip()
+    if env:
+        return Path(env).resolve()
+    return PKG_ROOT / "data"
+
+
+# Module-level evaluated once on import. Callers that want late binding
+# (e.g. tests that patch the env var) should call _resolve_default_data_root().
+DEFAULT_DATA_ROOT = _resolve_default_data_root()
 
 
 def _wait_from_429(e: openai.RateLimitError, attempt: int) -> float:
@@ -133,7 +148,10 @@ class FilesystemResearchAgent:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY is required (set in .env or env)")
 
-        self.data_root = (data_root or DEFAULT_DATA_ROOT).resolve()
+        # Re-resolve the env at __init__ time too so that even if the env var
+        # was set AFTER this module imported (e.g. by app/lifespan.py before
+        # the orchestrator is instantiated), we still pick it up.
+        self.data_root = (data_root or _resolve_default_data_root()).resolve()
         # Soft check. We log a warning if the dir is missing or empty at init,
         # but DO NOT raise — on Railway the chat router instantiates this
         # agent at import time, before the S3 bootstrap stage of the lifespan
