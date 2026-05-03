@@ -48,7 +48,7 @@ export const EXAMPLE_QUERIES: ExampleQuery[] = [
   {
     bucket: 'across',
     text:
-      "Which companies in our coverage explicitly mention OpenAI in their latest 10-K, and what's the nature of each disclosure (partnership, equity stake, customer, competitor, risk)?",
+      "What strategic narratives are the Mag 7 ($MSFT, $GOOGL, $AMZN, $META, $NVDA, $AAPL, $TSLA) emphasizing in their latest 10-K business overviews — where do they overlap, and where do they diverge most sharply?",
   },
   {
     bucket: 'across',
