@@ -3,6 +3,12 @@
  * and the chat page's empty state. Both surfaces import from here so they
  * never drift.
  *
+ * Shape: each entry has a short `preview` (what the user sees on the chip)
+ * and a long `text` (the full query that actually gets sent when clicked).
+ * The previews are punchy and analyst-flavored so they fit on a button
+ * without wrapping awkwardly; the texts are detailed and forcing the agent
+ * into specific filings + sections.
+ *
  * Curation principles:
  *   - Show analyst value, not toy use cases (avoid "what's NVDA's gross
  *     margin" — gross margin is on the 10-K cover page, no agent needed)
@@ -12,13 +18,34 @@
  *     reading — that's the corpus's edge over a one-off Google search
  */
 
-export const EXAMPLE_QUERIES: string[] = [
-  "What has $NVDA disclosed about customer concentration in its latest 10-K and 10-Qs (named customers, % of revenue), and how have its long-term supply purchase obligations and prepayments to TSMC and other suppliers evolved over the last two fiscal years?",
-  "Analyze $PLTR's last two 10-Ks and explain why growth has been high but operating margins have stayed thin. What's eating the operating leverage?",
-  "Trace $MSFT's disclosures about its OpenAI partnership and equity investment across the latest 10-K and recent 10-Qs: economics, accounting treatment, and how the language has shifted.",
-  "Track how $NVDA, $AMD, and $AVGO have modified their 10-K risk factors over the last 2-3 annual filings around US export controls on China, AI chip restrictions, and concentration in AI customers. What new language has appeared and what has been removed?",
-  "What strategic narratives are the Mag 7 ($MSFT, $GOOGL, $AMZN, $META, $NVDA, $AAPL, $TSLA) emphasizing in their latest 10-K business overviews? Where do they overlap, and where do they diverge most sharply?",
-  "How are the hyperscalers ($MSFT, $GOOGL, $AMZN, $META) disclosing AI-driven capex acceleration and data-center buildouts in their latest 10-Qs? What's each saying about ROI, payback period, and capacity constraints?",
+export interface ExampleQuery {
+  /** Short professional summary shown on the chip (~50-70 chars). */
+  preview: string
+  /** Full detailed query sent to the agent on click. */
+  text: string
+}
+
+export const EXAMPLE_QUERIES: ExampleQuery[] = [
+  {
+    preview: "NVDA customer concentration and TSMC supply commitments",
+    text: "What has $NVDA disclosed about customer concentration in its latest 10-K and 10-Qs (named customers, % of revenue), and how have its long-term supply purchase obligations and prepayments to TSMC and other suppliers evolved over the last two fiscal years?",
+  },
+  {
+    preview: "Why PLTR's growth runs hot but margins stay thin",
+    text: "Analyze $PLTR's last two 10-Ks and explain why growth has been high but operating margins have stayed thin. What's eating the operating leverage?",
+  },
+  {
+    preview: "MSFT and OpenAI: economics, accounting, language drift",
+    text: "Trace $MSFT's disclosures about its OpenAI partnership and equity investment across the latest 10-K and recent 10-Qs: economics, accounting treatment, and how the language has shifted.",
+  },
+  {
+    preview: "China export-control risk language across NVDA, AMD, AVGO",
+    text: "Track how $NVDA, $AMD, and $AVGO have modified their 10-K risk factors over the last 2-3 annual filings around US export controls on China, AI chip restrictions, and concentration in AI customers. What new language has appeared and what has been removed?",
+  },
+  {
+    preview: "Mag 7 strategic narratives: where they overlap and diverge",
+    text: "What strategic narratives are the Mag 7 ($MSFT, $GOOGL, $AMZN, $META, $NVDA, $AAPL, $TSLA) emphasizing in their latest 10-K business overviews? Where do they overlap, and where do they diverge most sharply?",
+  },
 
   // ── Bench: queries we tried and pulled but worth keeping for reference ──
   // Restore by uncommenting and putting back into the array above.

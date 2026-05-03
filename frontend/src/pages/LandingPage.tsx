@@ -313,16 +313,17 @@ export default function LandingPage() {
             >
               <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Example Queries</p>
               <div className="flex flex-col gap-2">
-                {exampleQueries.map((query, i) => (
+                {exampleQueries.map(({ preview, text }, i) => (
                   <button
                     key={i}
                     onClick={() => {
-                      track({ name: 'example_query_clicked', props: { surface: 'landing', query } })
-                      handleSubmit(query)
+                      track({ name: 'example_query_clicked', props: { surface: 'landing', query: text } })
+                      handleSubmit(text)
                     }}
+                    title={text}
                     className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-lg text-left text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all group"
                   >
-                    <span className="text-sm">{query}</span>
+                    <span className="text-sm">{preview}</span>
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
                   </button>
                 ))}

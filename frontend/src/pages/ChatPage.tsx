@@ -184,20 +184,24 @@ export default function ChatPage() {
                   </span>
                 </div>
 
-                {/* Example queries — single block, no categorisation */}
+                {/* Example queries — single block, no categorisation.
+                    Chip shows the short professional preview; click sends
+                    the full long query. Hover surfaces the full text via
+                    native title tooltip. */}
                 <div className="w-full max-w-2xl">
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 text-left">Example queries</p>
                   <div className="grid sm:grid-cols-2 gap-2">
-                    {EXAMPLE_QUERIES.map((query, index) => (
+                    {EXAMPLE_QUERIES.map(({ preview, text }, index) => (
                       <button
                         key={index}
                         onClick={() => {
-                          track({ name: 'example_query_clicked', props: { surface: 'chat', query } })
-                          handleSendMessage(query)
+                          track({ name: 'example_query_clicked', props: { surface: 'chat', query: text } })
+                          handleSendMessage(text)
                         }}
+                        title={text}
                         className="p-4 text-left bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all text-sm text-slate-600"
                       >
-                        {query}
+                        {preview}
                       </button>
                     ))}
                   </div>
