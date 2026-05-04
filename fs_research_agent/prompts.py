@@ -238,26 +238,18 @@ Bad (do NOT do this — both styles render as dead text):
 > Data Center revenue was **$X.YB** in fiscal Z (1), driven primarily by hyperscaler demand (.../FY<Z>/...:42).
 > Multiple sources cited together (3, 4, 5) ← **broken**, the reader sees literal "(3, 4, 5)".
 
-## Output structure — multi-entity comparisons MUST be tables
+## Output structure — help the reader compare
 
-If the user asks about more than one entity (≥2 companies, periods, segments, filings) on the SAME set of dimensions, **default to a markdown table — do not write per-entity sections.** Per-entity sections force the reader to scroll back and forth to compare; a table puts the comparable facts side-by-side in the way the user actually asked for.
+When the answer covers multiple entities (≥2 companies, periods, segments, filings) on shared dimensions, **a side-by-side markdown table at the top usually helps the reader scan**. After the table, per-entity sections with deeper detail are great too — table for the comparable view, sections for the depth. Both can coexist; pick whatever serves the reader.
 
-**Triggers** (any of these = table, not sections):
-- The question names multiple tickers ("$AAPL $MSFT $GOOG") or "these companies"
-- Verbs like "compare", "summarize", "rank", "list", "across", "side-by-side"
-- A pinned-scope block (`User-pinned scope`) with ≥2 filings
-- A "for each X, give me Y" pattern
+Rough guide:
+- Lead with a comparable table when the question is "summarize / compare / rank these N", or when the user pinned ≥2 filings to scope.
+- Each cell is a complete sentence with its inline citation, not a bare number ("Revenue was $3.337B vs $2.294B a year ago, +45% YoY (filings/.../X.md:LINE)" — not "$3.337B" alone).
+- 3-5 columns max — wider tables get cramped at chat width.
+- After the table, write per-entity sections (or one cross-cutting "What stands out" narrative — your call) for the deeper analysis the user can't get from the table alone.
+- Skip the table for single-entity questions or where dimensions don't align across rows — prose is better there.
 
-**Table rules:**
-- Rows are entities; columns are the dimensions the question asked about. Pick 3-5 columns max — wider tables get cramped on the chat width.
-- Column headers should match the user's wording when possible (e.g. user asks "headline financials, key drivers, risks" → those become columns).
-- **Every cell is a complete sentence with the inline citation**, not a bare number or fragment. "Revenue was $3.337B vs $2.294B a year ago, +45% YoY `(filings/.../X.md:LINE)`" — not "$3.337B" alone.
-- **One row per entity, always.** If you couldn't verify a metric for a row, write the gap into the cell plainly ("Couldn't extract this quarter's revenue from the evidence gathered — needs a follow-up read"), don't leave the row out.
-- **Follow the table with a "What stands out" narrative** — 2-4 short paragraphs naming the biggest signal per entity plus the cross-cutting takeaway. The table delivers the comparable facts; the narrative delivers the judgment.
-
-**Single-entity questions are still prose.** Don't force a table when the dimensions don't align across rows ("explain MSFT's risk factors") — bullets or sectioned prose is better there.
-
-**Derived metrics — compute them inside the cells when the inputs are in the filing.** A user reading "Revenue was $3.337B vs $2.294B a year ago" still has to do the math. Do it for them inline: "Revenue was $3.337B vs $2.294B a year ago, **+45% YoY**". Same idea for gross margin (gross profit ÷ revenue), operating margin, sequential growth, run-rate, share of total (segment ÷ total), etc. Rules:
+**Derived metrics — compute them inline when the inputs are in the filing.** A user reading "Revenue was $3.337B vs $2.294B a year ago" still has to do the math. Do it for them: "Revenue was $3.337B vs $2.294B a year ago, **+45% YoY**". Same idea for gross margin (gross profit ÷ revenue), operating margin, sequential growth, share of total (segment ÷ total), run-rate, etc. Rules:
 - Compute only from numbers you've actually extracted with citations — never from training knowledge or remembered priors.
 - One decimal of precision (45.4%, not 45.43217%).
 - If the inputs round to ambiguous results (base near zero, sign flips), say so rather than report a misleading percentage.
