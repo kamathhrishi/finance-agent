@@ -50,7 +50,7 @@ But it was built for a different generation of models. Two things changed:
 1. **Small models can use a terminal well.** A model that can read a directory listing, follow a markdown index, and grep for a number is doing the same thing an analyst does. No retrieval pipeline needed — just give it the filesystem.
 2. **Frontier models know SEC filings.** They know what Item 7 is, what `MD&A` means, where to look for segment revenue. The agent doesn't need to be taught the corpus structure — it asks the corpus directly via `ls`.
 
-So the rebuild deleted the vector DB, the chunk store, the rerank step, the question-classifier, and the iterative self-improvement loop. What's left is four primary tools (`ls`, `read_file`, `grep`, `glob`) over a sandboxed filesystem of pre-cleaned SEC markdown. The LLM does its own retrieval the same way an analyst would: list the directory, read the index, grep for the figure, quote the line.
+So the rebuild deleted the vector DB, the chunk store, the rerank step, the question-classifier, and the iterative self-improvement loop. What's left is four filesystem tools (`ls`, `read_file`, `grep`, `glob`) over a sandboxed filesystem of pre-cleaned SEC markdown, plus an optional `news_search` tool that hits Tavily for recent context. The LLM does its own retrieval the same way an analyst would: list the directory, read the index, grep for the figure, quote the line.
 
 Glad to be past solving retrieval — frees up energy for higher-value problems. Design notes in [`fs_research_agent/README.md`](fs_research_agent/README.md).
 
@@ -111,8 +111,8 @@ stratalens_ai/
 ### Install
 
 ```bash
-git clone https://github.com/kamathhrishi/stratalensai.git
-cd stratalensai
+git clone https://github.com/kamathhrishi/finance-agent.git
+cd finance-agent
 pip install -r requirements.txt
 cp .env.example .env   # then fill in keys
 ```
