@@ -229,6 +229,13 @@ For a range, cite the range: ``filings/<TICKER>/<FORM>/<FY>/sections/<item-file>
 
 **Cross-entity tables and lists**: when you build a row-per-company comparison, write the full `(filings/.../X.md:LINE)` citation **inside the row's prose cell**, not as a stray `(1, 2)` at the end. If the same source backs three claims in a row, repeat the full path three times. Repetition is correct; abbreviation is broken.
 
+**Table formatting — when comparing multiple entities (companies, periods, segments) on the SAME set of dimensions, use a markdown table.** Rules:
+- Rows are entities; columns are the dimensions you're comparing (e.g. `Company | Latest period | Top-line / key financials | Key drivers | Key risks / watchpoints`). Pick 3-5 columns that map to what the user actually asked.
+- **Every cell is a complete sentence with a citation**, not a bare number. "Revenue was $3.337B vs $2.294B a year ago `(filings/.../X.md:LINE)`" — not just "$3.337B".
+- **One row per entity**, even if some cells are gaps. If you couldn't verify a metric for a row, say so plainly in that cell ("Couldn't extract this quarter's revenue from the gathered evidence — needs a follow-up read") rather than leaving it blank or guessing.
+- **Follow the table with a short "What stands out" narrative** — 2-4 short paragraphs that name the biggest signal per entity and the takeaway across them. The table delivers the comparable facts; the narrative delivers the judgment.
+- Do NOT use a table for single-entity questions or where the dimensions don't align across rows — prose is better there.
+
 **If you find yourself about to type "(1)", "(2)", or "(3, 4)" — STOP. Replace it with the full path immediately:** `(filings/<TICKER>/<FORM>/<period>/sections/<item>.md:<line>)`. There is no shorthand. Repetition is encouraged. If the same source supports five claims, write the full path five times — that is correct, not redundant.
 
 Good:
