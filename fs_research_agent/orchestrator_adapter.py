@@ -82,20 +82,25 @@ def resolve_model(display_id: Optional[str], default: str) -> str:
 
 # ─── Conversational memory ───────────────────────────────────────────────────
 #
-# Process-level LRU keyed by (user_id, conversation_id). Lets follow-up
-# questions like "what about FY2024?" or "compare with MSFT" inherit the
-# prior topic without the user re-stating context.
+# Process-level LRU keyed by `conversation_id` only. Lets follow-up questions
+# ("what about FY2024?", "compare with MSFT", "is it deteriorating?") inherit
+# the prior topic without the user re-stating context.
 #
-# ISOLATION GUARANTEE: the cache key is the *tuple* (user_id, conversation_id).
-# Two users with somehow-colliding conversation ids cannot read each other's
-# turns — lookups never fall back to a partial-key match. The router also
-# validates conversation_id ownership before we ever see it, so this is
-# defense-in-depth on top of that.
+# Why conversation_id alone is sufficient:
+#   - conversation_id is a UUID, globally unique across users. No collision.
+#   - For authed users, the chat router validates conversation_id ownership
+#     before this cache is touched.
+#   - For anonymous users, conversation_id IS the only stable token we have —
+#     the user_id (`demo:session_<timestamp>`) gets fabricated fresh per
+#     request when the frontend doesn't send a session_id, which made the
+#     prior `(user_id, conversation_id)` tuple key NEVER MATCH ITSELF across
+#     turns. Result: anon memory was always empty, defeating the point.
+#
+# The user_id parameter is kept for logging and future hooks but is not part
+# of the cache key.
 #
 # Lifecycle:
-#   - Lives in-memory only (not persisted). Lost on restart by design — the
-#     authoritative chat history is in Postgres (chat_messages table); this
-#     cache exists purely for cheap follow-up disambiguation in the hot path.
+#   - Lives in-memory only (not persisted). Lost on restart by design.
 #   - LRU-evicts oldest conversations when the cache hits MEM_MAX_CONVERSATIONS.
 #   - Per-conversation, only the last MEM_MAX_TURNS user/assistant turns kept.
 
@@ -114,14 +119,6 @@ MEM_MAX_TURNS = 6                # ~3 user + 3 assistant pairs
 MEM_ASSISTANT_TRUNC_CHARS = 8000
 MEM_USER_TRUNC_CHARS = 1500
 
-# Sentinel for anonymous callers (older code paths that don't pass user_id).
-# Distinct from any real user id so anon entries cannot collide with real ones.
-_ANON_USER = "__anon__"
-
-# Composite cache key. Keeping the tuple type explicit makes accidental
-# single-string lookups a TypeError instead of a silent miss.
-_MemKey = Tuple[str, str]
-
 
 @dataclass
 class _Turn:
@@ -131,20 +128,25 @@ class _Turn:
 
 
 class ConversationMemory:
-    """Thread-safe LRU of recent conversation turns, keyed by (user_id, conv_id)."""
+    """Thread-safe LRU of recent conversation turns, keyed by conversation_id."""
 
     def __init__(self) -> None:
-        self._cache: "OrderedDict[_MemKey, List[_Turn]]" = OrderedDict()
+        self._cache: "OrderedDict[str, List[_Turn]]" = OrderedDict()
         self._lock = Lock()
 
     @staticmethod
-    def _key(user_id: Optional[str], conversation_id: Optional[str]) -> Optional[_MemKey]:
+    def _key(conversation_id: Optional[str]) -> Optional[str]:
+        # Keep the staticmethod signature so a future change (e.g. namespace
+        # by user) is a one-line edit. Today: conversation_id IS the key.
         if not conversation_id:
             return None
-        return (user_id or _ANON_USER, conversation_id)
+        return conversation_id
 
     def get(self, user_id: Optional[str], conversation_id: Optional[str]) -> List[_Turn]:
-        key = self._key(user_id, conversation_id)
+        # user_id retained in signature for backwards compat / call-site logging,
+        # but intentionally NOT used in the key. See module docstring.
+        del user_id
+        key = self._key(conversation_id)
         if key is None:
             return []
         with self._lock:
@@ -161,7 +163,9 @@ class ConversationMemory:
         role: str,
         content: str,
     ) -> None:
-        key = self._key(user_id, conversation_id)
+        # user_id retained in signature for backwards compat. See module docstring.
+        del user_id
+        key = self._key(conversation_id)
         if key is None or not content:
             return
         cap = MEM_USER_TRUNC_CHARS if role == "user" else MEM_ASSISTANT_TRUNC_CHARS
