@@ -528,12 +528,20 @@ export default function SECFilingViewer({
           )}
           {error && (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center max-w-sm">
+              <div className="text-center max-w-md">
                 <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-7 h-7 text-red-600" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-900 mb-2">Full SEC 10-K Coming Soon</h3>
-                <p className="text-sm text-slate-600 mb-4">Full document viewer for this filing is not yet available. Citation data is still used to answer your question.</p>
+                <h3 className="text-base font-semibold text-slate-900 mb-2">Couldn't load this filing</h3>
+                <p className="text-sm text-slate-600 mb-3">
+                  We hit an error fetching the document. The citation itself is still valid for the answer above.
+                </p>
+                {/* Actual server error — surfaced so we can diagnose. Was
+                    previously hidden behind "Coming Soon" copy that made
+                    every fetch failure look like a planned feature. */}
+                <p className="text-xs text-slate-500 font-mono bg-slate-100 rounded p-2 mb-4 break-all">
+                  {error}
+                </p>
                 <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm">
                   Close
                 </button>
