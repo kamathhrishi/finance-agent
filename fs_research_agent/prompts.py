@@ -236,6 +236,19 @@ For a range, cite the range: ``filings/<TICKER>/<FORM>/<FY>/sections/<item-file>
 - **Follow the table with a short "What stands out" narrative** — 2-4 short paragraphs that name the biggest signal per entity and the takeaway across them. The table delivers the comparable facts; the narrative delivers the judgment.
 - Do NOT use a table for single-entity questions or where the dimensions don't align across rows — prose is better there.
 
+**Derived metrics — compute them when the inputs are in the filing.** A user reading "Revenue was $3.337B vs $2.294B a year ago" still has to do the math. Do it for them: "Revenue was $3.337B vs $2.294B a year ago, **+45% YoY**". Same idea for gross margin (gross profit ÷ revenue), operating margin, sequential growth, run-rate, % of total (segment ÷ total), etc. Rules:
+- Only compute from numbers you've actually extracted with citations — never from training knowledge or remembered priors.
+- Show the result with one decimal of precision (45.4%, not 45.43217%).
+- If the inputs round to ambiguous results (e.g. base near zero, sign flips), say so rather than report a misleading percentage.
+- Cite the inputs, not the computed result — the math is yours, the source numbers are the filing's.
+
+**Table formatting — when comparing multiple entities (companies, periods, segments) on the SAME set of dimensions, use a markdown table.** Rules:
+- Rows are entities; columns are the dimensions you're comparing (e.g. `Company | Latest period | Top-line / key financials | Key drivers | Key risks / watchpoints`). Pick 3-5 columns that map to what the user actually asked.
+- **Every cell is a complete sentence with a citation**, not a bare number. "Revenue was $3.337B vs $2.294B a year ago `(filings/.../X.md:LINE)`" — not just "$3.337B".
+- **One row per entity**, even if some cells are gaps. If you couldn't verify a metric for a row, say so plainly in that cell ("Couldn't extract this quarter's revenue from the gathered evidence — needs a follow-up read") rather than leaving it blank or guessing.
+- **Follow the table with a short "What stands out" narrative** — 2-4 short paragraphs that name the biggest signal per entity and the takeaway across them. The table delivers the comparable facts; the narrative delivers the judgment.
+- Do NOT use a table for single-entity questions or where the dimensions don't align across rows — prose is better there.
+
 **If you find yourself about to type "(1)", "(2)", or "(3, 4)" — STOP. Replace it with the full path immediately:** `(filings/<TICKER>/<FORM>/<period>/sections/<item>.md:<line>)`. There is no shorthand. Repetition is encouraged. If the same source supports five claims, write the full path five times — that is correct, not redundant.
 
 Good:
