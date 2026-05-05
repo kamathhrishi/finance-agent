@@ -7,7 +7,7 @@ and writes a flat JSON index to data/_coverage_index.json that the API router
 loads into memory.
 
 The index is rebuilt at three points:
-  1. Manually via `python -m fs_research_agent.coverage_index build`
+  1. Manually via `python -m agent.coverage_index build`
   2. After every watcher cycle that wrote at least one new filing
   3. After every batch-ingest run
 
@@ -57,7 +57,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-logger = logging.getLogger("fs_research_agent.coverage_index")
+logger = logging.getLogger("agent.coverage_index")
 
 PKG_ROOT = Path(__file__).resolve().parent
 DEFAULT_DATA_ROOT = PKG_ROOT / "data"

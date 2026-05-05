@@ -31,7 +31,7 @@ export interface Source {
   title?: string
   marker?: string
   similarity?: number
-  // fs_research_agent: line-range citations into local markdown corpus
+  // agent: line-range citations into local markdown corpus
   source_backend?: 'sec' | 'fs_research'
   line_start?: number
   line_end?: number

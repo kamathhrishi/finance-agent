@@ -7,7 +7,7 @@
  * `disabled: true` greys the row in the dropdown so users see the future
  * lineup but can't pick anything beyond what's wired up server-side. To
  * enable a model, drop the `disabled` flag here AND make sure the backend
- * mapping in `fs_research_agent/orchestrator_adapter.py::MODEL_ALIASES`
+ * mapping in `agent/orchestrator_adapter.py::MODEL_ALIASES`
  * resolves it to a real OpenAI model id.
  */
 // Display ids the UI knows about. Add disabled-future models back here AND

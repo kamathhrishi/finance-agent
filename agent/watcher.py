@@ -22,16 +22,16 @@ State files (created lazily under `data/`):
   _watcher_state.json    — last-cycle stats + timestamps
 
 Usage:
-  python -m fs_research_agent.watcher                     # poll every 10 min
-  python -m fs_research_agent.watcher --interval 1800     # every 30 min
-  python -m fs_research_agent.watcher --forms 10-K,8-K    # subset of forms
-  python -m fs_research_agent.watcher --once              # one cycle and exit
+  python -m agent.watcher                     # poll every 10 min
+  python -m agent.watcher --interval 1800     # every 30 min
+  python -m agent.watcher --forms 10-K,8-K    # subset of forms
+  python -m agent.watcher --once              # one cycle and exit
 
 Run as a background daemon:
-  nohup python -m fs_research_agent.watcher >/var/log/fs_watcher.log 2>&1 &
+  nohup python -m agent.watcher >/var/log/fs_watcher.log 2>&1 &
 
 Or as a Railway cron job ("every 30 min"):
-  python -m fs_research_agent.watcher --once
+  python -m agent.watcher --once
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ os.environ.setdefault(
     "StrataLens kamathhrishi@gmail.com",
 )
 
-from fs_research_agent.ingest import (    # noqa: E402
+from agent.ingest import (    # noqa: E402
     DEFAULT_DATA_ROOT,
     SUPPORTED_FORMS,
     _normalize_date,
@@ -66,9 +66,9 @@ from fs_research_agent.ingest import (    # noqa: E402
     write_ticker_index,
     regenerate_index,
 )
-from fs_research_agent.tech_universe import TickerSpec, load_tech_universe  # noqa: E402
+from agent.tech_universe import TickerSpec, load_tech_universe  # noqa: E402
 
-logger = logging.getLogger("fs_research_agent.watcher")
+logger = logging.getLogger("agent.watcher")
 
 DEFAULT_POLL_INTERVAL_SECS = 600   # 10 minutes
 DEFAULT_MAX_AGE_DAYS = 30          # only fetch filings filed within last N days
@@ -268,7 +268,7 @@ def _ingest_single_accession(
 #
 # The watcher writes new filings to the local volume. Without an auto-push
 # back to S3, a future "wipe + bootstrap" would lose everything the watcher
-# gathered since the last manual `python -m fs_research_agent.bootstrap upload`.
+# gathered since the last manual `python -m agent.bootstrap upload`.
 #
 # This module-level helper checks two conditions after each cycle that wrote
 # anything:
@@ -507,7 +507,7 @@ async def watcher_loop(
     Cancellation in that case happens via asyncio.Task.cancel()."""
     universe = load_tech_universe()
     if not universe:
-        logger.error("Empty tech universe. Run `python -m fs_research_agent.tech_universe regenerate`.")
+        logger.error("Empty tech universe. Run `python -m agent.tech_universe regenerate`.")
         return 1
 
     seen = _load_seen(data_root)
@@ -576,7 +576,7 @@ def main() -> int:
     parser.add_argument("--interval", type=int, default=DEFAULT_POLL_INTERVAL_SECS,
                         help=f"Seconds between cycles (default: {DEFAULT_POLL_INTERVAL_SECS})")
     parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT),
-                        help="Corpus root (default: main fs_research_agent corpus)")
+                        help="Corpus root (default: main agent corpus)")
     parser.add_argument("--forms", default=",".join(DEFAULT_FORMS),
                         help=f"Comma-separated forms to watch (default: {','.join(DEFAULT_FORMS)})")
     parser.add_argument("--no-exhibits", action="store_true", help="Skip exhibit downloading")

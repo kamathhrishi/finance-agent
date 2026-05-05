@@ -41,7 +41,7 @@ interface SECFilingViewerProps {
   relevantChunks?: SECFilingChunk[]
   primaryChunkId?: string  // The specific citation that was clicked - scroll to this one
   panelMode?: boolean  // When true, renders as embedded panel content (no overlay)
-  // fs_research_agent mode: when 'fs_research', fetch from /fs-research/document/with-highlights
+  // agent mode: when 'fs_research', fetch from /fs-research/document/with-highlights
   // using `path` + line ranges instead of /sec-filings/with-highlights + char offsets.
   sourceBackend?: 'sec' | 'fs_research'
   path?: string

@@ -3,8 +3,8 @@ Coverage Router
 
 Public read-only endpoints that power the Companies and Latest Filings tabs.
 
-Backed by `fs_research_agent/data/_coverage_index.json` (built by
-`fs_research_agent.coverage_index`). Loaded into memory on first request and
+Backed by `agent/data/_coverage_index.json` (built by
+`agent.coverage_index`). Loaded into memory on first request and
 hot-reloaded when the file's mtime changes — so a watcher cycle that rewrites
 the index is reflected on the next request without a server restart.
 
@@ -25,7 +25,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel
 
-from fs_research_agent.coverage_index import index_path, load_index, rebuild
+from agent.coverage_index import index_path, load_index, rebuild
 
 logger = logging.getLogger("app.routers.coverage")
 

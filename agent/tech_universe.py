@@ -1,5 +1,5 @@
 """
-Canonical tech universe persisted as `fs_research_agent/tech_universe.json`.
+Canonical tech universe persisted as `agent/tech_universe.json`.
 
 Why a separate file from `universe.py`:
   - `universe.py` runs a filter over `US_TECH_CLEANED.json` every time and
@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Set
 
 import httpx
 
-logger = logging.getLogger("fs_research_agent.tech_universe")
+logger = logging.getLogger("agent.tech_universe")
 
 PKG_ROOT = Path(__file__).resolve().parent
 TECH_UNIVERSE_PATH = PKG_ROOT / "tech_universe.json"
@@ -288,7 +288,7 @@ def load_tech_universe() -> List[TickerSpec]:
     if not TECH_UNIVERSE_PATH.is_file():
         raise FileNotFoundError(
             f"{TECH_UNIVERSE_PATH} does not exist. Run "
-            f"`python -m fs_research_agent.tech_universe regenerate` first."
+            f"`python -m agent.tech_universe regenerate` first."
         )
     data = json.loads(TECH_UNIVERSE_PATH.read_text(encoding="utf-8"))
     return [TickerSpec(**t) for t in data.get("tickers", [])]

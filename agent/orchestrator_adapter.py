@@ -10,7 +10,7 @@ have since been retired. The shape lives on for the chat router and
 frontend that expect it.
 
 Citations are built from the agent's `path:line` cites (via
-`fs_research_agent.citations.extract_citations`) and shaped to match the
+`agent.citations.extract_citations`) and shaped to match the
 existing `ChatCitation` schema (with `source_backend='fs_research'` and
 extra `line_start` / `line_end` fields the highlighter endpoint needs).
 """
@@ -35,7 +35,7 @@ from .agent import (
 from .citations import extract_citations
 from .observability import span, info as obs_info, truncate
 
-logger = logging.getLogger("fs_research_agent.adapter")
+logger = logging.getLogger("agent.adapter")
 
 # The chat router still passes `max_iterations=3` for historical reasons
 # (the retired OrchestratorAgent counted ReAct iterations, where one iter =

@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """
-End-to-end CLI for the FinanceBench benchmark on fs_research_agent.
+End-to-end CLI for the FinanceBench benchmark on agent.
 
 Common flows:
 
     # Full smoke test on 5 questions, no download (must already have filings)
-    python -m fs_research_agent.benchmarks.financebench.cli run --limit 5
+    python -m agent.benchmarks.financebench.cli run --limit 5
 
     # Ensure required filings are present, then run all 136 questions
-    python -m fs_research_agent.benchmarks.financebench.cli download
-    python -m fs_research_agent.benchmarks.financebench.cli run
+    python -m agent.benchmarks.financebench.cli download
+    python -m agent.benchmarks.financebench.cli run
 
     # Download just for one company subset, then run that subset
-    python -m fs_research_agent.benchmarks.financebench.cli download --companies 3M,AMD,Adobe
-    python -m fs_research_agent.benchmarks.financebench.cli run --companies 3M,AMD,Adobe
+    python -m agent.benchmarks.financebench.cli download --companies 3M,AMD,Adobe
+    python -m agent.benchmarks.financebench.cli run --companies 3M,AMD,Adobe
 
     # Resume — re-running with the same `--run-name` skips already-judged questions
-    python -m fs_research_agent.benchmarks.financebench.cli run --run-name nano_2026-05-01
+    python -m agent.benchmarks.financebench.cli run --run-name nano_2026-05-01
 
     # See what the corpus is missing without downloading anything
-    python -m fs_research_agent.benchmarks.financebench.cli download --dry-run
+    python -m agent.benchmarks.financebench.cli download --dry-run
 """
 from __future__ import annotations
 

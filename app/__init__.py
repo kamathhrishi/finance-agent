@@ -7,12 +7,12 @@ This module creates and configures the FastAPI application instance.
 from dotenv import load_dotenv
 load_dotenv()
 
-# ─── Pre-import bootstrap of fs_research_agent path ──────────────────────────
+# ─── Pre-import bootstrap of agent path ──────────────────────────
 #
 # The chat router instantiates the FS agent at module-import time (line ~120
 # of app/routers/chat.py). The agent validates `data_root.is_dir()` and
 # raises if it doesn't exist. On Railway the default location
-# (/app/fs_research_agent/data) does not exist — the corpus lives on the
+# (/app/agent/data) does not exist — the corpus lives on the
 # persistent volume at /data/fs_research_corpus. The lifespan sets that env
 # var, but lifespan runs AFTER router imports, so the agent fails first.
 #
@@ -52,7 +52,7 @@ if not _os.getenv("FS_RESEARCH_DATA_ROOT"):
 try:
     from pathlib import Path as _Path
     _root = _os.getenv("FS_RESEARCH_DATA_ROOT") or str(
-        _Path(__file__).resolve().parent.parent / "fs_research_agent" / "data"
+        _Path(__file__).resolve().parent.parent / "agent" / "data"
     )
     _Path(_root).mkdir(parents=True, exist_ok=True)
 except Exception:

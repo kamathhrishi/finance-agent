@@ -1,5 +1,5 @@
 """
-Line-range highlighting for fs_research_agent corpus files.
+Line-range highlighting for agent corpus files.
 
 The agent emits citations as `path:line` or `path:line-line`. To render a UI
 view of the cited document we read the file, wrap each cited line range in a

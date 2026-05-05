@@ -1,5 +1,5 @@
 """
-Logfire integration for fs_research_agent.
+Logfire integration for agent.
 
 Lazy import + no-op fallback so the package keeps working when logfire isn't
 installed/configured. Mirrors the pattern already used in `agent/rag/`.
@@ -30,7 +30,7 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
-logger = logging.getLogger("fs_research_agent.observability")
+logger = logging.getLogger("agent.observability")
 
 try:
     import logfire as _logfire

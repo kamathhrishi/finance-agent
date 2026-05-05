@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
 """
-agent/ — public entry point for the StrataLens AI agent.
+agent — StrataLens AI's filesystem-only financial research agent.
 
-There used to be three implementations selectable via env vars (legacy
-chunk-RAG `RAGAgent`, multi-agent ReAct `OrchestratorAgent`, and the
-filesystem-research `FilesystemResearchOrchestrator`). The first two have
-been retired — the platform now ships only the FS research agent.
-
-For the historical context behind the decision, see the original blog
-post on the multi-agent / chunk-RAG approach (linked from `agent/README.md`)
-and the design notes in `fs_research_agent/README.md`.
+A ReAct agent (gpt-5.4-mini) that investigates SEC filings using only
+ls / read_file / grep / glob over a self-describing folder of markdown,
+plus an optional news_search tool. See `agent/README.md` for design notes.
 
 Public API:
   - `Agent` / `AgentSystem` — alias for `FilesystemResearchOrchestrator`
@@ -20,20 +14,7 @@ Sub-packages kept under `agent/`:
                   used by the screener router and qualitative-screen flow)
 """
 
-import os as _os
-
-# Hard guard against any leftover deploys still setting USE_FS_RESEARCH_AGENT=false.
-# The legacy agents are gone; falling back to them is no longer possible.
-_explicit = _os.getenv("USE_FS_RESEARCH_AGENT", "").strip().lower()
-if _explicit in ("0", "false", "no"):
-    raise RuntimeError(
-        "USE_FS_RESEARCH_AGENT=false is no longer supported — the legacy "
-        "agent (RAGAgent / OrchestratorAgent) has been removed. The "
-        "filesystem-research agent is now the only implementation. "
-        "Unset USE_FS_RESEARCH_AGENT (or set it to true) and redeploy."
-    )
-
-from fs_research_agent.orchestrator_adapter import FilesystemResearchOrchestrator
+from agent.orchestrator_adapter import FilesystemResearchOrchestrator
 
 # Public API
 Agent = FilesystemResearchOrchestrator

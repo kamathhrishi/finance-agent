@@ -6,14 +6,14 @@ no-op.
 
 Usage:
     # Dry-run (count what would change)
-    python -m fs_research_agent.backfill_table_cleanup --dry-run
+    python -m agent.backfill_table_cleanup --dry-run
 
     # Apply to main corpus
-    python -m fs_research_agent.backfill_table_cleanup
+    python -m agent.backfill_table_cleanup
 
     # Apply to benchmark corpus
-    python -m fs_research_agent.backfill_table_cleanup --data-root \
-        fs_research_agent/benchmarks/financebench/data
+    python -m agent.backfill_table_cleanup --data-root \
+        agent/benchmarks/financebench/data
 """
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ import sys
 import time
 from pathlib import Path
 
-from fs_research_agent.ingest import DEFAULT_DATA_ROOT
-from fs_research_agent.markdown_cleanup import cleanup_markdown_tables
+from agent.ingest import DEFAULT_DATA_ROOT
+from agent.markdown_cleanup import cleanup_markdown_tables
 
 
 def main() -> int:

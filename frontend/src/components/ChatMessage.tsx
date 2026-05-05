@@ -545,7 +545,7 @@ export default function ChatMessage({ message, onOpenDocument }: ChatMessageProp
       ? source.quarter
       : source.quarter ? parseInt(source.quarter, 10) : undefined
 
-    // ── fs_research_agent: line-range citations against local markdown corpus ──
+    // ── agent: line-range citations against local markdown corpus ──
     if (source.source_backend === 'fs_research' && source.path && source.line_start) {
       const fsChunks = (message.sources || [])
         .filter(s => s.source_backend === 'fs_research' && s.path === source.path && s.line_start)

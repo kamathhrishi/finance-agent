@@ -13,7 +13,7 @@ This module is intentionally tiny. It contains:
 
 NOTE: this is application boundary code, not LLM-call retry code. The
 retry decorator that used to live alongside these in `agent/rag/llm_utils.py`
-has been removed because the active agent (`fs_research_agent.agent`) does
+has been removed because the active agent (`agent.agent`) does
 its own per-attempt retry inside the OpenAI call loop.
 """
 from __future__ import annotations

@@ -1,5 +1,5 @@
 """
-Runner: drive the fs_research_agent through every FinanceBench question,
+Runner: drive the agent through every FinanceBench question,
 then judge each (expected, predicted) pair with the LLM judge.
 
 Output: results/<run_name>/results.jsonl  (one JSON object per question)
@@ -20,12 +20,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fs_research_agent.agent import FilesystemResearchAgent
+from agent.agent import FilesystemResearchAgent
 from .dataset import FinanceBenchQuestion, load_questions
 from .download import BENCHMARK_DATA_ROOT
 from .judge import Judge, JudgeResult, PASS_THRESHOLD
 
-logger = logging.getLogger("fs_research_agent.benchmarks.fb.runner")
+logger = logging.getLogger("agent.benchmarks.fb.runner")
 
 RESULTS_ROOT = Path(__file__).resolve().parent / "results"
 
@@ -244,7 +244,7 @@ async def run_benchmark(
     if not BENCHMARK_DATA_ROOT.is_dir():
         raise RuntimeError(
             f"Benchmark corpus not found at {BENCHMARK_DATA_ROOT}. "
-            f"Run `python -m fs_research_agent.benchmarks.financebench.cli download` first."
+            f"Run `python -m agent.benchmarks.financebench.cli download` first."
         )
     agent_kwargs: Dict[str, Any] = {"data_root": BENCHMARK_DATA_ROOT}
     if agent_model:

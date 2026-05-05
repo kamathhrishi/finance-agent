@@ -36,18 +36,18 @@ tiktoken==0.8.0
 datasets
 
 # LangChain — used ONLY by the DuckDB screener (`agent/screener/main_duckdb.py`)
-# for its NL→SQL chain. The chat agent (`fs_research_agent/`) does not use any
+# for its NL→SQL chain. The chat agent (`agent/`) does not use any
 # langchain code. If the screener is ever rewritten, these can go.
 langchain-core==0.3.34
 langchain-community==0.3.17
 langchain-openai
 
-# SEC EDGAR ingest — used by `fs_research_agent.watcher` and the batch ingest
+# SEC EDGAR ingest — used by `agent.watcher` and the batch ingest
 # CLI. Without this the watcher crashes per cycle (one-off downloads still
 # work for whatever's already on disk, but no new filings can be pulled).
 datamule
 
-# Universe source — used by `fs_research_agent.tech_universe.regenerate_tech_universe`
+# Universe source — used by `agent.tech_universe.regenerate_tech_universe`
 # to discover US tech tickers. Quarterly-refreshed snapshot of ~150k global
 # equities with sector/industry/market_cap/exchange metadata. Replaces the
 # older static US_TECH_CLEANED.json.

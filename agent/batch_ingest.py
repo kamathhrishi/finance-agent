@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Batch-ingest the tech universe into the fs_research_agent corpus.
+Batch-ingest the tech universe into the agent corpus.
 
 For each ticker × form combination, downloads the last `years` years of
 filings (with substantive exhibits) and writes them into the corpus. Records
@@ -9,18 +9,18 @@ already completed and only retry the failures.
 
 Usage:
     # Default — Tier A (Mega+Large IT/Comm), 5 years, all 3 forms, exhibits on
-    python -m fs_research_agent.batch_ingest
+    python -m agent.batch_ingest
 
     # Subset of forms / different ticker scope / different year window
-    python -m fs_research_agent.batch_ingest --forms 10-K,10-Q --years 3
-    python -m fs_research_agent.batch_ingest --tickers MSFT,AAPL,GOOGL --years 5
-    python -m fs_research_agent.batch_ingest --no-exhibits
+    python -m agent.batch_ingest --forms 10-K,10-Q --years 3
+    python -m agent.batch_ingest --tickers MSFT,AAPL,GOOGL --years 5
+    python -m agent.batch_ingest --no-exhibits
 
     # Retry just the ones that previously failed
-    python -m fs_research_agent.batch_ingest --retry-failed-only
+    python -m agent.batch_ingest --retry-failed-only
 
 Checkpoint:
-    fs_research_agent/data/_batch_checkpoint.json
+    agent/data/_batch_checkpoint.json
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ os.environ.setdefault(
     "StrataLens kamathhrishi@gmail.com",
 )
 
-from fs_research_agent.ingest import (    # noqa: E402
+from agent.ingest import (    # noqa: E402
     SUPPORTED_FORMS,
     DATA_ROOT,
     ingest_form_for_ticker,
@@ -48,9 +48,9 @@ from fs_research_agent.ingest import (    # noqa: E402
     write_ticker_index,
     regenerate_index,
 )
-from fs_research_agent.universe import load_universe  # noqa: E402
+from agent.universe import load_universe  # noqa: E402
 
-logger = logging.getLogger("fs_research_agent.batch")
+logger = logging.getLogger("agent.batch")
 
 CHECKPOINT_PATH = DATA_ROOT / "_batch_checkpoint.json"
 

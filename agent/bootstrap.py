@@ -4,26 +4,26 @@ S3 corpus bootstrap.
 
 The pattern:
     S3 holds a periodic snapshot of the local corpus as a single tarball
-    (`fs_research_agent/corpus/latest.tar.gz`). On Railway, the API and
+    (`agent/corpus/latest.tar.gz`). On Railway, the API and
     the watcher share a persistent volume mounted at `FS_RESEARCH_DATA_ROOT`.
     On a fresh deploy (volume empty), we bootstrap by downloading the
     snapshot from S3 + extracting to the volume. Once warm, the watcher
     keeps the volume up-to-date by polling SEC EDGAR directly.
 
 S3 keys (under the same Railway bucket the platform already uses):
-    fs_research_agent/corpus/latest.tar.gz       — current snapshot
-    fs_research_agent/corpus/latest.manifest.json — sha256 + counts + ts
+    agent/corpus/latest.tar.gz       — current snapshot
+    agent/corpus/latest.manifest.json — sha256 + counts + ts
 
 Usage:
     # Dev → push a snapshot from your local corpus to S3
-    python -m fs_research_agent.bootstrap upload
+    python -m agent.bootstrap upload
 
     # Railway → fetch the snapshot if local volume is empty
-    python -m fs_research_agent.bootstrap download
-    python -m fs_research_agent.bootstrap bootstrap-if-missing
+    python -m agent.bootstrap download
+    python -m agent.bootstrap bootstrap-if-missing
 
     # Inspect current local + S3 state
-    python -m fs_research_agent.bootstrap check
+    python -m agent.bootstrap check
 """
 from __future__ import annotations
 
@@ -42,14 +42,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-logger = logging.getLogger("fs_research_agent.bootstrap")
+logger = logging.getLogger("agent.bootstrap")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Config — Railway bucket reuses the platform's existing S3 client config
 # ──────────────────────────────────────────────────────────────────────────────
 
-S3_KEY_TARBALL = "fs_research_agent/corpus/latest.tar.gz"
-S3_KEY_MANIFEST = "fs_research_agent/corpus/latest.manifest.json"
+S3_KEY_TARBALL = "agent/corpus/latest.tar.gz"
+S3_KEY_MANIFEST = "agent/corpus/latest.manifest.json"
 
 # A volume that has fewer than this many ticker dirs is considered "empty"
 # enough that a bootstrap is warranted. 5 picks up a totally-fresh deploy
@@ -256,7 +256,7 @@ def download_and_extract_corpus(data_root: Optional[Path] = None, *, validate: b
     except Exception as e:
         raise RuntimeError(
             f"No manifest at s3://{bucket}/{S3_KEY_MANIFEST}. "
-            f"Run `python -m fs_research_agent.bootstrap upload` from a host that has the corpus first. "
+            f"Run `python -m agent.bootstrap upload` from a host that has the corpus first. "
             f"({e})"
         )
     manifest_data = json.loads(manifest_obj["Body"].read())

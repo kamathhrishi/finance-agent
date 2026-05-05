@@ -1,4 +1,4 @@
-# `fs_research_agent` — filesystem-based financial research
+# `agent` — filesystem-based financial research
 
 A self-contained experiment that gives an LLM **filesystem tools only** (`ls`,
 `read_file`, `grep`, `glob`) over a corpus of SEC filings stored as markdown,
@@ -46,7 +46,7 @@ That pipeline works but has the typical chunk-RAG failure modes:
 - The agent never sees the broader context around a chunk — it gets the
   isolated chunk and has to synthesize.
 
-`fs_research_agent` takes the opposite approach. The corpus is plain markdown
+`agent` takes the opposite approach. The corpus is plain markdown
 on local disk, organized into a self-describing folder layout. The agent has
 four tools — `ls`, `read_file`, `grep`, `glob` — and no other capabilities.
 It's expected to read a `README.md` and an `INDEX.md` to orient itself, then
@@ -131,10 +131,10 @@ no vector DB.
 
 **Two corpora live side by side**:
 
-- `fs_research_agent/data/` — the **main** corpus, populated by the tech-batch
+- `agent/data/` — the **main** corpus, populated by the tech-batch
   ingest (188 Mega+Large IT/Comm tickers × 5 years × 10-K + 10-Q + 8-K +
   filtered substantive exhibits, ~12,000 filings, ~2.8 GB).
-- `fs_research_agent/benchmarks/financebench/data/` — the **benchmark** corpus,
+- `agent/benchmarks/financebench/data/` — the **benchmark** corpus,
   isolated so the FinanceBench evaluation can't accidentally pull data from
   unrelated tech filings. Contains only the filings the FinanceBench questions
   reference.
@@ -146,7 +146,7 @@ no vector DB.
 ### Run a single question via CLI
 
 ```bash
-python -m fs_research_agent.cli "What was NVDA's data center revenue in FY2024?"
+python -m agent.cli "What was NVDA's data center revenue in FY2024?"
 ```
 
 The CLI prints the agent's reasoning trace to stderr and the streamed answer
@@ -161,35 +161,35 @@ to stdout. Useful flags:
 
 ```bash
 DATAMULE_SEC_USER_AGENT="YourName your@email.com" \
-  python -m fs_research_agent.ingest NVDA --years 5
+  python -m agent.ingest NVDA --years 5
 ```
 
 This downloads the last 5 years of 10-K + 10-Q + 8-K filings (with
-substantive exhibits), writes them under `fs_research_agent/data/filings/NVDA/`,
+substantive exhibits), writes them under `agent/data/filings/NVDA/`,
 parses sections per Item, and regenerates the per-ticker `INDEX.md` plus
 top-level `INDEX.md`.
 
 ### Batch-ingest the full tech universe
 
 ```bash
-python -m fs_research_agent.batch_ingest --years 5
+python -m agent.batch_ingest --years 5
 ```
 
 188 tickers × 3 forms = 564 jobs. Checkpointed at
-`fs_research_agent/data/_batch_checkpoint.json` — re-running skips done jobs.
+`agent/data/_batch_checkpoint.json` — re-running skips done jobs.
 `--retry-failed-only` retries failures without redoing successes.
 
 ### Run the FinanceBench benchmark
 
 ```bash
 # 1. Make sure required filings are in the benchmark corpus
-python -m fs_research_agent.benchmarks.financebench.cli download
+python -m agent.benchmarks.financebench.cli download
 
 # 2. Run the agent against all 131 questions
-python -m fs_research_agent.benchmarks.financebench.cli run --run-name run1
+python -m agent.benchmarks.financebench.cli run --run-name run1
 
 # 3. Inspect results
-ls fs_research_agent/benchmarks/financebench/results/run1/
+ls agent/benchmarks/financebench/results/run1/
 ```
 
 See [Section 10](#10-financebench-benchmark) for full benchmark details.
@@ -236,7 +236,7 @@ the now-retired `OrchestratorAgent`. Citations render as `[10K-N]` / `[10Q-N]` /
 ## 5. Module-by-module walkthrough
 
 ```
-fs_research_agent/
+agent/
 ├── README.md                       ← you are here
 ├── __init__.py
 ├── agent.py                        ← the ReAct loop
@@ -765,7 +765,7 @@ Of the 150 questions, **131 are runnable** here:
 - **`download.py`** — `ensure_required_filings()` calls the existing ingest
   pipeline for every (ticker, form) pair the questions reference.
   Writes into the **isolated** `BENCHMARK_DATA_ROOT`
-  (`fs_research_agent/benchmarks/financebench/data/`) — never the main
+  (`agent/benchmarks/financebench/data/`) — never the main
   corpus.
 
 - **`runner.py`** — `run_benchmark()` instantiates the agent sandboxed to
@@ -779,9 +779,9 @@ Of the 150 questions, **131 are runnable** here:
 
 - **`cli.py`** — three subcommands:
   ```bash
-  python -m fs_research_agent.benchmarks.financebench.cli download [--companies X,Y,Z] [--dry-run]
-  python -m fs_research_agent.benchmarks.financebench.cli run --run-name nano_full [--limit 5] [--companies X,Y]
-  python -m fs_research_agent.benchmarks.financebench.cli summary <run-name>
+  python -m agent.benchmarks.financebench.cli download [--companies X,Y,Z] [--dry-run]
+  python -m agent.benchmarks.financebench.cli run --run-name nano_full [--limit 5] [--companies X,Y]
+  python -m agent.benchmarks.financebench.cli summary <run-name>
   ```
 
 ### Question augmentation (the "period hint")

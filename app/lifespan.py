@@ -475,7 +475,7 @@ async def lifespan(app: FastAPI):
         log_stage_header(5, "👤", "USER MANAGEMENT & ADMIN SETUP")
         await create_default_admin()
         
-        # Verify ripgrep (`rg`) is on PATH — fs_research_agent's grep tool
+        # Verify ripgrep (`rg`) is on PATH — agent's grep tool
         # shells out to it. Without rg, every grep call returns an error and
         # the agent quietly degrades. Loud-fail at boot makes deploys obvious.
         # In Nixpacks builds (Railway) this is provided by nixpacks.toml's
@@ -484,10 +484,10 @@ async def lifespan(app: FastAPI):
         import shutil as _shutil
         _rg_path = _shutil.which("rg")
         if _rg_path:
-            log_info(f"✅ ripgrep found at {_rg_path} (fs_research_agent grep tool ready)")
+            log_info(f"✅ ripgrep found at {_rg_path} (agent grep tool ready)")
         else:
             log_info(
-                "⚠ ripgrep (rg) NOT on PATH — fs_research_agent's grep tool will fail. "
+                "⚠ ripgrep (rg) NOT on PATH — agent's grep tool will fail. "
                 "Install: `apt-get install ripgrep` or `brew install ripgrep`. "
                 "On Railway/Nixpacks add `aptPkgs = [\"ripgrep\"]` under [phases.setup] in nixpacks.toml."
             )
@@ -542,13 +542,13 @@ async def lifespan(app: FastAPI):
 
         if _bootstrap_explicit or _bootstrap_auto:
             _why = "explicit env" if _bootstrap_explicit else "auto (Railway + S3 creds detected)"
-            log_info(f"📦 Scheduling background fs_research_agent corpus bootstrap from S3 — {_why}")
+            log_info(f"📦 Scheduling background agent corpus bootstrap from S3 — {_why}")
 
             async def _run_bootstrap_in_background():
                 try:
                     # Local import — keeps boto3/manifest deps optional
                     # for environments that don't use the FS agent at all.
-                    from fs_research_agent.bootstrap import bootstrap_if_missing
+                    from agent.bootstrap import bootstrap_if_missing
                     did = await asyncio.to_thread(bootstrap_if_missing)
                     if did:
                         log_info("✅ Background S3 bootstrap completed (corpus refreshed)")
@@ -618,8 +618,8 @@ async def lifespan(app: FastAPI):
 
         if _watcher_should_run:
             try:
-                from fs_research_agent.watcher import watcher_loop
-                from fs_research_agent.agent import _resolve_default_data_root
+                from agent.watcher import watcher_loop
+                from agent.agent import _resolve_default_data_root
 
                 _interval = int(os.getenv("FS_RESEARCH_WATCHER_INTERVAL_SECS", "1800"))
                 _max_age = int(os.getenv("FS_RESEARCH_WATCHER_MAX_AGE_DAYS", "30"))

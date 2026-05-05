@@ -52,7 +52,7 @@ But it was built for a different generation of models. Two things changed:
 
 So the rebuild deleted the vector DB, the chunk store, the rerank step, the question-classifier, and the iterative self-improvement loop. What's left is four filesystem tools (`ls`, `read_file`, `grep`, `glob`) over a sandboxed filesystem of pre-cleaned SEC markdown, plus an optional `news_search` tool that hits Tavily for recent context. The LLM does its own retrieval the same way an analyst would: list the directory, read the index, grep for the figure, quote the line.
 
-Glad to be past solving retrieval — frees up energy for higher-value problems. Design notes in [`fs_research_agent/README.md`](fs_research_agent/README.md).
+Glad to be past solving retrieval — frees up energy for higher-value problems. Design notes in [`agent/README.md`](agent/README.md).
 
 ---
 
@@ -60,8 +60,8 @@ Glad to be past solving retrieval — frees up energy for higher-value problems.
 
 The corpus is downloaded from SEC EDGAR via [datamule](https://github.com/john-friedman/datamule-python) — a Python SDK around EDGAR's submissions API plus an HTML→markdown converter. We use one class (`Portfolio`) at two call sites:
 
-- **Bulk seed** (`fs_research_agent/ingest.py`) — pulls every 10-K / 10-Q / 8-K for a ticker over the last N years. Used for the initial corpus build (`python -m fs_research_agent.batch_ingest`).
-- **Watcher single-fetch** (`fs_research_agent/watcher.py`) — pulls one specific filing by accession number. Used by the in-process polling watcher when its diff against `_seen_accessions.json` finds a new submission on EDGAR.
+- **Bulk seed** (`agent/ingest.py`) — pulls every 10-K / 10-Q / 8-K for a ticker over the last N years. Used for the initial corpus build (`python -m agent.batch_ingest`).
+- **Watcher single-fetch** (`agent/watcher.py`) — pulls one specific filing by accession number. Used by the in-process polling watcher when its diff against `_seen_accessions.json` finds a new submission on EDGAR.
 
 Each downloaded document goes through `_doc_markdown` (datamule's built-in HTML→markdown render) and then `markdown_cleanup.py` (post-processing for two SEC-specific quirks — the `$`+value double-column pattern that confuses fiscal-year reads, and table-cell collapsing). The cleaned files land under `filings/<TICKER>/{10-K,10-Q,8-K}/<period>/` ready for the agent to `grep`.
 
@@ -71,20 +71,19 @@ Datamule handles SEC's rate limits, retry-after headers, and the HTML→markdown
 
 ```
 stratalens_ai/
-├── fs_research_agent/        # The active agent + tools + corpus management
-│   ├── agent.py              # ReAct loop on OpenAI function-calling
-│   ├── tools.py              # ls / read_file / grep / glob / news_search
-│   ├── prompts.py            # System prompt (date-injected per request)
-│   ├── citations.py          # path:line → [10K-N] markers + post-processor
+├── agent/                       # The research agent + tools + corpus management
+│   ├── agent.py                 # ReAct loop on OpenAI function-calling
+│   ├── tools.py                 # ls / read_file / grep / glob / news_search
+│   ├── prompts.py               # System prompt (date-injected per request)
+│   ├── citations.py             # path:line → [10K-N] markers + post-processor
 │   ├── orchestrator_adapter.py  # Adapter for the chat router
-│   ├── coverage_index.py     # Per-ticker filing index for the UI
-│   ├── bootstrap.py          # S3 corpus snapshot upload/download
-│   ├── watcher.py            # Background SEC poller
-│   ├── observability.py      # Logfire span wrapper
-│   ├── tech_universe.json    # Canonical 300+ ticker list (CIK-resolved, regenerated from FinanceDatabase)
-│   └── data/                 # Corpus root (gitignored, lives on Railway volume)
-├── agent/
-│   └── screener/             # DuckDB-backed stock screener
+│   ├── coverage_index.py        # Per-ticker filing index for the UI
+│   ├── bootstrap.py             # S3 corpus snapshot upload/download
+│   ├── watcher.py               # Background SEC poller
+│   ├── observability.py         # Logfire span wrapper
+│   ├── tech_universe.json       # Canonical 300+ ticker list (CIK-resolved, regenerated from FinanceDatabase)
+│   ├── data/                    # Corpus root (gitignored, lives on Railway volume)
+│   └── screener/                # DuckDB-backed stock screener (independent sub-package)
 ├── app/
 │   ├── __init__.py           # FastAPI app + global exception handlers
 │   ├── lifespan.py           # Startup/shutdown (auto-bootstrap, watcher spawn)
@@ -121,10 +120,10 @@ cp .env.example .env   # then fill in keys
 
 ```bash
 # Either: download a ready snapshot from S3
-python -m fs_research_agent.bootstrap download
+python -m agent.bootstrap download
 
 # Or: ingest from scratch (slow, hits SEC EDGAR)
-python -m fs_research_agent.batch_ingest --years 3
+python -m agent.batch_ingest --years 3
 ```
 
 ### Build frontend + run server
@@ -172,7 +171,7 @@ Auto-generated from the FastAPI app — see the live spec rather than a curated 
 
 | Document | Description |
 |---|---|
-| **[fs_research_agent/README.md](fs_research_agent/README.md)** | Deep dive: tools, prompts, citations, ingest, benchmarks, lessons |
+| **[agent/README.md](agent/README.md)** | Deep dive: tools, prompts, citations, ingest, benchmarks, lessons |
 | **[Original blog post (chunked RAG approach)](https://substack.com/home/post/p-181608263)** | Historical: the multi-agent / vector-retrieval pipeline that preceded this design |
 
 ---
@@ -181,11 +180,11 @@ Auto-generated from the FastAPI app — see the live spec rather than a curated 
 
 - **Platform**: Railway (Nixpacks builder)
 - **Volume**: persistent volume mounted at `/data/fs_research_corpus` for the SEC corpus
-- **Cold start**: corpus auto-hydrates from S3 (`s3://<bucket>/fs_research_agent/corpus/latest.tar.gz`) on first boot, then short-circuits on every redeploy
+- **Cold start**: corpus auto-hydrates from S3 (`s3://<bucket>/agent/corpus/latest.tar.gz`) on first boot, then short-circuits on every redeploy
 - **Watcher**: in-process asyncio task, polls SEC every 30 min, writes new filings directly to the volume
 - **Observability**: Logfire spans across the whole agent lifecycle (flow / llm_round / tool_call / force_final / errors)
 
-See [`fs_research_agent/README.md`](fs_research_agent/README.md) for the operations playbook.
+See [`agent/README.md`](agent/README.md) for the operations playbook.
 
 ---
 

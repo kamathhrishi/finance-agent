@@ -3,10 +3,10 @@
 CLI debug runner for FilesystemResearchAgent.
 
 Usage:
-    python -m fs_research_agent.cli "what was NVDA's data center revenue trend?"
-    python -m fs_research_agent.cli -v "..."          verbose: full event payloads
-    python -m fs_research_agent.cli --raw "..."       raw event JSON, one per line
-    echo "..." | python -m fs_research_agent.cli
+    python -m agent.cli "what was NVDA's data center revenue trend?"
+    python -m agent.cli -v "..."          verbose: full event payloads
+    python -m agent.cli --raw "..."       raw event JSON, one per line
+    echo "..." | python -m agent.cli
 
 stderr: progress / tool calls / reasoning
 stdout: final answer

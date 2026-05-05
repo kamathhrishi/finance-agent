@@ -21,9 +21,9 @@ Layout:
             (same internal layout)
 
 Usage:
-    python -m fs_research_agent.ingest NVDA --years 5
-    python -m fs_research_agent.ingest NVDA --years 5 --forms 10-K,10-Q,8-K
-    python -m fs_research_agent.ingest NVDA --years 5 --no-exhibits
+    python -m agent.ingest NVDA --years 5
+    python -m agent.ingest NVDA --years 5 --forms 10-K,10-Q,8-K
+    python -m agent.ingest NVDA --years 5 --no-exhibits
 """
 from __future__ import annotations
 
@@ -38,10 +38,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-logger = logging.getLogger("fs_research_agent.ingest")
+logger = logging.getLogger("agent.ingest")
 
 PKG_ROOT = Path(__file__).resolve().parent
-# Default corpus root — the main fs_research_agent corpus. Other corpora
+# Default corpus root — the main agent corpus. Other corpora
 # (e.g. the FinanceBench benchmark sandbox) pass an explicit `data_root` to
 # all the public functions to write somewhere else.
 DEFAULT_DATA_ROOT = PKG_ROOT / "data"

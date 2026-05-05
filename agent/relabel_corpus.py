@@ -22,16 +22,16 @@ This script:
 
 Usage:
     # Dry-run first (recommended)
-    python -m fs_research_agent.relabel_corpus --dry-run
+    python -m agent.relabel_corpus --dry-run
 
     # Apply
-    python -m fs_research_agent.relabel_corpus
+    python -m agent.relabel_corpus
 
     # Limit to specific tickers
-    python -m fs_research_agent.relabel_corpus --tickers MSFT,AAPL,NVDA
+    python -m agent.relabel_corpus --tickers MSFT,AAPL,NVDA
 
     # Point at a different corpus root
-    python -m fs_research_agent.relabel_corpus --data-root /path/to/data
+    python -m agent.relabel_corpus --data-root /path/to/data
 """
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ import httpx
 # SEC requires a User-Agent identifying the requester
 SEC_UA = os.getenv("DATAMULE_SEC_USER_AGENT", "StrataLens kamathhrishi@gmail.com")
 
-from fs_research_agent.ingest import (    # noqa: E402
+from agent.ingest import (    # noqa: E402
     DEFAULT_DATA_ROOT,
     SUPPORTED_FORMS,
     _normalize_date,
@@ -59,7 +59,7 @@ from fs_research_agent.ingest import (    # noqa: E402
     regenerate_index,
 )
 
-logger = logging.getLogger("fs_research_agent.relabel")
+logger = logging.getLogger("agent.relabel")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -345,7 +345,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true", help="Show what would be moved, but don't touch anything")
     parser.add_argument("--tickers", default="", help="Comma-separated ticker subset (default: all)")
-    parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT), help="Corpus root (default: main fs_research_agent corpus)")
+    parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT), help="Corpus root (default: main agent corpus)")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 

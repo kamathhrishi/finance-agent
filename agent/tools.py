@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-logger = logging.getLogger("fs_research_agent.tools")
+logger = logging.getLogger("agent.tools")
 
 
 class SandboxViolation(ValueError):

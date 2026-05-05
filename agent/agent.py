@@ -26,7 +26,7 @@ from .prompts import _BASE_SYSTEM_PROMPT, build_date_anchor
 from .tools import Sandbox, TOOL_SCHEMAS, make_tool_executor
 from .observability import span, info as obs_info, warn as obs_warn, truncate
 
-logger = logging.getLogger("fs_research_agent.agent")
+logger = logging.getLogger("agent.agent")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

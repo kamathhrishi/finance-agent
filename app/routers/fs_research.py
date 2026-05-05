@@ -1,6 +1,6 @@
 """
 FS Research router — serves the local markdown corpus consumed by
-`fs_research_agent` and injects line-range highlight marks for the
+`agent` and injects line-range highlight marks for the
 SECFilingViewer to render.
 
 Endpoints
@@ -12,7 +12,7 @@ POST /fs-research/document/with-highlights
     body: { path: str, relevant_chunks: [{chunk_id, line_start, line_end, primary?}] }
     → { document_markdown, highlighted_markdown, ... }   (shape mirrors /sec-filings/with-highlights)
 
-The data root is `<repo>/fs_research_agent/data/` by default — override with
+The data root is `<repo>/agent/data/` by default — override with
 `FS_RESEARCH_DATA_ROOT` env var. All path inputs are resolved inside the
 sandbox; anything escaping returns 400.
 """
@@ -27,7 +27,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
-from fs_research_agent.highlight import LineHighlight, inject_line_highlights
+from agent.highlight import LineHighlight, inject_line_highlights
 
 
 router = APIRouter(prefix="/fs-research", tags=["fs-research"])
@@ -39,9 +39,9 @@ def _resolve_data_root() -> Path:
     if env:
         p = Path(env).expanduser().resolve()
     else:
-        # repo-relative default: <repo>/fs_research_agent/data/
+        # repo-relative default: <repo>/agent/data/
         # __file__ is .../app/routers/fs_research.py → up 3 levels = repo root
-        p = Path(__file__).resolve().parents[2] / "fs_research_agent" / "data"
+        p = Path(__file__).resolve().parents[2] / "agent" / "data"
     return p
 
 
@@ -63,7 +63,7 @@ def _safe_resolve(rel_path: str) -> Path:
 
 
 # Matches all three corpus path shapes — must stay aligned with the
-# canonical _PATH_RE in fs_research_agent/citations.py:
+# canonical _PATH_RE in agent/citations.py:
 #   10-K:  filings/<TICKER>/10-K/FY####/(sections/|exhibits/)?<file>.md
 #   10-Q:  filings/<TICKER>/10-Q/FY####/Q[1-4]/(sections/|exhibits/)?<file>.md
 #   8-K:   filings/<TICKER>/8-K/YYYY-MM-DD/(sections/|exhibits/)?<file>.md

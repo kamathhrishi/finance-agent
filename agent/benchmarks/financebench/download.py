@@ -1,7 +1,7 @@
 """
 Build an ISOLATED FinanceBench corpus under
-`fs_research_agent/benchmarks/financebench/data/`, mirroring the structure
-of the main fs_research_agent corpus but containing ONLY the (ticker, form,
+`agent/benchmarks/financebench/data/`, mirroring the structure
+of the main agent corpus but containing ONLY the (ticker, form,
 year/quarter/date) combinations FinanceBench questions reference.
 
 Why isolation: makes the benchmark reproducible and prevents the agent from
@@ -9,13 +9,13 @@ accidentally answering from unrelated filings that happen to live in the
 main tech corpus.
 
 Layout (identical to main corpus):
-    fs_research_agent/benchmarks/financebench/data/
+    agent/benchmarks/financebench/data/
       README.md
       INDEX.md
       filings/<TICKER>/<FORM>/...
 
 Usage:
-    from fs_research_agent.benchmarks.financebench.download import (
+    from agent.benchmarks.financebench.download import (
         ensure_required_filings, BENCHMARK_DATA_ROOT,
     )
     ensure_required_filings()                            # ALL questions
@@ -33,7 +33,7 @@ from typing import Dict, List, Optional, Tuple
 # Force a real SEC user-agent before datamule import (otherwise SEC throttles AAPL etc.)
 os.environ.setdefault("DATAMULE_SEC_USER_AGENT", "StrataLens kamathhrishi@gmail.com")
 
-from fs_research_agent.ingest import (    # noqa: E402
+from agent.ingest import (    # noqa: E402
     ingest_form_for_ticker,
     write_data_readme,
     write_ticker_index,
@@ -45,7 +45,7 @@ from .dataset import (    # noqa: E402
     required_filings,
 )
 
-logger = logging.getLogger("fs_research_agent.benchmarks.fb.download")
+logger = logging.getLogger("agent.benchmarks.fb.download")
 
 # The benchmark's isolated corpus root. Sibling of the agent code.
 # Override with FS_RESEARCH_FINANCEBENCH_DATA_ROOT if you want it elsewhere.

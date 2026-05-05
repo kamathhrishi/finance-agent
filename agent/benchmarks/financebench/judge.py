@@ -1,12 +1,12 @@
 """
-LLM-as-judge for fs_research_agent benchmark answers.
+LLM-as-judge for agent benchmark answers.
 
 Scoring:
     1-10 integer; >= 7 means the predicted answer is materially correct.
     Accuracy = (# of >=7 scores) / (total questions judged).
 
 Design notes:
-    - The judge MUST tolerate verbose answers. The fs_research_agent often
+    - The judge MUST tolerate verbose answers. The agent often
       writes 200-500 word analyst-style responses with surrounding narrative
       and citations. As long as the *core fact* the question asks for matches
       the expected answer, it should score 7 or higher. Extra context is good,
@@ -32,7 +32,7 @@ from typing import Optional
 
 import openai
 
-logger = logging.getLogger("fs_research_agent.benchmarks.judge")
+logger = logging.getLogger("agent.benchmarks.judge")
 
 DEFAULT_JUDGE_MODEL = "gpt-5.4-mini-2026-03-17"
 PASS_THRESHOLD = 7  # scores >= this are "correct"
