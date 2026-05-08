@@ -1,5 +1,0 @@
-## Item 2.
-### Properties
-Our corporate headquarters are located in Los Gatos, California and consist of leased space aggregating approximately 600,000 square feet\. Additionally, our Los Angeles, California offices consist of leased space aggregating approximately 400,000 square feet\.  We have entered into leases for additional space that will add approximately 700,000 square feet to the Los Angeles, California offices to support our growing headcount and growing number of original productions\. The additional space is estimated to be available for use over the next two years\.
-In the United States, we lease other offices in various locations, including Fremont, California for our DVD operations\. We also lease office space in other countries to support international streaming operations\.
-We believe that our existing facilities are adequate to meet current requirements, and that suitable additional or substitute space will be available as needed to accommodate any further physical expansion of operations and for any additional offices\.

@@ -1,2 +1,0 @@
-# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
-D\. Adamczyk notified the Company that he intends to retire from the Company’s Board of Directors in connection with an announcement on April 23rd that he will join Goldman Sachs as a Partner\. The retirement will be effective May 31, 2025\. His retirement is for personal reasons and not as a result of any disagreement with management on any matter relating to the Company’s operations, policies, or practices\.

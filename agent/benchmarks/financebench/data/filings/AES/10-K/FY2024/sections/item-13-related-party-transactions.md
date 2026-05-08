@@ -1,2 +1,0 @@
-## ITEM 13. CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS, AND DIRECTOR INDEPENDENCE
-The information regarding related party transactions required by this item will be included in the 2025 Proxy Statement found under the headings Related Person Policies and Procedures and Board and Committee Governance and are incorporated herein by reference\.

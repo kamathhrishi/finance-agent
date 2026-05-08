@@ -1,3 +1,0 @@
-## Item 10.  Directors, Executive Officers and Corporate Governance.
-Information concerning the Executive Officers of CVS Health Corporation is included in Part I of this 10\-K pursuant to General Instruction G to Form 10\-K\.
-The sections of the Proxy Statement under the captions “Committees of the Board as of the Annual Meeting,” “Code of Conduct,” “Audit Committee Report,” and “Biographies of our Incumbent Board Nominees” are incorporated herein by reference\.

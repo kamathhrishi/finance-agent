@@ -1,3 +1,0 @@
-## ITEM 8.
-### FINANCIAL STATEMENTS AND SUPPLEMENTARY DATA
-The information required by this item is incorporated by reference to all information under the captions "Consolidated Statements of Income," "Consolidated Statements of Comprehensive Income," "Consolidated Balance Sheets," "Consolidated Statements of Shareholders' Equity and Redeemable Noncontrolling Interest," "Consolidated Statements of Cash Flows," "Notes to Consolidated Financial Statements" and "Report of Independent Registered Public Accounting Firm" included in our Annual Report to Shareholders\.  Such information is included in Exhibit 13 to this Annual Report on Form 10\-K\.

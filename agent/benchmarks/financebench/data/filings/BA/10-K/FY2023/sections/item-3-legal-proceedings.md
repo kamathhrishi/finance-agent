@@ -1,2 +1,0 @@
-## Item 3. Legal Proceedings
-Currently, we are involved in a number of legal proceedings\. For a discussion of contingencies related to legal proceedings, see Note 21 to our Consolidated Financial Statements, which is hereby incorporated by reference\.

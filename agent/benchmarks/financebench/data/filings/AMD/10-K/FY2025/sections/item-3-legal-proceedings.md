@@ -1,2 +1,0 @@
-## ITEM 3.       LEGAL PROCEEDINGS
-For a discussion of our legal proceedings, refer to Note 12 – Commitments and Contingencies of the Notes to Consolidated Financial Statements \(Part II, Item 8 of this Form 10\-K\)\.

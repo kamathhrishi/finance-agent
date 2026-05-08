@@ -1,2 +1,0 @@
-## ITEM 13. CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS, AND DIRECTOR INDEPENDENCE
-Incorporated by reference from our Proxy Statement for our 2025 Annual Meeting of Stockholders to be filed with the SEC within 120 days after December 31, 2024\.

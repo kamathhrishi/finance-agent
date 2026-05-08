@@ -1,2 +1,0 @@
-## ITEM 8. FINANCIAL STATEMENTS AND SUPPLEMENTARY DATA
-The audited consolidated financial statements covering the years ended December 31, 2022, 2021, and 2020 and accompanying notes listed in Part IV, Item 15\(a\)\(1\) of this Form 10‑K are included in this report\.

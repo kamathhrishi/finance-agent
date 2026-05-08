@@ -1,2 +1,0 @@
-## ITEM 12.    SECURITY OWNERSHIP OF CERTAIN BENEFICIAL OWNERS AND MANAGEMENT AND RELATED STOCKHOLDER MATTERS
-Information required by this item setting forth the security ownership of certain beneficial owners and management is incorporated by reference in the Company’s Proxy Statement for the 2024 Annual Meeting of Shareholders, under the captions entitled “Certain Beneficial Ownership Matters—Security Ownership of Management,” “Certain Beneficial Ownership Matters—Security Ownership of Certain Beneficial Owners” and “Equity Compensation Plan Information\.”

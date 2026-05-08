@@ -1,2 +1,0 @@
-## Item 11—Executive Compensation
-The information required by this Item is incorporated herein by reference to the sections entitled “Compensation of Directors” and “Executive Compensation” in Costco’s Proxy Statement\.

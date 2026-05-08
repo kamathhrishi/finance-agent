@@ -1,2 +1,0 @@
-## Item 3. Quantitative and Qualitative Disclosures About Market Risk
-There have been no material changes in our market risk during the three months ended December 31, 2022\. For additional information, refer to Note 8, "Fair Value Measurements," and Note 9, "Derivative Instruments," in the notes to our unaudited condensed consolidated financial statements, and to "Item 7A\. \- Quantitative and Qualitative Disclosures About Market Risk" of our Annual Report on Form 10\-K for the year ended June 30, 2022\.

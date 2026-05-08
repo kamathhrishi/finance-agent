@@ -1,2 +1,0 @@
-## Item 7.  Management’s Discussion and Analysis of Financial Condition and Results of Operations
-The information contained in “Management’s Discussion and Analysis of Financial Condition and Results of Operations” in the Annual Report, which includes the “Cautionary Statement Concerning Forward\-Looking Statements” at the end of such section, is incorporated by reference herein\.

@@ -1,2 +1,0 @@
-# Item 2.02 Results of operations and financial condition
-On October 14, 2025, Johnson & Johnson \(the “Company”\) issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the third quarter ended September 28, 2025\.

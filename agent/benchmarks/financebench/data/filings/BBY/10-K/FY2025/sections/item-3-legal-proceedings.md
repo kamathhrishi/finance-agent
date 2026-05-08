@@ -1,2 +1,0 @@
-## Item 3. Legal Proceedings.
-For additional information regarding our legal proceedings, see Note 12, Contingencies and Commitments, of the Notes to Consolidated Financial Statements, included in Item 8, Financial Statements and Supplementary Data, of this Annual Report on Form 10\-K\.

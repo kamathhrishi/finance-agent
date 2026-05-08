@@ -1,6 +1,0 @@
-## Item 4.
-### Controls and Procedures
-#### Disclosure Controls and Procedures
-Our Chief Executive Officer \(principal executive officer\) and Chief Financial Officer \(principal financial officer\) have concluded that our disclosure controls and procedures \(as defined in Rules 13a\-15\(e\) and 15d\-15\(e\) under the Securities Exchange Act of 1934, as amended \(“the Exchange Act”\)\) were effective as of June 30, 2021 to provide reasonable assurance that information required to be disclosed in the Company’s reports under the Exchange Act is recorded, processed, summarized and reported within the time periods specified in the SEC rules and regulations and to provide that such information is accumulated and communicated to management to allow timely decisions regarding required disclosures\. This conclusion is based on an evaluation as required by Rules 13a\-15\(b\) and 15d\-15\(b\) under the Exchange Act conducted under the supervision and participation of the principal executive officer and principal financial officer along with company management\.
-### Changes in Internal Control over Financial Reporting
-During the quarter ended June 30, 2021, there were no changes in our internal control over financial reporting that materially affected, or are reasonably likely to materially affect, our internal control over financial reporting\.

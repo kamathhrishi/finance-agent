@@ -1,2 +1,0 @@
-## Item 13.CERTAIN RELATIONSHIPS AND RELATED TRANSACTIONS, AND DIRECTOR INDEPENDENCE
-The information called for by this item is incorporated herein by reference to the material under the captions “Item 1\. Election of Directors \- Director Independence” and “Related Person Transactions” in the Proxy Statement\.

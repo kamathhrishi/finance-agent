@@ -1,2 +1,0 @@
-## ITEM 13.    Certain Relationships and Related Transactions, and Director Independence
-The information required by Item 404 and 407\(a\) of Regulation S\-K is included in the section titled “Corporate Governance” in the 2026 Proxy Statement, and that information is incorporated by reference in this Form 10\-K\.

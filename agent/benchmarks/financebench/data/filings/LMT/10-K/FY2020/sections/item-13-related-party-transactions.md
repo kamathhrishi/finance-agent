@@ -1,2 +1,0 @@
-## ITEM 13.    Certain Relationships and Related Transactions, and Director Independence
-The information required by Item 404 and 407\(a\) of Regulation S\-K is included under the captions “Corporate Governance \- Related Person Transaction Policy,” “Corporate Governance \- Certain Relationships and Related Person Transactions of Directors, Executive Officers and 5 Percent Stockholders,” and “Corporate Governance \- Director Independence” in the 2021 Proxy Statement, and that information is incorporated by reference in this Form 10\-K\.

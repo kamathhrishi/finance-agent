@@ -1,2 +1,0 @@
-## Item 8.    Financial Statements and Supplementary Data
-Information required by this item is included in the consolidated financial statements and related notes of Verizon Communications Inc\. and Subsidiaries in the 2019 Verizon Annual Report to Shareholders, which is incorporated herein by reference\.

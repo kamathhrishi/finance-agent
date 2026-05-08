@@ -1,2 +1,0 @@
-# Item 8.01 Other Events
-On November 5, 2020, the Board of the Directors of the Company approved a $150 million repurchase of the Company’s ordinary shares and of the Company’s CDIs\.  Pursuant to this program, purchases of the Company’s ordinary shares and CDIs will be made subject to market conditions and at prevailing market prices, through open market purchases\.  The Company expects to complete the share buyback by the end of fiscal year 2021; however, the timing, volume and nature of repurchases may be amended, suspended or discontinued at any time\.

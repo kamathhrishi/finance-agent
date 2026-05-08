@@ -421,7 +421,12 @@ async def run_one_cycle(
             new_total += len(new_for_this_ticker)
             logger.info(f"  {spec.ticker} ({spec.company_name}): {len(new_for_this_ticker)} new filing(s)")
             for f in new_for_this_ticker:
-                ok = _ingest_single_accession(
+                # datamule's download_submissions calls asyncio.run() under the
+                # hood, which blows up when invoked from inside a running event
+                # loop (uvicorn's). Run it in a worker thread so it has its
+                # own (no-)loop context.
+                ok = await asyncio.to_thread(
+                    _ingest_single_accession,
                     ticker=spec.ticker,
                     cik=spec.cik,
                     accession=f["accession"],

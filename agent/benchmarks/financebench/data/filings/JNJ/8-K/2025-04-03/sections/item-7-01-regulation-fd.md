@@ -1,2 +1,0 @@
-# Item 7.01 Regulation FD Disclosure
-On March 31, 2025, the Company announced that the U\.S\. Bankruptcy Court for the Southern District of Texas denied the request by the Company’s subsidiary Red River Talc LLC to confirm its proposed prepackaged bankruptcy plan\. The Company will reverse approximately $7 billion from amounts previously reserved for the bankruptcy resolution\. The press release further discussing this announcement is attached as Exhibit 99\.1\.

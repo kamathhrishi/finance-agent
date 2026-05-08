@@ -1,3 +1,0 @@
-## Item 3.    Legal ProceedingsItem 3.    Legal Proceedings
-Verizon is not subject to any administrative or judicial proceeding arising under any Federal, State or local provisions that have been enacted or adopted regulating the discharge of materials into the environment or primarily for the purpose of protecting the environment that is likely to result in monetary sanctions of $1 million or more\.
-## Item 4.    Mine Safety Disclosures

@@ -1,2 +1,0 @@
-# Item 2.02 Results of operations and financial condition
-On July 17, 2024, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the second quarter ended June 30, 2024\.

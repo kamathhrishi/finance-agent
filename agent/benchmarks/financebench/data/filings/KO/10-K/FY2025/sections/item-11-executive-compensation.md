@@ -1,2 +1,0 @@
-## ITEM 11.  EXECUTIVE COMPENSATION
-The information required by this item is incorporated by reference to the Company’s 2026 Proxy Statement to be filed with the SEC within 120 days after the end of the fiscal year ended December 31, 2025\.

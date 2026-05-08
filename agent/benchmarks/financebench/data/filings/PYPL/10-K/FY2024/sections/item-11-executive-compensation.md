@@ -1,2 +1,0 @@
-## ITEM 11. EXECUTIVE COMPENSATION
-Incorporated by reference from our Proxy Statement for our 2025 Annual Meeting of Stockholders to be filed with the SEC within 120 days after December 31, 2024 \(excluding the information under the subheading “Pay Versus Performance”\)\.

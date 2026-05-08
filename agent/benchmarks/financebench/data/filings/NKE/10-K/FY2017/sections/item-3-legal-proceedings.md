@@ -1,2 +1,0 @@
-## ITEM 3. Legal Proceedings
-There are no material pending legal proceedings, other than ordinary routine litigation incidental to our business, to which we are a party or of which any of our property is the subject\.

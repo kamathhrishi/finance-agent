@@ -1,3 +1,0 @@
-## Item 3.    Legal ProceedingsItem 3.    Legal Proceedings
-In the ordinary course of business, Verizon is involved in various litigation and regulatory proceedings at the state and federal level\. As of the date of this report, we do not believe that any pending legal proceedings to which we or our subsidiaries are subject are required to be disclosed as material legal proceedings pursuant to this item\. We apply a threshold of $1\.0 million for purposes of disclosing administrative and judicial environmental proceedings involving a governmental authority, if any, pursuant to Item 103\(c\)\(3\)\(iii\) of Regulation S\-K\. For a discussion of our litigation risks, refer to Item 1A Risk Factors\.
-## Item 4.    Mine Safety Disclosures

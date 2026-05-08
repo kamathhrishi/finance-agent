@@ -1,3 +1,0 @@
-## Item 11.    Executive CompensationItem 11.    Executive Compensation
-For information with respect to executive compensation, see the sections entitled "Governance — Non\-employee Director compensation" and "Executive Compensation — Compensation discussion and analysis, — Compensation Committee Report and — Compensation tables" in our definitive Proxy Statement to be filed with the Securities and Exchange Commission and delivered to shareholders in connection with our 2023 Annual Meeting of Shareholders, which are incorporated by reference herein\. There were no relationships to be disclosed under paragraph \(e\)\(4\) of Item 407 of Regulation S\-K\.
-## Item 12.    Security Ownership of Certain Beneficial Owners and Management and Related Stockholder Matters

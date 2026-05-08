@@ -1,2 +1,0 @@
-## Item 13—Certain Relationships and Related Transactions, and Director Independence
-The information required by this Item is incorporated herein by reference to the sections entitled “Certain Relationships and Transactions” and "Committees of the Board" in Costco’s Proxy Statement\.

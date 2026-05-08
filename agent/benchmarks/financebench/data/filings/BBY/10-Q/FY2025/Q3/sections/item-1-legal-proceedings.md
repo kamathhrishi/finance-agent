@@ -1,2 +1,0 @@
-## Item 1.    Legal Proceedings
-For information about our legal proceedings, see Note 10, Contingencies, of the Notes to Condensed Consolidated Financial Statements, included in this Quarterly Report on Form 10\-Q\.

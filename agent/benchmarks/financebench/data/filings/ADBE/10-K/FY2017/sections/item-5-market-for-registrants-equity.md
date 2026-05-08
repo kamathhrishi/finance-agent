@@ -1,4 +1,0 @@
-## Item 5.02. Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
-### (b)
-On January 22, 2018, Mark Garrett notified Adobe Systems Incorporated \(“Adobe”\) of his intent to retire as Executive Vice President and Chief Financial Officer of Adobe during 2018\.  Mike Dillon also notified Adobe of his intent to retire as Executive Vice President and General Counsel of Adobe during 2018\.      To ensure an orderly transition and continuity of operations, both Garrett and Dillon will remain in their current roles with Adobe until their respective successors are in place\.
-Adobe is conducting an internal and external search to fill both roles and both Garrett and Dillon will be active participants in the search for and transition to their successors\.

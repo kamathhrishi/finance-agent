@@ -1,3 +1,0 @@
-## Item 2. Properties
-In the U\.S\., 3M’s general offices, corporate research laboratories, and certain division laboratories are located in St\. Paul, Minnesota\. The Company operates 48 manufacturing facilities in 26 states\. Internationally, the Company operates 60 manufacturing and converting facilities in 25 countries\.
-3M owns the majority of its physical properties\. 3M’s physical facilities are highly suitable for the purposes for which they were designed\. Because 3M is a global enterprise characterized by substantial inter\-segment cooperation, properties are often used by multiple business segments\.

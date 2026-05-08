@@ -1,2 +1,0 @@
-## Item 7A.QUANTITATIVE AND QUALITATIVE DISCLOSURES ABOUT MARKET RISK
-The information called for by this item is incorporated herein by reference to “Item 7\. Management’s Discussion and Analysis of Results of Operations and Financial Condition \- Liquidity and Capital Resources \- Financing and Market Risk” of this Report; and Note 1 “Summary of Significant Accounting Policies \- Financial Instruments” of the Notes to Consolidated Financial Statements included in Item 8 of this Report\.

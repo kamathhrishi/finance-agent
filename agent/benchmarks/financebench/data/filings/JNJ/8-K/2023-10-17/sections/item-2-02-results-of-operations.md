@@ -1,2 +1,0 @@
-# Item 2.02     Results of Operations and Financial Condition
-On October 17, 2023, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the third quarter ended October 1, 2023\.

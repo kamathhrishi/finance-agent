@@ -1,3 +1,0 @@
-## ITEM 7.
-### MANAGEMENT'S DISCUSSION AND ANALYSIS OF FINANCIAL CONDITION AND RESULTS OF OPERATIONS
-The information required by this item is incorporated by reference to all information under the caption "Management's Discussion and Analysis of Financial Condition and Results of Operations" included in our Annual Report to Shareholders\.  Such information is included in Exhibit 13 to this Annual Report on Form 10\-K\.

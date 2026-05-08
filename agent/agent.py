@@ -22,6 +22,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 import openai
 from dotenv import load_dotenv
 
+from .compaction import compact_tool_results
 from .prompts import _BASE_SYSTEM_PROMPT, build_date_anchor
 from .tools import Sandbox, TOOL_SCHEMAS, make_tool_executor
 from .observability import span, info as obs_info, warn as obs_warn, truncate
@@ -34,6 +35,11 @@ logger = logging.getLogger("agent.agent")
 # ─────────────────────────────────────────────────────────────────────────────
 
 DEFAULT_MODEL = "gpt-5.4-mini-2026-03-17"
+# Final-answer synthesis is split off to the full model: the mini drives the
+# 25-turn ReAct loop (cheap), then one no-tools call to the full model writes
+# the answer from the gathered evidence. Override per-deploy with
+# FS_RESEARCH_SYNTHESIS_MODEL.
+DEFAULT_SYNTHESIS_MODEL = "gpt-5.4-2026-03-05"
 DEFAULT_MAX_TOOL_CALLS = 25
 DEFAULT_MAX_COMPLETION_TOKENS = 16000
 
@@ -135,6 +141,7 @@ class FilesystemResearchAgent:
         self,
         data_root: Optional[Path] = None,
         model: str = DEFAULT_MODEL,
+        synthesis_model: Optional[str] = None,
         max_tool_calls: int = DEFAULT_MAX_TOOL_CALLS,
         max_completion_tokens: int = DEFAULT_MAX_COMPLETION_TOKENS,
         openai_api_key: Optional[str] = None,
@@ -172,14 +179,70 @@ class FilesystemResearchAgent:
         self.execute_tool = make_tool_executor(self.sandbox)
 
         self.model = model
+        self.synthesis_model = (
+            synthesis_model
+            or os.getenv("FS_RESEARCH_SYNTHESIS_MODEL", "").strip()
+            or DEFAULT_SYNTHESIS_MODEL
+        )
         self.max_tool_calls = max_tool_calls
         self.max_completion_tokens = max_completion_tokens
 
         self._client = openai.AsyncOpenAI(api_key=self.api_key)
         logger.info(
             f"FilesystemResearchAgent ready (model={self.model}, "
+            f"synthesis_model={self.synthesis_model}, "
             f"data_root={self.data_root}, budget={self.max_tool_calls})"
         )
+
+    # ── Internal: synthesis pass ─────────────────────────────────────────────
+
+    async def _synthesize_final_answer(
+        self,
+        messages: List[Dict[str, Any]],
+        instruction: str,
+        phase: str,
+    ) -> Optional[str]:
+        """Single no-tools call to the full model that writes the final answer
+        from the evidence already in `messages`. Returns None if rate-limited
+        beyond retries or on a non-retryable failure (caller surfaces error)."""
+        final_resp = None
+        with span(
+            "fs_research.synthesize",
+            phase=phase,
+            model=self.synthesis_model,
+            message_count=len(messages),
+        ):
+            for _attempt in range(5):
+                try:
+                    final_resp = await self._client.chat.completions.create(
+                        model=self.synthesis_model,
+                        messages=messages + [{"role": "user", "content": instruction}],
+                        temperature=0,
+                        max_completion_tokens=self.max_completion_tokens,
+                    )
+                    break
+                except openai.RateLimitError as e:
+                    wait = _wait_from_429(e, _attempt)
+                    logger.warning(f"synthesis ({phase}) 429; sleeping {wait:.1f}s")
+                    obs_warn(
+                        "fs_research.rate_limit",
+                        attempt=_attempt + 1,
+                        wait_s=round(wait, 2),
+                        phase=f"synthesis.{phase}",
+                    )
+                    await asyncio.sleep(wait)
+                    continue
+                except (openai.APITimeoutError, openai.APIConnectionError) as e:
+                    wait = min(2 ** _attempt, 15)
+                    logger.warning(f"synthesis ({phase}) transient {type(e).__name__}; sleeping {wait}s")
+                    await asyncio.sleep(wait)
+                    continue
+                except Exception:
+                    logger.exception(f"Synthesis ({phase}) call failed (non-retryable)")
+                    return None
+        if final_resp is None:
+            return None
+        return final_resp.choices[0].message.content or ""
 
     # ── Public API ───────────────────────────────────────────────────────────
 
@@ -237,6 +300,15 @@ class FilesystemResearchAgent:
         yield Event("progress", {"message": "Starting research"}).as_dict()
 
         while tool_call_count < self.max_tool_calls:
+            # Compact older tool results when accumulated tool-message bytes
+            # exceed the threshold. No LLM call — just clip stale evidence.
+            # Keeps the model focused on recent results instead of drowning
+            # in 200k+ tokens of accumulated reads.
+            messages, _comp_stats = compact_tool_results(messages)
+            if _comp_stats["triggered"]:
+                yield Event("compaction", _comp_stats).as_dict()
+                obs_info("fs_research.compaction", **_comp_stats)
+
             llm_call_num += 1
             yield Event(
                 "llm_call",
@@ -325,25 +397,49 @@ class FilesystemResearchAgent:
             msg = choice.message
             tool_calls = msg.tool_calls or []
 
-            # Append assistant turn (preserve tool_calls so we can match tool responses)
-            assistant_msg: Dict[str, Any] = {"role": "assistant", "content": msg.content}
+            # Append assistant turn ONLY if it has tool_calls (so subsequent tool
+            # responses can be matched). On natural finish we deliberately drop
+            # the mini's text answer so the synthesis pass writes fresh from
+            # the gathered evidence rather than anchoring on the mini's draft.
             if tool_calls:
-                assistant_msg["tool_calls"] = [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    }
-                    for tc in tool_calls
-                ]
-            messages.append(assistant_msg)
-
-            # No more tool calls → done
-            if not tool_calls:
-                final_answer = msg.content or ""
+                messages.append({
+                    "role": "assistant",
+                    "content": msg.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in tool_calls
+                    ],
+                })
+            else:
+                # Natural finish — full-model synthesis pass with no tools.
+                yield Event("llm_call", {
+                    "call_num": llm_call_num + 1,
+                    "phase": "synthesis",
+                    "model": self.synthesis_model,
+                }).as_dict()
+                final_answer = await self._synthesize_final_answer(
+                    messages,
+                    instruction=(
+                        "The research loop is complete. Write the final answer to the "
+                        "user's original question using ONLY the evidence gathered in "
+                        "the tool messages above. Cite every numerical claim and "
+                        "named-entity claim with the literal `path:line` or "
+                        "`path:line_start-line_end` form. Do not invent citations."
+                    ),
+                    phase="natural",
+                )
+                if final_answer is None:
+                    yield Event("error", {
+                        "message": "Sorry — the model is rate-limited right now. Please try again in a moment.",
+                    }).as_dict()
+                    return
                 break
 
             # Execute every tool call (parallel within a single turn)
@@ -459,53 +555,27 @@ class FilesystemResearchAgent:
                                 "content": "(skipped — agent tool budget exhausted before this call ran)",
                             })
 
-                # Force final-answer call: no tools allowed
-                yield Event("llm_call", {"call_num": llm_call_num + 1, "phase": "force_final"}).as_dict()
-                final_resp = None
-                with span(
-                    "fs_research.force_final",
-                    model=active_model,
-                    message_count=len(messages),
-                    tool_calls_used=tool_call_count,
-                ):
-                  for _attempt in range(5):
-                    try:
-                        final_resp = await self._client.chat.completions.create(
-                            model=active_model,
-                            messages=messages
-                            + [
-                                {
-                                    "role": "user",
-                                    "content": (
-                                        "Tool budget exhausted. Write the best answer you can "
-                                        "with the evidence already gathered. Cite every claim with "
-                                        "`path:line`. Note any gaps explicitly."
-                                    ),
-                                }
-                            ],
-                            temperature=0,
-                            max_completion_tokens=self.max_completion_tokens,
-                        )
-                        break
-                    except openai.RateLimitError as e:
-                        wait = _wait_from_429(e, _attempt)
-                        logger.warning(f"force-final 429; sleeping {wait:.1f}s")
-                        await asyncio.sleep(wait)
-                        continue
-                    except Exception as e:
-                        # Log the real error but surface a generic message to the user.
-                        logger.exception(f"Force-final call failed: {e}")
-                        yield Event("error", {
-                            "message": "Sorry — something went wrong while finalizing the answer. Please try again, or rephrase the question more narrowly.",
-                        }).as_dict()
-                        return
-                if final_resp is None:
-                    logger.error("Force-final rate-limited after retries")
+                # Force final-answer call: no tools allowed, full-model synthesis
+                yield Event("llm_call", {
+                    "call_num": llm_call_num + 1,
+                    "phase": "force_final",
+                    "model": self.synthesis_model,
+                }).as_dict()
+                final_answer = await self._synthesize_final_answer(
+                    messages,
+                    instruction=(
+                        "Tool budget exhausted. Write the best answer you can "
+                        "with the evidence already gathered. Cite every claim with "
+                        "`path:line`. Note any gaps explicitly."
+                    ),
+                    phase="force_final",
+                )
+                if final_answer is None:
+                    logger.error("Force-final synthesis failed after retries")
                     yield Event("error", {
                         "message": "Sorry — the model is rate-limited right now. Please try again in a moment.",
                     }).as_dict()
                     return
-                final_answer = final_resp.choices[0].message.content or ""
                 break
 
         elapsed = time.time() - start
@@ -522,11 +592,13 @@ class FilesystemResearchAgent:
         obs_info(
             "fs_research.run.complete",
             tool_calls=tool_call_count,
-            llm_calls=llm_call_num + (1 if force_final_triggered else 0),
+            # +1 for the synthesis pass (always runs in both natural and force-final paths)
+            llm_calls=llm_call_num + 1,
             answer_chars=len(final_answer),
             elapsed_s=round(elapsed, 2),
             elapsed_ms=int(elapsed * 1000),
             force_final=force_final_triggered,
+            synthesis_model=self.synthesis_model,
         )
 
         yield Event(
@@ -534,7 +606,7 @@ class FilesystemResearchAgent:
             {
                 "answer": final_answer,
                 "tool_calls": tool_call_count,
-                "llm_calls": llm_call_num + (1 if tool_call_count >= self.max_tool_calls else 0),
+                "llm_calls": llm_call_num + 1,
                 "elapsed_s": round(elapsed, 2),
             },
         ).as_dict()

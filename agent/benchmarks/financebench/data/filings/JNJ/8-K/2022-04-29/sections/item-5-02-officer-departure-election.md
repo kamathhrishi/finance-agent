@@ -1,2 +1,0 @@
-# Item 5.02 Departure of Directors or Certain Officers; Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of Certain Officers.
-The information included in the third bullet under Item 5\.07\(b\) below is incorporated herein by reference\.

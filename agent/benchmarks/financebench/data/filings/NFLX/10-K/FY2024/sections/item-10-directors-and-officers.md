@@ -1,3 +1,0 @@
-## Item 10.Directors, Executive Officers and Corporate Governance
-Information regarding our directors and executive officers is incorporated by reference from the information contained under the sections “Proposal One: Election of Directors,” and “Code of Ethics” in our Proxy Statement for the Annual Meeting of Stockholders\.
-The Company has adopted an insider trading policy which governs transactions in our securities by the Company and its directors, officers, employees, consultants, and contractors and is designed to promote compliance with insider trading laws, rules and regulations applicable to the Company\. A copy of our insider trading policy is filed with this Annual Report on Form 10\-K as Exhibit 19\.1\.

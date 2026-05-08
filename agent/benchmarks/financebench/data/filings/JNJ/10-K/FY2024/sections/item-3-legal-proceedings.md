@@ -1,2 +1,0 @@
-## Item 3. Legal proceedings
-The information called for by this item is incorporated herein by reference to the information set forth in Note 19 Legal proceedings of the Notes to Consolidated Financial Statements included in Item 8 of this Report\.

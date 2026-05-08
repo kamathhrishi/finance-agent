@@ -1,2 +1,0 @@
-## ITEM 13.    Certain Relationships and Related Transactions and Director Independence
-The information required by this Item 13 is included under the captions “Corporate Governance \- Related Person Transaction Policy,” “Corporate Governance \- Certain Relationships and Related Person Transactions of Directors, Executive Officers and 5 Percent Stockholders,” and “Corporate Governance \- Director Independence” in the 2019 Proxy Statement, and that information is incorporated by reference in this Annual Report on Form 10\-K\.

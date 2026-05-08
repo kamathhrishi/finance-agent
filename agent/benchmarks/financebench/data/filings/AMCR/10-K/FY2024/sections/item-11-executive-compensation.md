@@ -1,2 +1,0 @@
-## Item 11. - Executive Compensation
-Information required to be submitted in response to this item is omitted because a definitive proxy statement containing such information will be filed with the Securities and Exchange Commission pursuant to Regulation 14A within 120 days after June 30, 2024, and such information is expressly incorporated herein by reference\.

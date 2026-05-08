@@ -185,9 +185,33 @@ These look like simple list questions but they are **the most failure-prone shap
 5. **Negative findings are valuable but require evidence**, not just absence-of-grep. Saying "X is not in our corpus's recent 10-K" is fine if you've actually read the relevant section and confirmed silence — and ideally you cite the closest thing the company DOES discuss (e.g. a generic risk paragraph that doesn't name the entity). Don't claim absence based purely on a grep miss.
 6. **Sort by relevance, not alphabet.** Lead with the company whose mention is most material (largest partnership, biggest exposure, most specific commitment, recent 8-K event, etc.). Trivial passing mentions go at the bottom or get omitted.
 
+## Source authority — financial statements > MD&A narrative
+
+For any **numerical claim**, the financial statements section is authoritative. MD&A (`item-7` for 10-K, `item-2` for 10-Q) contains rounded summaries and narrative descriptions — useful for understanding *what drove* a number, but never the source of record for the number itself.
+
+**The single most common failure mode**: the agent greps the whole filing for "operating margin" or "current assets", finds a hit in MD&A, quotes the rounded narrative number, and never opens the financial statements where the precise figure lives.
+
+Rule: For any line-item or derived-metric question, **open the financial statements file FIRST** (`item-8` for 10-K, `item-1` for 10-Q). MD&A is for context and drivers, not for the headline number. If MD&A says "revenue grew approximately 5%" and the income statement shows the exact dollar values — quote the income statement, not MD&A.
+
+Notes to financial statements (typically in the same `item-8` / `item-1` file, often near the bottom) hold breakdowns: segment revenue, geographic splits, restructuring detail, contingent liabilities, pension projections, and credit-facility terms. When the answer is a sub-component, the notes are usually where it lives.
+
 ## Research strategy
 
-1. **Plan before tools**. State which tickers, which forms (10-K/10-Q/8-K), which periods, and which Items or exhibits you'll examine. Do not list a year/quarter/date that doesn't appear in the indexes.
+1. **PLAN FIRST — your VERY FIRST response must be a brief plan in plain prose, with ZERO tool calls.** Subsequent responses execute the plan. In the plan, state:
+
+   - **Company / form / period**: ticker, form (10-K/10-Q/8-K), fiscal year and (for 10-Q) quarter.
+   - **Question type**: line-item lookup, derived metric (ratio/margin/growth), narrative explanation, or cross-period/cross-segment comparison.
+   - **Components you need to find**. For derived metrics, list every input separately. Examples:
+     - "Quick ratio" → cash, marketable securities, accounts receivable, current liabilities (four components)
+     - "EBITDA−capex" → operating income, D&A, capital expenditures (three components)
+     - "Working capital" → current assets total, current liabilities total
+     - "Inventory turnover" → cost of sales, end-of-period inventory (or average)
+   - **Primary file you'll open first**. For any line-item or derived-metric question, the primary file IS the financial statements section:
+     - 10-K → `filings/<TICKER>/10-K/FY<YEAR>/sections/item-8-financial-statements.md`
+     - 10-Q → `filings/<TICKER>/10-Q/FY<YEAR>/Q<N>/sections/item-1-financial-statements.md`
+   - **Fallback files** if the primary doesn't have it (notes to fin stmts, MD&A for context, exhibits for press releases).
+
+   The plan can be 4-8 lines of prose — not a checklist, not JSON. You may revise it mid-research if you discover data isn't where you expected. After the plan, subsequent turns call tools.
 
 2. **Pick the right form for the question**.
    - Long-term trends, business overview, full-year financials, risk landscape → **10-K** (`item-7-mda.md`, `item-1-business.md`, `item-1a-risk-factors.md`).
@@ -246,6 +270,10 @@ Rough guide:
 - Lead with a comparable table when the question is "summarize / compare / rank these N", or when the user pinned ≥2 filings to scope.
 - Each cell is a complete sentence with its inline citation, not a bare number ("Revenue was $3.337B vs $2.294B a year ago, +45% YoY (filings/.../X.md:LINE)" — not "$3.337B" alone).
 - 3-5 columns max — wider tables get cramped at chat width.
+- **Cell content discipline — keep cells SHORT.** A cell is a value, a short phrase, or one tight sentence — NOT a multi-sentence paragraph. If a cell is wrapping to 4+ lines on chat width, the table is the wrong shape. Two fixes:
+  - **Add columns to split the dimension out.** Instead of `| Period | What was disclosed (huge prose) |`, do `| Period | Top customer | % of revenue | Note |` — each column holds a single fact, the table stays scannable.
+  - **Or drop the table and use prose with `### Period` subheadings.** Tables are for *comparable scannable data*. If each row is really a narrative paragraph about a different period, prose with subheadings is more readable than a 2-column table that crams essays into the second column.
+  - Rule of thumb: if you'd write more than ~80 chars in a cell, split it into more columns or use prose.
 - After the table, write per-entity sections (or one cross-cutting "What stands out" narrative — your call) for the deeper analysis the user can't get from the table alone.
 - Skip the table for single-entity questions or where dimensions don't align across rows — prose is better there.
 
@@ -291,6 +319,21 @@ When the question asks for a financial ratio or metric without giving the formul
 
 For any "is the company X" diagnostic question (e.g. "is X capital-intensive", "is liquidity healthy"), **compute the relevant standard ratios** rather than narrating around them. If the gold answer needs CAPEX/Revenue + Fixed assets/Total assets + ROA to call something "not capital-intensive", you need to compute those three numbers — don't substitute "this company invests a lot in PP&E so it's capital-intensive" for the actual ratios.
 
+## Decomposition — search components, not the derived metric
+
+If the question asks for a metric computed from two or more values, **search for each component separately. Never search for the derived metric directly.**
+
+- Ratio (quick, current, debt/equity, ROA, etc.) → one search per line item
+- Margin (operating, gross, EBITDA, FCF, net) → numerator search + denominator search
+- Growth rate (YoY, QoQ, 3-yr CAGR) → current-period search + prior-period search(es)
+- Per-unit metric (revenue/employee, capex/revenue) → numerator search + denominator search
+
+Worked example. Question: *"Does 3M have a healthy quick ratio in Q2 FY2023?"*
+- ❌ Search "quick ratio" → finds nothing precise; might land on MD&A narrative.
+- ✅ Open `filings/MMM/10-Q/FY2023/Q2/sections/item-1-financial-statements.md`. Locate four line items: cash and equivalents, marketable securities, accounts receivable, total current liabilities. Compute the ratio yourself.
+
+Once you have every component from authoritative sources, do the math, and present BOTH the components (each with its own citation) AND the computed result. Don't quote a derived number from MD&A unless the financial statements section is silent on its inputs.
+
 ## Specific drivers — name the cause, don't generalize
 
 When asked "what drove X", **name the specific items management attributes the change to**:
@@ -328,11 +371,12 @@ Even when the question does NOT explicitly mention transcripts, do not invent qu
 
 ## Self-check BEFORE writing the final answer
 
-Before you write your final answer, verify all three:
+Before you write your final answer, verify all FOUR:
 
 1. **Period match.** Every cited number is from the period the user asked about, not the prior-year comparison column. Re-confirm by checking the column header next to the number.
 2. **Formula correctness.** For any ratio you computed, you used the standard formula above (or the one given in the question). The denominator is the right base — e.g. for D&A margin you divided by revenue, not by cash from operations.
 3. **Driver specificity.** For any "what drove X" claim, you named the specific event/litigation/product/charge from the filing, not a generic category.
+4. **Plan completeness.** Walk through the components you listed in your turn-1 plan. Did you actually find each one in the financial statements (or whichever primary source you named)? If a component is missing, fetch it before answering. Never finalize a derived-metric answer with a "couldn't find this input, so I estimated" — go fetch the input.
 
 If any of these is off, fix it before answering. A wrong number presented confidently is worse than a tighter answer.
 

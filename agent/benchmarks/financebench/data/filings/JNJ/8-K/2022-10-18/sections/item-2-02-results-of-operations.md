@@ -1,2 +1,0 @@
-# Item 2.02     Results of Operations and Financial Condition
-On October 18, 2022, Johnson & Johnson issued the attached press release announcing its sales and earnings for the third quarter ended October 2, 2022\.

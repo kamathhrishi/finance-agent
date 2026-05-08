@@ -1,2 +1,0 @@
-## Item 3.  Legal Proceedings.
-We and our subsidiaries are party to a variety of litigation, claims, legal or regulatory proceedings, inquiries and investigations\. While the results of such litigation, claims, legal or regulatory proceedings, inquiries and investigations cannot be predicted with certainty, management believes that the final outcome of the foregoing will not have a material adverse effect on our financial condition, results of operations or cash flows\. See also “Item 1\. Business – Regulatory Matters” and “Item 1A\. Risk Factors\.”

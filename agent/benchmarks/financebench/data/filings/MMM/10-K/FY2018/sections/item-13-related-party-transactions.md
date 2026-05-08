@@ -1,4 +1,0 @@
-## Item 13. 
-### Certain Relationships and Related Transactions, and Director Independence.
-		
-With respect to certain relationships and related transactions as set forth in Item 404 of Regulation S\-K, no matters require disclosure with respect to transactions with related persons\. The information required by Item 404\(b\) and Item 407\(a\) of Regulation S\-K is contained under the section “Corporate Governance at 3M” under the captions “Director Independence” and “Related Person Transaction Policy and Procedures” of the 3M Proxy Statement and such information is incorporated by reference herein\.

@@ -1,3 +1,0 @@
-## ITEM 6.ITEM 6.SELECTED FINANCIAL DATASELECTED FINANCIAL DATASELECTED FINANCIAL DATA
-This Item is reserved as a result of the Company’s early adoption of Item 301 of Regulation S\-K, as deleted pursuant to SEC Release No\. 33\-10890; 34\-90459 \(Management’s Discussion and Analysis; Selected Financial Data, and Supplementary Financial Information\) adopted by the Securities and Exchange Commission on November 19, 2020\.
-## ITEM 7.

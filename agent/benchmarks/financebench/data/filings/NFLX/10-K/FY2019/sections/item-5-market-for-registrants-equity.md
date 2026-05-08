@@ -1,9 +1,0 @@
-## Item 5.
-### Market for Registrant’s Common Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities
-#### Market Information
-Our common stock is traded on the NASDAQ Global Select Market under the symbol “NFLX”\.
-#### Holders
-As of December 31, 2019, there were approximately 590 stockholders of record of our common stock, although there is a significantly larger number of beneficial owners of our common stock\.
-##### Stock Performance Graph
-###### Notwithstanding any statement to the contrary in any of our previous or future filings with the Securities and Exchange Commission, the following information relating to the price performance of our common stock shall not be deemed “filed” with the Commission or “soliciting material” under the Securities Exchange Act of 1934 and shall not be incorporated by reference into any such filings.
-The following graph compares, for the five year period ended December 31, 2019, the total cumulative stockholder return on the Company’s common stock, as adjusted for the seven\-for\-one stock split that occurred in July 2015, with the total cumulative return of the NASDAQ Composite Index, the S&P 500 Index and the RDG Internet Composite Index\.  Measurement points are the last trading day of each of the Company’s fiscal years ended December 31, 2014, December 31, 2015, December 31, 2016, December 31, 2017, December 31, 2018 and December 31, 2019\.  Total cumulative stockholder return assumes $100 invested at the beginning of the period in the Company’s common stock, the stocks represented in the NASDAQ Composite Index, the stocks represented in the S&P 500 Index and the stocks represented in the RDG Internet Composite Index, respectively, and reinvestment of any dividends\.  Historical stock price performance should not be relied upon as an indication of future stock price performance\.

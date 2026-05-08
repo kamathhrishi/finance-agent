@@ -1,3 +1,0 @@
-## Item 3.LEGAL PROCEEDINGS
-The information called for by this item is incorporated herein by reference to the information set forth in Note 19 “Legal Proceedings” of the Notes to Consolidated Financial Statements included in Item 8 of this Report\.
-In addition, Johnson & Johnson and its subsidiaries are also parties to a number of proceedings brought under the Comprehensive Environmental Response, Compensation, and Liability Act, commonly known as Superfund, and comparable state, local or foreign laws in which the primary relief sought is the cost of past and/or future remediation\.

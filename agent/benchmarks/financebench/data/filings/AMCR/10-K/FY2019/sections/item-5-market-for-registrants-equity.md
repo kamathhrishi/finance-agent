@@ -1,2 +1,0 @@
-## Item 5. - Market for Registrant's Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities
-Our ordinary shares began trading on the New York Stock Exchange under the symbol AMCR on June 11, 2019 following the consummation of the Bemis acquisition\. On June 30, 2019, there were 86,573 registered holders of record of our ordinary shares and CDIs\.

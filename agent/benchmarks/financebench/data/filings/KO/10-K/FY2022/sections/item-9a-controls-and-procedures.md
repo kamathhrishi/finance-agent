@@ -1,7 +1,0 @@
-## ITEM 9A.  CONTROLS AND PROCEDURES
-### Evaluation of Disclosure Controls and Procedures
-The Company, under the supervision and with the participation of its management, including the Chief Executive Officer and the Chief Financial Officer, evaluated the effectiveness of the design and operation of the Company’s “disclosure controls and procedures” \(as defined in Rule 13a\-15\(e\) under the Exchange Act\) as of the end of the period covered by this report\. Based on that evaluation, the Chief Executive Officer and the Chief Financial Officer concluded that the Company’s disclosure controls and procedures were effective as of December 31, 2022\.
-### Report of Management on Internal Control Over Financial Reporting and Attestation Report of Independent Registered Public Accounting Firm
-The report of management on our internal control over financial reporting as of December 31, 2022 and the attestation report of our independent registered public accounting firm on our internal control over financial reporting are set forth in Part II, “Item 8\. Financial Statements and Supplementary Data” in this report\.
-### Changes in Internal Control Over Financial Reporting
-There have been no changes in the Company’s internal control over financial reporting during the quarter ended     December 31, 2022 that have materially affected, or are reasonably likely to materially affect, the Company’s internal control over financial reporting\.

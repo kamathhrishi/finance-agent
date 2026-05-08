@@ -1,3 +1,0 @@
-## ITEM 1B. UNRESOLVED STAFF COMMENTS
-We have received no written comments regarding our periodic or current reports from the staff of the SEC that were issued 180 days or more
-preceding the end of our fiscal year 2016 that remain unresolved\.

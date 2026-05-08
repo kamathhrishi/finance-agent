@@ -1,2 +1,0 @@
-## ITEM 9. Changes in and Disagreements with Accountants on Accounting and Financial Disclosure
-There has been no change of accountants nor any disagreements with accountants on any matter of accounting principles or practices or financial statement disclosure required to be reported under this Item\.

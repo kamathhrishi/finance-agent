@@ -1,3 +1,0 @@
-## Item 13. Certain Relationships and Related Transactions, and Director Independence
-The information required by Item 404 of Regulation S\-K will be included under the caption “Related Person Transactions” in the 2017 Proxy Statement, and that information is incorporated by reference herein\.
-The information required by Item 407\(a\) of Regulation S\-K will be included under the caption “Director Independence” in the 2017 Proxy Statement, and that information is incorporated by reference herein\.

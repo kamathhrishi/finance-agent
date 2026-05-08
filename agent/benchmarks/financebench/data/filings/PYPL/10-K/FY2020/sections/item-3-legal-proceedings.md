@@ -1,2 +1,0 @@
-## ITEM 3. LEGAL PROCEEDINGS
-The information set forth under “Note 13—Commitments and Contingencies—Litigation and Regulatory Matters” to the consolidated financial statements included in Part IV, Item 15 of this Form 10\-K is incorporated herein by reference\.

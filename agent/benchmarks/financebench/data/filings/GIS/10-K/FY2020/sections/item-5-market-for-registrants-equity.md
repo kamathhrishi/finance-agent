@@ -1,2 +1,0 @@
-## ITEM 5 - Market for Registrant’s Common Equity, Related Stockholder Matters and Issuer Purchases of Equity Securities
-Our common stock is listed on the New York Stock Exchange under the symbol “GIS\.” On June 15, 2020, there were approximately 27,000 record holders of our common stock\.

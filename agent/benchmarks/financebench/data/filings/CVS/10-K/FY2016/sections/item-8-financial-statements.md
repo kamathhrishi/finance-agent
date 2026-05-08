@@ -1,2 +1,0 @@
-## Item 8. Financial Statements and Supplementary Data
-We refer you to the “Consolidated Statements of Income,” “Consolidated Statements of Comprehensive Income,” “Consolidated Balance Sheets,” “Consolidated Statements of Shareholders’ Equity,” “Consolidated Statements of Cash Flows,” “Notes to Consolidated Financial Statements,” and “Report of Independent Registered Public Accounting Firm” of our Annual Report to Stockholders for the year ended December 31, 2016, which sections are incorporated by reference herein\.

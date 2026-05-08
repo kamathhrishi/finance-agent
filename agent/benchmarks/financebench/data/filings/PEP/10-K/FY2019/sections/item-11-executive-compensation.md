@@ -1,2 +1,0 @@
-## Item 11.  Executive Compensation.
-Information about director and executive officer compensation, Compensation Committee interlocks and the Compensation Committee Report is contained in our 2020 Proxy Statement under the captions “2019 Director Compensation,” “Executive Compensation,” “Corporate Governance at PepsiCo – Committees of the Board of Directors – Compensation Committee – Compensation Committee Interlocks and Insider Participation” and “Executive Compensation – Compensation Committee Report” and is incorporated herein by reference\.

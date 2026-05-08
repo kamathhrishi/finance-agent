@@ -1,2 +1,0 @@
-## Item 8.   Financial Statements and Supplementary Data
-See the index, consolidated financial statements, and notes to consolidated financial statements included under Item 15, “Exhibits and Financial Statement Schedules\.”

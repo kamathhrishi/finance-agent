@@ -1,2 +1,0 @@
-## Item 3.    Quantitative and Qualitative Disclosures About Market Risk.
-For a discussion of the quantitative and qualitative disclosures about market risk, refer to the Market Risk Management section of Management’s discussion and analysis and pages 124–131 of JPMorgan Chase’s 2018 Form 10\-K\.

@@ -1,3 +1,0 @@
-## ITEM 12. SECURITY OWNERSHIP OF CERTAIN BENEFICIAL OWNERS AND MANAGEMENT AND RELATED STOCKHOLDER MATTERS
-The information in the Proxy Statement set forth under the captions “Stock ownership information” and “Equity
-compensation plan information” is incorporated herein by reference\.

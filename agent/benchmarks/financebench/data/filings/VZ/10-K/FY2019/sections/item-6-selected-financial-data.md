@@ -1,2 +1,0 @@
-## Item 6.    Selected Financial Data
-Information required by this item is included in the 2019 Verizon Annual Report to Shareholders under the heading "Selected Financial Data," which is incorporated herein by reference\.

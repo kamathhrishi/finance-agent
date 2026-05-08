@@ -1,3 +1,0 @@
-## ITEM 12.
-### SECURITY OWNERSHIP OF CERTAIN BENEFICIAL OWNERS AND MANAGEMENT AND RELATED STOCKHOLDER MATTERS
-The information required by this item is incorporated herein by reference to all information under the sub\-captions "Holdings of Major Shareholders" and "Holdings of Officers and Directors" that appear under the caption "Stock Ownership" and all information that appears under the caption "Executive Compensation Tables – Equity Compensation Plan Information" included in our Proxy Statement\.

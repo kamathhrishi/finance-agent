@@ -1,2 +1,0 @@
-# Item 2.02 Results of operations and financial condition
-On April 14, 2026, Johnson & Johnson issued the attached press release \(Exhibit 99\.1\) announcing its sales and earnings for the first quarter ended March 29, 2026\.
