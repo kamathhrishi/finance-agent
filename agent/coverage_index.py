@@ -76,6 +76,22 @@ def _data_root_from_env() -> Path:
     return Path(env).resolve() if env else DEFAULT_DATA_ROOT
 
 
+def _clean_text(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _clean_optional_text(value: Any) -> Optional[str]:
+    text = _clean_text(value)
+    return text or None
+
+
+def _clean_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _period_label(form: str, fy: Optional[str], q: Optional[str], filing_date: str) -> str:
     """Render a human-readable period label that fits in a single table cell."""
     if form == "10-K" and fy:
@@ -96,15 +112,16 @@ def _load_universe(universe_path: Path) -> Tuple[List[Dict[str, str]], Dict[str,
         return [], {}
     raw = json.loads(universe_path.read_text(encoding="utf-8"))
     tickers = raw.get("tickers") or []
-    companies = [
-        {
-            "ticker": t.get("ticker", "").strip().upper(),
-            "cik": str(t.get("cik", "")).strip(),
-            "company_name": t.get("company_name", "").strip(),
-        }
-        for t in tickers
-        if t.get("ticker")
-    ]
+    companies = []
+    for t in tickers:
+        ticker = _clean_text(t.get("ticker")).upper()
+        if not ticker:
+            continue
+        companies.append({
+            "ticker": ticker,
+            "cik": _clean_text(t.get("cik")),
+            "company_name": _clean_text(t.get("company_name")),
+        })
     name_map = {c["ticker"]: c["company_name"] for c in companies}
     return companies, name_map
 
@@ -135,16 +152,16 @@ def build_index(
                 logger.warning(f"skipping unreadable metadata: {meta_path} ({e})")
                 continue
 
-            ticker = (m.get("ticker") or "").strip().upper()
-            form = (m.get("form") or "").strip()
+            ticker = _clean_text(m.get("ticker")).upper()
+            form = _clean_text(m.get("form")).upper()
             if not ticker or not form:
                 continue
 
-            fy = m.get("fiscal_year_label") or None
-            q = m.get("quarter_label") or None
-            filing_date = (m.get("filing_date") or "").strip()
-            accession = (m.get("accession") or "").strip()
-            chars = m.get("filing_chars") or 0
+            fy = _clean_optional_text(m.get("fiscal_year_label"))
+            q = _clean_optional_text(m.get("quarter_label"))
+            filing_date = _clean_text(m.get("filing_date"))
+            accession = _clean_text(m.get("accession"))
+            chars = _clean_int(m.get("filing_chars"))
             section_keys = m.get("section_keys") or []
             exhibits = m.get("exhibits") or []
 
