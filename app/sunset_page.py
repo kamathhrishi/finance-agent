@@ -231,6 +231,14 @@ SUNSET_HTML = """<!DOCTYPE html>
     color: var(--slate-600);
     line-height: 1.7;
   }}
+  .note a {{
+    color: var(--navy);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--slate-300);
+  }}
+  .note a:hover {{ text-decoration-color: var(--navy); }}
   .note .from {{
     display: block;
     margin-top: 1rem;
@@ -332,6 +340,10 @@ SUNSET_HTML = """<!DOCTYPE html>
         companies straight from primary sources, and I learned an enormous
         amount building it. The code is open, so take it, fork it, and make it
         your own.
+        <br /><br />
+        I've since joined the team at
+        <a href="https://www.button.xyz" target="_blank" rel="noopener noreferrer">button.xyz</a>,
+        where we're building something similar — I'd love for you to check it out.
         <span class="from">
           &mdash; Hrishikesh &middot;
           <a href="https://kamathhrishi.github.io/" target="_blank" rel="noopener noreferrer">kamathhrishi.github.io</a>
