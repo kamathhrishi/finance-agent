@@ -6,10 +6,10 @@ On localhost the normal React landing page is served unchanged. See
 `setup_frontend_routes` in app/routes.py for the branch.
 
 The HTML is fully self-contained (inline CSS, fonts from Google Fonts) so it
-has no dependency on the React build output — the build can be absent or stale
-and this page still renders. The styling mirrors the React landing page
+has no dependency on the React build output, so the build can be absent or
+stale and this page still renders. The styling mirrors the React landing page
 (frontend/src/pages/LandingPage.tsx) one-to-one:
-  - action / brand color is navy #0a1628 (NOT the teal/blue in index.css — the
+  - action / brand color is navy #0a1628 (NOT the teal/blue in index.css; the
     landing page uses inline bg-[#0a1628] everywhere)
   - fixed 64px white nav bar with the fa-layer-group logo mark in a navy box
   - hero on warm #faf9f7 with a 64px #e2e8f0 grid overlay
@@ -239,6 +239,37 @@ SUNSET_HTML = """<!DOCTYPE html>
     text-decoration-color: var(--slate-300);
   }}
   .note a:hover {{ text-decoration-color: var(--navy); }}
+  .note-lead {{
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--navy);
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+  }}
+  .note-cta {{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--navy);
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none !important;
+    padding: 0.7rem 1.4rem;
+    border-radius: 0.5rem;
+    transition: background 0.2s, transform 0.2s;
+  }}
+  .note-cta:hover {{ background: var(--navy-light); transform: translateY(-1px); }}
+  .note-cta .arrow {{ transition: transform 0.2s; }}
+  .note-cta:hover .arrow {{ transform: translateX(2px); }}
+  .note-body {{
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--slate-200);
+    font-size: 0.95rem;
+    color: var(--slate-600);
+    line-height: 1.7;
+  }}
   .note .from {{
     display: block;
     margin-top: 1rem;
@@ -319,7 +350,7 @@ SUNSET_HTML = """<!DOCTYPE html>
       <span class="eyebrow">Market Intelligence Platform</span>
       <h1>It was a pleasure building StrataLens AI.</h1>
       <p class="lede">
-        This site is no longer maintained. The project is open source — clone
+        This site is no longer maintained. The project is open source, so clone
         the repo and run it with your own key.
       </p>
 
@@ -335,17 +366,23 @@ SUNSET_HTML = """<!DOCTYPE html>
       </div>
 
       <div class="note">
-        A note from me — thank you to everyone who tried StrataLens and shared
-        feedback along the way. It began as an experiment in researching
-        companies straight from primary sources, and I learned an enormous
-        amount building it. The code is open, so take it, fork it, and make it
-        your own.
-        <br /><br />
-        I've since joined the team at
-        <a href="https://www.button.xyz" target="_blank" rel="noopener noreferrer">button.xyz</a>,
-        where we're building something similar — I'd love for you to check it out.
+        <p class="note-lead">
+          I've recently joined the team at button.xyz, where we're building
+          something similar. If StrataLens was useful to you, I'd love for you
+          to see what we're building next.
+        </p>
+        <a class="note-cta" href="https://www.button.xyz" target="_blank" rel="noopener noreferrer">
+          Check out button.xyz <span class="arrow" aria-hidden>&rarr;</span>
+        </a>
+        <p class="note-body">
+          And a heartfelt thank you to everyone who tried StrataLens and shared
+          feedback along the way. It began as an experiment in researching
+          companies straight from primary sources, and I learned an enormous
+          amount building it. The code is open, so take it, fork it, and make
+          it your own.
+        </p>
         <span class="from">
-          &mdash; Hrishikesh &middot;
+          Hrishikesh &middot;
           <a href="https://kamathhrishi.github.io/" target="_blank" rel="noopener noreferrer">kamathhrishi.github.io</a>
         </span>
       </div>
