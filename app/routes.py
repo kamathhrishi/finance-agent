@@ -5,7 +5,7 @@ Sets up all API routes, frontend routes, and static file serving.
 """
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from app.auth import auth
 from app.auth import router as auth_router
@@ -70,7 +70,20 @@ def setup_frontend_routes(app: FastAPI):
 
     @app.get("/")
     async def serve_landing():
-        """Serve the React app landing page"""
+        """Serve the landing page.
+
+        On Railway (the public deployment) we serve a static farewell/sunset
+        page instead of the React app. On localhost the normal React landing
+        page is served unchanged, so local dev is unaffected.
+        """
+        # Lazy import avoids a circular import: app/__init__.py imports this
+        # module via setup_routes, so we can't import from `app` at module load.
+        from app import _is_railway
+
+        if _is_railway():
+            from app.sunset_page import SUNSET_HTML
+            return HTMLResponse(content=SUNSET_HTML)
+
         return FileResponse(f"{FRONTEND_DIR}/index.html")
 
     @app.get("/chat")
